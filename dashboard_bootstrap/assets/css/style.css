@@ -1,0 +1,115 @@
+/* GLOBAL */
+body {
+    background: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 250px;
+    transition: all 0.3s ease;
+}
+
+.sidebar.hide {
+    margin-left: -250px;
+}
+
+/* CONTENT */
+.content-wrapper {
+    margin-left: 250px;
+    transition: all 0.3s ease;
+}
+
+.content-wrapper.full {
+    margin-left: 0;
+}
+
+/* CARD DASHBOARD */
+.card-dashboard {
+    border-radius: 12px;
+    color: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* HEADER */
+.header-top {
+    background: #0d6efd;
+    color: white;
+    padding: 10px;
+}
+
+.small-box {
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+}
+.card {
+    border-radius: 10px;
+}
+
+/* ===== SIDEBAR NORMAL ===== */
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+    transition: all 0.3s ease;
+}
+
+/* MENU LINK */
+.menu-link {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 5px;
+}
+
+.menu-link:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* ICON */
+.menu-link .icon {
+    width: 30px;
+    text-align: center;
+    font-size: 18px;
+}
+
+/* TEXT */
+.menu-link .text {
+    margin-left: 10px;
+    transition: opacity 0.3s;
+}
+
+/* ===== COLLAPSE MODE ===== */
+.sidebar.collapsed {
+    width: 70px;
+}
+
+/* sembunyikan text */
+.sidebar.collapsed .text {
+    display: none;
+}
+
+/* center icon */
+.sidebar.collapsed .menu-link {
+    justify-content: center;
+}
+
+/* SUBMENU saat collapse */
+.sidebar.collapsed .collapse {
+    display: none !important;
+}
+
+canvas {
+    max-height: 300px;
+}
+
+.menu-link {
+    gap: 10px;
+}
+
+.sidebar {
+    border: 3px solid red;
+}

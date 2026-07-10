@@ -1,0 +1,6 @@
+{
+    "name": "hp/aplikasi-skripsi",
+    "require": {
+        "dompdf/dompdf": "^3.1"
+    }
+}
