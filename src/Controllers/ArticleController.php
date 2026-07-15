@@ -75,6 +75,7 @@ class ArticleController
 
         $id = $this->articles->create((int) $_SESSION['user_id'], $title, $content, $category, $tags, $image);
 
+        $_SESSION['success'] = 'Artikel berhasil dipublikasikan.';
         Response::redirect('/article/' . $id);
     }
 
@@ -130,6 +131,7 @@ class ArticleController
 
         $this->articles->update((int) $id, $title, $content, $category, $tags, $image);
 
+        $_SESSION['success'] = 'Artikel berhasil diperbarui.';
         Response::redirect('/article/' . $id);
     }
 
@@ -140,6 +142,7 @@ class ArticleController
 
         if ($this->findOwnedArticle((int) $id)) {
             $this->articles->delete((int) $id);
+            $_SESSION['success'] = 'Artikel berhasil dihapus.';
         }
 
         Response::redirect('/article');

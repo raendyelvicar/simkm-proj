@@ -13,6 +13,7 @@ use App\Controllers\CounselorController;
 use App\Controllers\ChatController;
 use App\Controllers\ConsultationController;
 use App\Controllers\AdminCounselorController;
+use App\Controllers\AdminApprovalController;
 use App\Controllers\ArticleController;
 use App\Controllers\StudentController;
 use App\Controllers\ReportController;
@@ -74,6 +75,11 @@ $router->post('/admin/counselors', [AdminCounselorController::class, 'store']);
 $router->get('/admin/counselors/{id}/edit', [AdminCounselorController::class, 'edit']);
 $router->post('/admin/counselors/{id}', [AdminCounselorController::class, 'update']);
 $router->post('/admin/counselors/{id}/status', [AdminCounselorController::class, 'toggleStatus']);
+
+// --- Protected: admin-only approval queue for pending mahasiswa registrations ---
+$router->get('/admin/approvals', [AdminApprovalController::class, 'index']);
+$router->post('/admin/approvals/{id}/approve', [AdminApprovalController::class, 'approve']);
+$router->post('/admin/approvals/{id}/reject', [AdminApprovalController::class, 'reject']);
 
 $router->get('/article', [ArticleController::class, 'index']);
 $router->get('/article/create', [ArticleController::class, 'create']);

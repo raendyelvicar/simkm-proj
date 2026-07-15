@@ -56,6 +56,7 @@ class DiaryController
 
         $this->diaries->create((int) $_SESSION['user_id'], $judul, $moodLevel, $content, $isPrivate, $entryDate);
 
+        $_SESSION['success'] = 'Diary berhasil ditambahkan.';
         Response::redirect('/diary');
     }
 
@@ -119,6 +120,7 @@ class DiaryController
 
         $this->diaries->update((int) $id, $judul, $moodLevel, $content, $isPrivate, $entryDate);
 
+        $_SESSION['success'] = 'Diary berhasil diperbarui.';
         Response::redirect('/diary/' . $id);
     }
 
@@ -127,6 +129,7 @@ class DiaryController
     {
         if ($this->findOwnedEntry((int) $id)) {
             $this->diaries->delete((int) $id);
+            $_SESSION['success'] = 'Diary berhasil dihapus.';
         }
 
         Response::redirect('/diary');

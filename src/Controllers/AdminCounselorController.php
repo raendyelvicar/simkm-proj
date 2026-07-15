@@ -78,6 +78,7 @@ class AdminCounselorController
             $this->counselors->updateUserProfileImage($userId, $image);
         }
 
+        $_SESSION['success'] = 'Konselor berhasil ditambahkan.';
         Response::redirect('/admin/counselors');
     }
 
@@ -139,6 +140,7 @@ class AdminCounselorController
             $fields['status_aktif']
         );
 
+        $_SESSION['success'] = 'Konselor berhasil diperbarui.';
         Response::redirect('/admin/counselors');
     }
 
@@ -154,6 +156,9 @@ class AdminCounselorController
 
         if ($counselor['has_profile']) {
             $this->counselors->setActive((int) $counselor['konselor_id'], !$counselor['status_aktif']);
+            $_SESSION['success'] = $counselor['status_aktif']
+                ? 'Konselor berhasil dinonaktifkan.'
+                : 'Konselor berhasil diaktifkan kembali.';
         }
 
         Response::redirect('/admin/counselors');

@@ -48,4 +48,4 @@
 $content = ob_get_clean();
 $pageTitle = $title ?? 'Detail Artikel';
 $extraStyles = require __DIR__ . '/_styles.php';
-require __DIR__ . '/../layouts/public.php';
+require __DIR__ . '/../layouts/index.php';

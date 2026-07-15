@@ -5,9 +5,12 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
+use App\Repositories\UserRepository;
 
 class StudentController
 {
+    private UserRepository $users;
+
     public function __construct()
     {
         AuthMiddleware::handle();
@@ -18,12 +21,15 @@ class StudentController
             http_response_code(403);
             exit('Forbidden: konselor/admin only.');
         }
+
+        $this->users = new UserRepository();
     }
 
     // GET /students
     public function index(Request $request): void
     {
-        // TODO: UserRepository::allWithRole('mahasiswa')
-        Response::view('students/index', ['title' => 'Data Mahasiswa', 'students' => []]);
+        $students = array_map(fn ($student) => $student->toArray(), $this->users->allByRole('mahasiswa'));
+
+        Response::view('students/index', ['title' => 'Data Mahasiswa', 'students' => $students]);
     }
 }

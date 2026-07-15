@@ -17,7 +17,7 @@ class DashboardController
     public function index(Request $request): void
     {
         Response::view('dashboard/index', [
-            'title'    => 'OKE',
+            'title'    => 'Dashboard',
             'username' => $_SESSION['username'] ?? '',
             'role'     => $_SESSION['role'] ?? '',
         ]);

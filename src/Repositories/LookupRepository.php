@@ -28,4 +28,26 @@ class LookupRepository
         $result = $stmt->get_result();
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
+
+    // The users table stores fakultas/jurusan as plain text, while the
+    // register form submits their lookup ids — these resolve one to the other.
+    public function findFakultasName(int $id): ?string
+    {
+        $stmt = $this->db->prepare('SELECT name FROM fakultas WHERE id = ? LIMIT 1');
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+
+        return $row['name'] ?? null;
+    }
+
+    public function findJurusanName(int $id): ?string
+    {
+        $stmt = $this->db->prepare('SELECT name FROM jurusan WHERE id = ? LIMIT 1');
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+
+        return $row['name'] ?? null;
+    }
 }

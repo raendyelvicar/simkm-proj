@@ -23,21 +23,21 @@
             <div class="field">
                 <label for="title">Judul</label>
                 <input type="text" id="title" name="title"
-                       value="<?= htmlspecialchars($article['title'] ?? '') ?>" required>
+                    value="<?= htmlspecialchars($article['title'] ?? '') ?>" required>
             </div>
 
             <div class="field">
                 <label for="category">Kategori</label>
                 <input type="text" id="category" name="category"
-                       value="<?= htmlspecialchars($article['category'] ?? '') ?>"
-                       placeholder="Mis. Edukasi, Tips, Assessment (opsional)">
+                    value="<?= htmlspecialchars($article['category'] ?? '') ?>"
+                    placeholder="Mis. Edukasi, Tips, Assessment (opsional)">
             </div>
 
             <div class="field">
                 <label for="tags">Tag</label>
                 <input type="text" id="tags" name="tags"
-                       value="<?= htmlspecialchars($article['tags'] ?? '') ?>"
-                       placeholder="Pisahkan dengan koma, mis. stres, kuliah, self-care (opsional)">
+                    value="<?= htmlspecialchars($article['tags'] ?? '') ?>"
+                    placeholder="Pisahkan dengan koma, mis. stres, kuliah, self-care (opsional)">
             </div>
 
             <div class="field">
@@ -54,7 +54,7 @@
             <div class="field">
                 <label for="content">Isi Artikel</label>
                 <textarea id="content" name="content"
-                          required><?= htmlspecialchars($article['content'] ?? '') ?></textarea>
+                    required><?= htmlspecialchars($article['content'] ?? '') ?></textarea>
             </div>
 
             <div class="article-form-actions">

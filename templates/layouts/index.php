@@ -6,6 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
 $role = $_SESSION['role'] ?? 'guest';
 $pageTitle = $pageTitle ?? 'Dashboard SIMKM';
 $roleLabel = ucfirst($role);
+$username = $_SESSION['username'] ?? 'Pengguna';
+$avatarInitial = strtoupper(substr($username, 0, 1));
 
 $currentPath = '/' . trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
 
@@ -61,6 +63,42 @@ function navActive(string $path, string $currentPath): string
             top: 0;
             z-index: 20;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        .topbar-brand {
+            line-height: 1.15;
+        }
+
+        .topbar-page-title {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .account-toggle {
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 4px 12px 4px 4px;
+        }
+
+        .account-toggle::after {
+            margin-left: 10px;
+        }
+
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .account-menu {
+            min-width: 220px;
         }
 
         .app-shell {
@@ -166,19 +204,44 @@ function navActive(string $path, string $currentPath): string
     <header class="topbar">
         <div class="d-flex align-items-center gap-2">
             <button class="btn btn-outline-secondary btn-sm" id="toggleSidebar" type="button">☰</button>
-            <span class="fw-semibold">SIMKM</span>
+            <div class="topbar-brand">
+                <div class="fw-semibold">SIMKM</div>
+                <div class="topbar-page-title"><?= htmlspecialchars($pageTitle) ?></div>
+            </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary"><?= htmlspecialchars($roleLabel) ?></span>
-            <form method="POST" action="/logout" class="d-inline m-0">
-                <button type="submit" class="btn btn-outline-dark btn-sm">Logout</button>
-            </form>
+        <div class="dropdown">
+            <button class="btn btn-light account-toggle dropdown-toggle d-flex align-items-center gap-2" type="button"
+                id="accountMenuToggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="avatar-circle"><?= htmlspecialchars($avatarInitial) ?></span>
+                <span class="d-none d-sm-flex flex-column align-items-start lh-1">
+                    <span class="fw-semibold small"><?= htmlspecialchars($username) ?></span>
+                </span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end account-menu shadow-sm" aria-labelledby="accountMenuToggle">
+                <li>
+                    <h6 class="dropdown-header">Masuk sebagai <?= htmlspecialchars($roleLabel) ?></h6>
+                </li>
+                <li><a class="dropdown-item" href="/profile">👤 Profil Saya</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <form method="POST" action="/logout" class="m-0">
+                        <button type="submit" class="dropdown-item text-danger">🚪 Logout</button>
+                    </form>
+                </li>
+            </ul>
         </div>
     </header>
 
     <div class="app-shell">
         <aside class="sidebar" id="sidebar">
+            <script>
+                if (localStorage.getItem('simkm.sidebarCollapsed') === '1') {
+                    document.getElementById('sidebar').classList.add('collapsed');
+                }
+            </script>
             <nav>
                 <a href="/dashboard" class="nav-link <?= navActive('/dashboard', $currentPath) ?>">
                     <span>🏠</span>
@@ -218,6 +281,10 @@ function navActive(string $path, string $currentPath): string
                         <span>🧑‍⚕️</span>
                         <span class="nav-label">Kelola Konselor</span>
                     </a>
+                    <a href="/admin/approvals" class="nav-link <?= navActive('/admin/approvals', $currentPath) ?>">
+                        <span>✅</span>
+                        <span class="nav-label">Persetujuan Akun</span>
+                    </a>
                 <?php endif; ?>
                 <a href="/profile" class="nav-link <?= navActive('/profile', $currentPath) ?>">
                     <span>👤</span>
@@ -244,17 +311,70 @@ function navActive(string $path, string $currentPath): string
         </div>
     </div>
 
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080;">
+        <?php if (!empty($_SESSION['success'])): ?>
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive"
+                aria-atomic="true" data-bs-autohide="true" data-bs-delay="4000">
+                <div class="d-flex">
+                    <div class="toast-body"><?= htmlspecialchars($_SESSION['success']) ?></div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+
+        <?php if (!empty($_SESSION['error'])): ?>
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
+                aria-atomic="true" data-bs-autohide="true" data-bs-delay="6000">
+                <div class="d-flex">
+                    <div class="toast-body"><?= htmlspecialchars($_SESSION['error']) ?></div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const toggleButton = document.getElementById('toggleSidebar');
             const sidebar = document.getElementById('sidebar');
+            const STORAGE_KEY = 'simkm.sidebarCollapsed';
 
-            if (toggleButton && sidebar) {
-                toggleButton.addEventListener('click', function() {
-                    sidebar.classList.toggle('collapsed');
+            if (!toggleButton || !sidebar) {
+                return;
+            }
+
+            const tooltips = Array.from(sidebar.querySelectorAll('.nav-link')).map(function(link) {
+                const label = link.querySelector('.nav-label');
+                link.setAttribute('data-bs-toggle', 'tooltip');
+                link.setAttribute('data-bs-placement', 'right');
+                link.setAttribute('title', label ? label.textContent.trim() : '');
+                return new bootstrap.Tooltip(link);
+            });
+
+            function syncTooltips() {
+                const collapsed = sidebar.classList.contains('collapsed');
+                tooltips.forEach(function(tip) {
+                    tip.hide();
+                    collapsed ? tip.enable() : tip.disable();
                 });
             }
+
+            syncTooltips();
+
+            toggleButton.addEventListener('click', function() {
+                const collapsed = sidebar.classList.toggle('collapsed');
+                localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+                syncTooltips();
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.toast-container .toast').forEach(function(el) {
+                new bootstrap.Toast(el).show();
+            });
         });
     </script>
 </body>

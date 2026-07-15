@@ -6,42 +6,37 @@ require __DIR__ . '/phpmailer/src/PHPMailer.php';
 require __DIR__ . '/phpmailer/src/SMTP.php';
 require __DIR__ . '/phpmailer/src/Exception.php';
 
-function kirimEmail($to, $subject, $message)
+// Sends an email via SMTP using credentials from .env (never hardcode
+// secrets here — this file is committed to git).
+// Returns true on success, false on failure (logged via error_log rather
+// than echoed, so a failed notification email never breaks the page).
+function kirimEmail(string $to, string $subject, string $message): bool
 {
     $mail = new PHPMailer(true);
 
     try {
-        // DEBUG (WAJIB SAAT TEST)
-        $mail->SMTPDebug = 2; 
-        $mail->Debugoutput = 'html';
+        $mail->SMTPDebug = (int) env('MAIL_DEBUG', 0);
+        $mail->Debugoutput = 'error_log';
 
-        // SMTP CONFIG
         $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
+        $mail->Host       = env('MAIL_HOST', 'smtp.gmail.com');
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'raendy.elvicar@gmail.com';
+        $mail->Username   = env('MAIL_USERNAME', '');
+        $mail->Password   = env('MAIL_PASSWORD', '');
+        $mail->SMTPSecure = env('MAIL_ENCRYPTION', PHPMailer::ENCRYPTION_STARTTLS);
+        $mail->Port       = (int) env('MAIL_PORT', 587);
 
-        // ❗ HAPUS SPASI APP PASSWORD
-        $mail->Password   = 'cyvzhknnwwmslbue';
-
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
-
-        // FROM & TO
-        $mail->setFrom('raendy.elvicar@gmail.com', 'SIMKM XAMPP');
+        $mail->setFrom(env('MAIL_FROM_ADDRESS', $mail->Username), env('MAIL_FROM_NAME', 'SIMKM'));
         $mail->addAddress($to);
 
-        // CONTENT
         $mail->isHTML(true);
         $mail->Subject = $subject;
-        $mail->Body    = nl2br($message);
+        $mail->Body    = nl2br(htmlspecialchars($message));
 
         $mail->send();
         return true;
-
     } catch (Exception $e) {
-        // TAMPILKAN ERROR (INI YANG PENTING)
-        echo "Email gagal dikirim. Error: {$mail->ErrorInfo}";
-        exit;
+        error_log('kirimEmail failed: ' . $mail->ErrorInfo);
+        return false;
     }
 }
