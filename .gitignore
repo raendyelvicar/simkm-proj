@@ -1,4 +1,19 @@
-./vendor
-./public/uploads
-./.env
-./.claude
+# Composer dependencies — reinstall with `composer install`
+/vendor/
+
+# Runtime user uploads — not source, and grows unbounded
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Secrets — never commit real credentials; .env.copy is the tracked template
+.env
+.env.*
+!.env.copy
+
+# Editor/OS junk
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code local settings
+.claude/
