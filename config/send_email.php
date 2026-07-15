@@ -19,16 +19,16 @@ function kirimEmail($to, $subject, $message)
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'addoafrilioputera@gmail.com';
+        $mail->Username   = 'raendy.elvicar@gmail.com';
 
         // ❗ HAPUS SPASI APP PASSWORD
-        $mail->Password   = 'cpkievpfstmebcbo';
+        $mail->Password   = 'cyvzhknnwwmslbue';
 
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
         // FROM & TO
-        $mail->setFrom('addoafrilioputera@gmail.com', 'SIMKM XAMPP');
+        $mail->setFrom('raendy.elvicar@gmail.com', 'SIMKM XAMPP');
         $mail->addAddress($to);
 
         // CONTENT

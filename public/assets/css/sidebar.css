@@ -1,0 +1,241 @@
+/* ================= SIDEBAR ================= */
+
+:root{
+    --sb-bg:#161b26;
+    --sb-border:rgba(255,255,255,0.08);
+    --sb-text:#c8ccd6;
+    --sb-text-muted:#6b7280;
+    --sb-text-active:#ffffff;
+    --sb-accent:#3b82f6;
+    --sb-accent-soft:rgba(59,130,246,0.15);
+}
+
+#sidebar{
+    width:250px;
+    min-width:250px;
+    background:var(--sb-bg);
+    transition:width 0.3s ease, min-width 0.3s ease;
+    overflow:hidden;
+    min-height:100vh;
+    flex-shrink:0; /* stop the sidebar from ever getting squeezed by its flex sibling */
+    display:flex;
+    flex-direction:column;
+}
+
+/* COLLAPSE MODE */
+#sidebar.active{
+    width:78px;
+    min-width:78px;
+}
+
+/* ================= BRAND HEADER ================= */
+.sidebar-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--sb-border);
+    flex-shrink:0;
+}
+
+.brand-icon{
+    font-size:26px;
+    line-height:1;
+}
+
+.brand-text{
+    font-size:19px;
+    font-weight:700;
+    color:var(--sb-text-active);
+    white-space:nowrap;
+    letter-spacing:0.3px;
+}
+
+#sidebar.active .sidebar-brand{
+    justify-content:center;
+    padding:22px 0 18px;
+}
+
+/* ================= SECTION LABEL ================= */
+.menu-label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    color:var(--sb-text-muted);
+    padding:16px 20px 8px;
+    flex-shrink:0;
+}
+
+/* ================= SCROLLABLE MENU AREA ================= */
+.sidebar-menu{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:0 10px 20px;
+}
+
+.sidebar-menu::-webkit-scrollbar{
+    width:6px;
+}
+.sidebar-menu::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,0.15);
+    border-radius:10px;
+}
+.sidebar-menu::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+/* ================= MENU LINK ================= */
+.menu-link{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    color:var(--sb-text);
+    text-decoration:none;
+    padding:12px 16px;
+    margin:2px 0;
+    border-radius:10px;
+    border-left:3px solid transparent;
+    transition:background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    white-space:nowrap;
+    font-size:14.5px;
+}
+
+.menu-link:hover{
+    background:var(--sb-accent-soft);
+    color:var(--sb-text-active);
+}
+
+/* ACTIVE (set via PHP isActive() -> 'active-menu') */
+.menu-link.active-menu{
+    background:var(--sb-accent-soft);
+    color:var(--sb-text-active);
+    border-left-color:var(--sb-accent);
+    font-weight:600;
+}
+
+/* ICON */
+.menu-link .icon{
+    min-width:22px;
+    font-size:18px;
+    text-align:center;
+    flex-shrink:0;
+}
+
+/* TEXT (hidden in collapsed mode below) */
+.menu-link .text{
+    transition:opacity 0.15s ease;
+}
+
+/* CHEVRON on collapsible group triggers */
+.menu-link .chevron{
+    margin-left:auto;
+    font-size:16px;
+    color:var(--sb-text-muted);
+    transition:transform 0.2s ease;
+    flex-shrink:0;
+}
+
+.menu-link.has-submenu[aria-expanded="true"] .chevron{
+    transform:rotate(90deg);
+    color:var(--sb-text-active);
+}
+
+/* ================= SUBMENU ================= */
+.submenu{
+    margin:2px 0 6px 32px;
+    padding-left:12px;
+    border-left:1px solid var(--sb-border);
+}
+
+.submenu-link{
+    padding:9px 12px;
+    margin:1px 0;
+    font-size:13.5px;
+    color:var(--sb-text-muted);
+    border-radius:8px;
+    border-left:none;
+}
+
+.submenu-link:hover{
+    color:var(--sb-text-active);
+    background:rgba(255,255,255,0.05);
+}
+
+.submenu-link.active-menu{
+    color:var(--sb-accent);
+    background:var(--sb-accent-soft);
+    font-weight:600;
+    border-left:none;
+}
+
+/* ================= COLLAPSE MODE (icon-only) ================= */
+#sidebar.active .text,
+#sidebar.active .brand-text,
+#sidebar.active .menu-label,
+#sidebar.active .chevron{
+    display:none;
+}
+
+#sidebar.active .menu-link{
+    justify-content:center;
+    padding:12px 0;
+    margin:2px 8px;
+    gap:0;
+}
+
+#sidebar.active .menu-link .icon{
+    font-size:20px;
+}
+
+#sidebar.active .submenu{
+    display:none; /* submenus don't make sense icon-only; use the tooltip on the parent instead */
+}
+
+/* ================= CONTENT ================= */
+.content-wrapper{
+    flex:1;       /* take exactly the remaining space next to the sidebar */
+    min-width:0;  /* lets long tables/content inside shrink instead of overflowing the page */
+    min-height:100vh;
+    background:#f4f6f9;
+    transition:all 0.3s ease;
+}
+
+/* NAVBAR */
+.top-navbar{
+    border-bottom:1px solid #e5e5e5;
+}
+
+/* BREADCRUMB */
+.breadcrumb-text{
+    font-size:14px;
+    color:#666;
+}
+
+/* PROFILE */
+.profile-navbar{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+/* PROFILE PHOTO */
+.profile-navbar img{
+    object-fit:cover;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:768px){
+
+    #sidebar{
+        position:fixed;
+        z-index:999;
+        height:100%;
+    }
+
+    #sidebar.active{
+        margin-left:-78px;
+    }
+
+}

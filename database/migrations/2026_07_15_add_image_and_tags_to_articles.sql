@@ -1,0 +1,3 @@
+ALTER TABLE articles
+  ADD COLUMN image VARCHAR(255) NULL AFTER category,
+  ADD COLUMN tags VARCHAR(255) NULL AFTER image;
