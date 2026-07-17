@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    <div class="chat-box" id="chatBox" data-counselor-id="<?= (int) $counselor['id'] ?>">
+    <div class="chat-box" id="chatBox" data-counselor-id="<?= (int) $counselor['user_id'] ?>">
         <?php if (empty($messages)): ?>
             <p class="chat-empty">Belum ada percakapan. Mulai konsultasi dengan mengirim pesan di bawah.</p>
         <?php endif; ?>
@@ -35,66 +35,68 @@
         <?php endforeach; ?>
     </div>
 
-    <form method="post" action="/chat/<?= (int) $counselor['id'] ?>" class="chat-form" id="chatForm">
+    <form method="post" action="/chat/<?= (int) $counselor['user_id'] ?>" class="chat-form" id="chatForm">
         <input type="text" name="message" class="chat-input" placeholder="Ketik pesan..." autocomplete="off" required>
         <button type="submit" class="btn-counselor btn-counselor-primary">Kirim</button>
     </form>
 </div>
 
 <script>
-(function () {
-    var box = document.getElementById('chatBox');
-    if (!box) {
-        return;
-    }
-    box.scrollTop = box.scrollHeight;
-
-    var counselorId = box.dataset.counselorId;
-    var currentUserId = <?= (int) $_SESSION['user_id'] ?>;
-
-    function lastMessageId() {
-        var bubbles = box.querySelectorAll('.chat-bubble');
-        if (!bubbles.length) {
-            return 0;
+    (function() {
+        var box = document.getElementById('chatBox');
+        if (!box) {
+            return;
         }
-        return bubbles[bubbles.length - 1].dataset.id || 0;
-    }
-
-    function appendMessage(message) {
-        var mine = String(message.user_id) === String(currentUserId);
-        var bubble = document.createElement('div');
-        bubble.className = 'chat-bubble ' + (mine ? 'chat-bubble-mine' : 'chat-bubble-theirs');
-        bubble.dataset.id = message.id;
-
-        var text = document.createElement('div');
-        text.className = 'chat-bubble-text';
-        text.textContent = message.message;
-
-        var time = document.createElement('div');
-        time.className = 'chat-bubble-time';
-        time.textContent = message.created_at ? message.created_at : '';
-
-        bubble.appendChild(text);
-        bubble.appendChild(time);
-
-        var empty = box.querySelector('.chat-empty');
-        if (empty) {
-            empty.remove();
-        }
-
-        box.appendChild(bubble);
         box.scrollTop = box.scrollHeight;
-    }
 
-    setInterval(function () {
-        fetch('/chat/' + counselorId + '/messages?after=' + lastMessageId())
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                (data.messages || []).forEach(appendMessage);
-            })
-            .catch(function () {});
-    }, 4000);
-})();
+        var counselorId = box.dataset.counselorId;
+        var currentUserId = <?= (int) $_SESSION['user_id'] ?>;
+
+        function lastMessageId() {
+            var bubbles = box.querySelectorAll('.chat-bubble');
+            if (!bubbles.length) {
+                return 0;
+            }
+            return bubbles[bubbles.length - 1].dataset.id || 0;
+        }
+
+        function appendMessage(message) {
+            var mine = String(message.user_id) === String(currentUserId);
+            var bubble = document.createElement('div');
+            bubble.className = 'chat-bubble ' + (mine ? 'chat-bubble-mine' : 'chat-bubble-theirs');
+            bubble.dataset.id = message.id;
+
+            var text = document.createElement('div');
+            text.className = 'chat-bubble-text';
+            text.textContent = message.message;
+
+            var time = document.createElement('div');
+            time.className = 'chat-bubble-time';
+            time.textContent = message.created_at ? message.created_at : '';
+
+            bubble.appendChild(text);
+            bubble.appendChild(time);
+
+            var empty = box.querySelector('.chat-empty');
+            if (empty) {
+                empty.remove();
+            }
+
+            box.appendChild(bubble);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        setInterval(function() {
+            fetch('/chat/' + counselorId + '/messages?after=' + lastMessageId())
+                .then(function(res) {
+                    return res.json();
+                })
+                .then(function(data) {
+                    (data.messages || []).forEach(appendMessage);
+                })
+                .catch(function() {});
+        }, 4000);
+    })();
 </script>
 
 <?php

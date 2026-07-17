@@ -28,12 +28,12 @@ class ChatController
             return;
         }
 
-        $messages = $this->chats->conversation((int) $_SESSION['user_id'], $counselor['id']);
+        $messages = $this->chats->conversation((int) $_SESSION['user_id'], $counselor['user_id']);
 
         Response::view('chat/index', [
             'title' => 'Chat dengan ' . ($counselor['nama'] ?: 'Konselor'),
             'counselor' => $counselor,
-            'messages' => array_map(fn ($message) => $message->toArray(), $messages),
+            'messages' => array_map(fn($message) => $message->toArray(), $messages),
         ]);
     }
 
@@ -44,7 +44,7 @@ class ChatController
         $message = trim($request->post('message', ''));
 
         if ($counselor && $message !== '') {
-            $this->chats->send((int) $_SESSION['user_id'], $counselor['id'], $message);
+            $this->chats->send((int) $_SESSION['user_id'], $counselor['user_id'], $message);
         }
 
         Response::redirect('/chat/' . $counselorId);
@@ -64,7 +64,7 @@ class ChatController
         $messages = $this->chats->conversationSince((int) $_SESSION['user_id'], $counselor['id'], $afterId);
 
         Response::json([
-            'messages' => array_map(fn ($message) => $message->toArray(), $messages),
+            'messages' => array_map(fn($message) => $message->toArray(), $messages),
         ]);
     }
 

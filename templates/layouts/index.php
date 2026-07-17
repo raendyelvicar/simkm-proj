@@ -242,70 +242,33 @@ function navActive(string $path, string $currentPath): string
                     document.getElementById('sidebar').classList.add('collapsed');
                 }
             </script>
+            <?php
+            // roles omitted => visible to everyone logged in. Order here is render order.
+            $navItems = [
+                ['path' => '/dashboard', 'icon' => '🏠', 'label' => 'Dashboard'],
+                ['path' => '/assessment', 'icon' => '📝', 'label' => 'Assessment', 'roles' => ['mahasiswa', 'konselor']],
+                ['path' => '/article', 'icon' => '📰', 'label' => 'Artikel'],
+                ['path' => '/consultations', 'icon' => '💬', 'label' => 'Konsultasi Masuk', 'roles' => ['konselor']],
+                ['path' => '/tips', 'icon' => '💡', 'label' => 'Tips Harian', 'roles' => ['konselor']],
+                ['path' => '/shared-diaries', 'icon' => '📔', 'label' => 'Diary Dibagikan', 'roles' => ['konselor']],
+                ['path' => '/diary', 'icon' => '📖', 'label' => 'Diary', 'roles' => ['mahasiswa']],
+                ['path' => '/counselor', 'icon' => '💬', 'label' => 'Konselor', 'roles' => ['mahasiswa']],
+                ['path' => '/students', 'icon' => '🎓', 'label' => 'Data Mahasiswa', 'roles' => ['admin']],
+                ['path' => '/admin/counselors', 'icon' => '🧑‍⚕️', 'label' => 'Kelola Konselor', 'roles' => ['admin']],
+                ['path' => '/admin/approvals', 'icon' => '✅', 'label' => 'Persetujuan Akun', 'roles' => ['admin']],
+                ['path' => '/admin/settings', 'icon' => '⚙️', 'label' => 'Pengaturan', 'roles' => ['admin']],
+                ['path' => '/profile', 'icon' => '👤', 'label' => 'Profil'],
+            ];
+            ?>
             <nav>
-                <a href="/dashboard" class="nav-link <?= navActive('/dashboard', $currentPath) ?>">
-                    <span>🏠</span>
-                    <span class="nav-label">Dashboard</span>
-                </a>
-                <?php if (in_array($role, ['mahasiswa', 'konselor'], true)): ?>
-                    <a href="/diary" class="nav-link <?= navActive('/diary', $currentPath) ?>">
-                        <span>📖</span>
-                        <span class="nav-label">Diary</span>
-                    </a>
-                    <a href="/assessment" class="nav-link <?= navActive('/assessment', $currentPath) ?>">
-                        <span>📝</span>
-                        <span class="nav-label">Assessment</span>
-                    </a>
-                <?php endif; ?>
-                <a href="/article" class="nav-link <?= navActive('/article', $currentPath) ?>">
-                    <span>📰</span>
-                    <span class="nav-label">Artikel</span>
-                </a>
-                <?php if ($role === 'konselor'): ?>
-                    <a href="/consultations" class="nav-link <?= navActive('/consultations', $currentPath) ?>">
-                        <span>💬</span>
-                        <span class="nav-label">Konsultasi Masuk</span>
-                    </a>
-                    <a href="/tips" class="nav-link <?= navActive('/tips', $currentPath) ?>">
-                        <span>💡</span>
-                        <span class="nav-label">Tips Harian</span>
-                    </a>
-                    <a href="/shared-diaries" class="nav-link <?= navActive('/shared-diaries', $currentPath) ?>">
-                        <span>📔</span>
-                        <span class="nav-label">Diary Dibagikan</span>
-                    </a>
-                <?php endif; ?>
-                <?php if ($role === 'mahasiswa'): ?>
-                    <a href="/counselor" class="nav-link <?= navActive('/counselor', $currentPath) ?>">
-                        <span>💬</span>
-                        <span class="nav-label">Konselor</span>
-                    </a>
-                <?php endif; ?>
-
-                <?php if (in_array($role, ['admin'], true)): ?>
-                    <a href="/students" class="nav-link <?= navActive('/students', $currentPath) ?>">
-                        <span>🎓</span>
-                        <span class="nav-label">Data Mahasiswa</span>
-                    </a>
-                <?php endif; ?>
-                <?php if ($role === 'admin'): ?>
-                    <a href="/admin/counselors" class="nav-link <?= navActive('/admin/counselors', $currentPath) ?>">
-                        <span>🧑‍⚕️</span>
-                        <span class="nav-label">Kelola Konselor</span>
-                    </a>
-                    <a href="/admin/approvals" class="nav-link <?= navActive('/admin/approvals', $currentPath) ?>">
-                        <span>✅</span>
-                        <span class="nav-label">Persetujuan Akun</span>
-                    </a>
-                    <a href="/admin/settings" class="nav-link <?= navActive('/admin/settings', $currentPath) ?>">
-                        <span>⚙️</span>
-                        <span class="nav-label">Pengaturan</span>
-                    </a>
-                <?php endif; ?>
-                <a href="/profile" class="nav-link <?= navActive('/profile', $currentPath) ?>">
-                    <span>👤</span>
-                    <span class="nav-label">Profil</span>
-                </a>
+                <?php foreach ($navItems as $item): ?>
+                    <?php if (empty($item['roles']) || in_array($role, $item['roles'], true)): ?>
+                        <a href="<?= $item['path'] ?>" class="nav-link <?= navActive($item['path'], $currentPath) ?>">
+                            <span><?= $item['icon'] ?></span>
+                            <span class="nav-label"><?= htmlspecialchars($item['label']) ?></span>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             </nav>
         </aside>
 

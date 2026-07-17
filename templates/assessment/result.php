@@ -39,21 +39,6 @@
         <p class="mb-0"><?= htmlspecialchars($feedback) ?></p>
     </div>
 
-    <?php if (!empty($combined)): ?>
-        <div class="assess-card assess-card-body mb-3">
-            <h5 class="mb-2">🧭 Klasifikasi Gabungan (PWB + BDI-II)</h5>
-            <p class="text-muted small mb-2">Berdasarkan hasil PWB dan BDI-II terakhirmu (<?= htmlspecialchars($combined['other_type_label']) ?> diisi <?= htmlspecialchars(date('d M Y', strtotime($combined['other_submitted_at']))) ?>).</p>
-            <span class="assess-badge <?= assessment_level_badge_class($combined['level']) ?>" style="font-size:1rem;">
-                Level <?= (int) $combined['level'] ?> &middot; Risiko <?= htmlspecialchars($combined['risk_label']) ?>
-            </span>
-            <div class="mt-3">
-                <div class="mb-1"><strong>Rekomendasi:</strong> <?= htmlspecialchars($combined['recommendation']) ?></div>
-                <div class="mb-1"><strong>Fitur:</strong> <?= htmlspecialchars($combined['features']) ?></div>
-                <div class="text-muted small"><?= htmlspecialchars($combined['purpose']) ?></div>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <?php if (!empty($tips)): ?>
         <div class="assess-card assess-card-body mb-3">
             <h5 class="mb-2">💡 Tips Menjaga Kesehatan Mental</h5>
@@ -65,21 +50,6 @@
         </div>
     <?php endif; ?>
 
-    <?php if (in_array($submission['category'], ['Sedang', 'Berat'], true)): ?>
-        <div class="assess-card assess-card-body mb-3 <?= $submission['category'] === 'Berat' ? 'border border-danger' : '' ?>">
-            <h5 class="mb-2"><?= $submission['category'] === 'Berat' ? '🚨 Segera Hubungi Konselor' : '💬 Rekomendasi Tindak Lanjut' ?></h5>
-            <p class="text-muted">Kamu dapat berdiskusi dengan konselor kampus melalui fitur Chat Konselor untuk mendapatkan pendampingan yang sesuai.</p>
-            <a href="/counselor" class="btn <?= $submission['category'] === 'Berat' ? 'btn-danger' : 'btn-warning' ?>">
-                <?= $submission['category'] === 'Berat' ? 'Hubungi Konselor Sekarang' : 'Lihat Konselor' ?>
-            </a>
-        </div>
-    <?php elseif ($submission['category'] === 'Ringan'): ?>
-        <div class="assess-card assess-card-body mb-3">
-            <h5 class="mb-2">📰 Rekomendasi Bacaan</h5>
-            <p class="text-muted">Baca artikel seputar manajemen stres dan relaksasi untuk membantu mengelola kondisimu.</p>
-            <a href="/article" class="btn btn-secondary">Baca Artikel</a>
-        </div>
-    <?php endif; ?>
 
     <?php if (!empty($submission['dimension_scores'])): ?>
         <div class="assess-card assess-card-body mb-3">
@@ -103,7 +73,13 @@
         <h5 class="mb-3">Rincian Jawaban</h5>
         <div class="table-responsive">
             <table class="table assess-table table-sm">
-                <thead><tr><th style="width:60%">Pertanyaan</th><th>Jawaban</th><th class="text-center">Skor</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th style="width:60%">Pertanyaan</th>
+                        <th>Jawaban</th>
+                        <th class="text-center">Skor</th>
+                    </tr>
+                </thead>
                 <tbody>
                     <?php foreach ($answers as $answer): ?>
                         <tr>

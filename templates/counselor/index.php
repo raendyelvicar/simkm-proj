@@ -39,13 +39,13 @@
                         <?php if (!empty($counselor['metode_konsultasi'])): ?>
                             <div class="counselor-meta">💻 <?= htmlspecialchars($counselor['metode_konsultasi']) ?> &middot; <?= (int) $counselor['durasi_sesi'] ?> menit</div>
                         <?php endif; ?>
-                        <?php if (!empty($counselor['biaya_konsultasi'])): ?>
+                        <!-- <?php if (!empty($counselor['biaya_konsultasi'])): ?>
                             <div class="counselor-meta">💳 Rp<?= number_format((float) $counselor['biaya_konsultasi'], 0, ',', '.') ?></div>
-                        <?php endif; ?>
+                        <?php endif; ?> -->
 
                         <div class="counselor-actions">
-                            <a href="/counselor/<?= urlencode($counselor['konselor_id']) ?>" class="btn-counselor btn-counselor-ghost">Lihat Profil</a>
-                            <a href="/chat/<?= urlencode($counselor['konselor_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Konsultasi</a>
+                            <a href="/counselor/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-ghost">Lihat Profil</a>
+                            <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Konsultasi</a>
                         </div>
                     </div>
                 </div>

@@ -57,12 +57,23 @@ class AssessmentController
             return;
         }
 
+        $latestBdi2 = $this->assessments->latestForUser($userId, 'bdi2')?->toArray();
+        $latestPwb = $this->assessments->latestForUser($userId, 'pwb')?->toArray();
+
+        $combined = null;
+        if ($latestBdi2 && $latestPwb) {
+            $combined = $this->scoring->combinedLevel($latestPwb['category'], $latestBdi2['category']);
+            $combined['bdi2_submitted_at'] = $latestBdi2['submitted_at'];
+            $combined['pwb_submitted_at'] = $latestPwb['submitted_at'];
+        }
+
         Response::view('assessment/index', [
             'title'      => 'Self-Assessment',
             'isStaff'    => false,
             'meta'       => self::META,
-            'latestBdi2' => $this->assessments->latestForUser($userId, 'bdi2')?->toArray(),
-            'latestPwb'  => $this->assessments->latestForUser($userId, 'pwb')?->toArray(),
+            'latestBdi2' => $latestBdi2,
+            'latestPwb'  => $latestPwb,
+            'combined'   => $combined,
         ]);
     }
 
@@ -88,8 +99,6 @@ class AssessmentController
             $pwbCategory = $type === 'pwb' ? $submission->category : $otherSubmission->category;
             $bdi2Category = $type === 'bdi2' ? $submission->category : $otherSubmission->category;
             $combined = $this->scoring->combinedLevel($pwbCategory, $bdi2Category);
-            $combined['other_type_label'] = self::META[$otherType]['short_title'];
-            $combined['other_submitted_at'] = $otherSubmission->submittedAt;
         }
 
         Response::view('assessment/result', [

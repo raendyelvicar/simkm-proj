@@ -44,7 +44,15 @@
                 <p class="text-muted small mb-3">Mahasiswa yang menjawab butir "Pikiran-pikiran atau keinginan bunuh diri" dengan skor &gt; 0. Segera tindak lanjuti.</p>
                 <div class="table-responsive">
                     <table class="table assess-table align-middle">
-                        <thead><tr><th>Mahasiswa</th><th>Skor Butir</th><th>Total Skor BDI-II</th><th>Tanggal</th><th></th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>Mahasiswa</th>
+                                <th>Skor Butir</th>
+                                <th>Total Skor BDI-II</th>
+                                <th>Tanggal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
                         <tbody>
                             <?php foreach ($suicidalIdeationFlags as $flag): ?>
                                 <tr>
@@ -126,7 +134,14 @@
                 <div class="table-responsive">
                     <table class="table assess-table align-middle">
                         <thead>
-                            <tr><th>Mahasiswa</th><th>Jenis</th><th>Skor</th><th>Kategori</th><th>Tanggal</th><th></th></tr>
+                            <tr>
+                                <th>Mahasiswa</th>
+                                <th>Jenis</th>
+                                <th>Skor</th>
+                                <th>Kategori</th>
+                                <th>Tanggal</th>
+                                <th></th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($recentFlagged as $s): ?>
@@ -147,7 +162,7 @@
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            (function () {
+            (function() {
                 var fakultasCounts = <?= json_encode($fakultasCounts ?? []) ?>;
                 var countsBdi2 = <?= json_encode($countsBdi2 ?? []) ?>;
                 var countsPwb = <?= json_encode($countsPwb ?? []) ?>;
@@ -155,29 +170,68 @@
                 var pwbDimensionAverages = <?= json_encode($pwbDimensionAverages ?? []) ?>;
                 var bdi2ItemAverages = <?= json_encode($bdi2ItemAverages ?? []) ?>;
 
-                var categoryColors = { 'Minimal': '#15803d', 'Tinggi': '#15803d', 'Ringan': '#a16207', 'Sedang': '#c2410c', 'Berat': '#b91c1c', 'Rendah': '#b91c1c' };
+                var categoryColors = {
+                    'Minimal': '#15803d',
+                    'Tinggi': '#15803d',
+                    'Ringan': '#a16207',
+                    'Sedang': '#c2410c',
+                    'Berat': '#b91c1c',
+                    'Rendah': '#b91c1c'
+                };
 
                 if (Object.keys(fakultasCounts).length) {
                     new Chart(document.getElementById('chart-fakultas'), {
                         type: 'bar',
                         data: {
                             labels: Object.keys(fakultasCounts),
-                            datasets: [{ label: 'Mahasiswa', data: Object.values(fakultasCounts), backgroundColor: '#2563eb' }]
+                            datasets: [{
+                                label: 'Mahasiswa',
+                                data: Object.values(fakultasCounts),
+                                backgroundColor: '#2563eb'
+                            }]
                         },
-                        options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+                        options: {
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                }
+                            }
+                        }
                     });
                 }
 
                 function categoryDoughnut(canvasId, counts) {
                     var el = document.getElementById(canvasId);
-                    if (!el || !Object.keys(counts).length) { return; }
+                    if (!el || !Object.keys(counts).length) {
+                        return;
+                    }
                     new Chart(el, {
                         type: 'doughnut',
                         data: {
                             labels: Object.keys(counts),
-                            datasets: [{ data: Object.values(counts), backgroundColor: Object.keys(counts).map(function (c) { return categoryColors[c] || '#94a3b8'; }) }]
+                            datasets: [{
+                                data: Object.values(counts),
+                                backgroundColor: Object.keys(counts).map(function(c) {
+                                    return categoryColors[c] || '#94a3b8';
+                                })
+                            }]
                         },
-                        options: { plugins: { legend: { position: 'bottom' } } }
+                        options: {
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
                     });
                 }
                 categoryDoughnut('chart-bdi2-category', countsBdi2);
@@ -187,10 +241,24 @@
                     new Chart(document.getElementById('chart-pwb-dimensions'), {
                         type: 'radar',
                         data: {
-                            labels: Object.keys(pwbDimensionAverages).map(function (k) { return pwbDimensionLabels[k] || k; }),
-                            datasets: [{ label: 'Rata-rata Skor (maks 18)', data: Object.values(pwbDimensionAverages), backgroundColor: 'rgba(37,99,235,0.2)', borderColor: '#2563eb' }]
+                            labels: Object.keys(pwbDimensionAverages).map(function(k) {
+                                return pwbDimensionLabels[k] || k;
+                            }),
+                            datasets: [{
+                                label: 'Rata-rata Skor (maks 18)',
+                                data: Object.values(pwbDimensionAverages),
+                                backgroundColor: 'rgba(37,99,235,0.2)',
+                                borderColor: '#2563eb'
+                            }]
                         },
-                        options: { scales: { r: { beginAtZero: true, suggestedMax: 18 } } }
+                        options: {
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    suggestedMax: 18
+                                }
+                            }
+                        }
                     });
                 }
 
@@ -198,20 +266,73 @@
                     new Chart(document.getElementById('chart-bdi2-items'), {
                         type: 'bar',
                         data: {
-                            labels: bdi2ItemAverages.map(function (i) { return 'No. ' + i.order_no; }),
+                            labels: bdi2ItemAverages.map(function(i) {
+                                return 'No. ' + i.order_no;
+                            }),
                             datasets: [{
                                 label: 'Rata-rata Skor (maks 3)',
-                                data: bdi2ItemAverages.map(function (i) { return i.avg_score; }),
-                                backgroundColor: bdi2ItemAverages.map(function (i) { return i.order_no === 9 ? '#b91c1c' : '#2563eb'; })
+                                data: bdi2ItemAverages.map(function(i) {
+                                    return i.avg_score;
+                                }),
+                                backgroundColor: bdi2ItemAverages.map(function(i) {
+                                    return i.order_no === 9 ? '#b91c1c' : '#2563eb';
+                                })
                             }]
                         },
-                        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: 3 } } }
+                        options: {
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    suggestedMax: 3
+                                }
+                            }
+                        }
                     });
                 }
             })();
         </script>
 
     <?php else: ?>
+
+        <?php if (!empty($combined)): ?>
+            <div class="assess-card assess-card-body mb-3">
+                <h5 class="mb-2">🧭 Klasifikasi Gabungan (PWB + BDI-II)</h5>
+                <p class="text-muted small mb-2">Berdasarkan hasil PWB (<?= htmlspecialchars(date('d M Y', strtotime($combined['pwb_submitted_at']))) ?>) dan BDI-II (<?= htmlspecialchars(date('d M Y', strtotime($combined['bdi2_submitted_at']))) ?>) terakhirmu.</p>
+                <span class="assess-badge <?= assessment_level_badge_class($combined['level']) ?>" style="font-size:1rem;">
+                    Level <?= (int) $combined['level'] ?> &middot; Risiko <?= htmlspecialchars($combined['risk_label']) ?>
+                </span>
+                <div class="mt-3">
+                    <div class="mb-1"><strong>Rekomendasi:</strong> <?= htmlspecialchars($combined['recommendation']) ?></div>
+                    <div class="mb-1"><strong>Fitur:</strong> <?= htmlspecialchars($combined['features']) ?></div>
+                    <div class="text-muted small"><?= htmlspecialchars($combined['purpose']) ?></div>
+                </div>
+            </div>
+
+            <?php if ($combined['level'] >= 6): ?>
+                <div class="assess-card assess-card-body mb-3 border border-danger">
+                    <h5 class="mb-2">🚨 Segera Hubungi Konselor</h5>
+                    <p class="text-muted">Tingkat risikomu tergolong tinggi. Kamu dapat berdiskusi dengan konselor kampus melalui fitur Chat Konselor untuk mendapatkan pendampingan psikologis awal sebelum bantuan profesional.</p>
+                    <a href="/counselor" class="btn btn-danger">Hubungi Konselor Sekarang</a>
+                </div>
+            <?php elseif ($combined['level'] >= 3): ?>
+                <div class="assess-card assess-card-body mb-3">
+                    <h5 class="mb-2">📔 Rekomendasi Self Help</h5>
+                    <p class="text-muted">Isi Diary Terstruktur secara rutin untuk membantu mengenali emosi, memonitor perkembangan kondisimu, dan meningkatkan coping skill.</p>
+                    <a href="/diary" class="btn btn-warning">Isi Diary</a>
+                </div>
+            <?php else: ?>
+                <div class="assess-card assess-card-body mb-3">
+                    <h5 class="mb-2">📰 Rekomendasi Bacaan</h5>
+                    <p class="text-muted">Baca artikel seputar manajemen stres dan relaksasi untuk membantu mengelola kondisimu.</p>
+                    <a href="/article" class="btn btn-secondary">Baca Artikel</a>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <div class="row g-3">
             <?php foreach (['bdi2', 'pwb'] as $type):
