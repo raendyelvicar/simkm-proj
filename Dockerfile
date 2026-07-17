@@ -4,6 +4,7 @@ RUN apt-get update \
     && apt-get install -y unzip libzip-dev \
     && docker-php-ext-install mysqli \
     && a2enmod rewrite \
+    && a2dismod mpm_event mpm_worker 2>/dev/null; a2enmod mpm_prefork \
     && rm -rf /var/lib/apt/lists/*
 
 # Point Apache's docroot at /public and allow .htaccess overrides
