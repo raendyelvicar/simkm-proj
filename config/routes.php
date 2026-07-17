@@ -9,6 +9,8 @@ use App\Controllers\DashboardController;
 use App\Controllers\ProfileController;
 use App\Controllers\DiaryController;
 use App\Controllers\AssessmentController;
+use App\Controllers\AssessmentSessionController;
+use App\Controllers\AdminSettingsController;
 use App\Controllers\CounselorController;
 use App\Controllers\ChatController;
 use App\Controllers\ConsultationController;
@@ -17,6 +19,8 @@ use App\Controllers\AdminApprovalController;
 use App\Controllers\ArticleController;
 use App\Controllers\StudentController;
 use App\Controllers\ReportController;
+use App\Controllers\DailyTipController;
+use App\Controllers\SharedDiaryController;
 
 $router->get('/', [HomeController::class, 'index']);
 
@@ -47,9 +51,23 @@ $router->post('/diary/{id}', [DiaryController::class, 'update']);
 $router->post('/diary/{id}/delete', [DiaryController::class, 'destroy']);
 
 $router->get('/assessment', [AssessmentController::class, 'index']);
-$router->get('/assessment/{id}', [AssessmentController::class, 'show']);
-$router->post('/assessment/{id}', [AssessmentController::class, 'submit']);
 $router->get('/assessment/history', [AssessmentController::class, 'history']);
+$router->get('/assessment/history/student/{id}', [AssessmentController::class, 'studentHistory']);
+$router->get('/assessment/history/{id}/pdf', [AssessmentController::class, 'exportPdf']);
+$router->get('/assessment/result/{id}', [AssessmentController::class, 'result']);
+
+// --- Combined, timed BDI-II+PWB fill-in flow (one continuous session, AJAX) ---
+$router->get('/assessment/start', [AssessmentSessionController::class, 'start']);
+$router->post('/assessment/session', [AssessmentSessionController::class, 'create']);
+$router->get('/assessment/session', [AssessmentSessionController::class, 'show']);
+$router->get('/assessment/session/state', [AssessmentSessionController::class, 'state']);
+$router->post('/assessment/session/answer', [AssessmentSessionController::class, 'answer']);
+$router->post('/assessment/session/finish', [AssessmentSessionController::class, 'finish']);
+$router->get('/assessment/session/complete/{id}', [AssessmentSessionController::class, 'complete']);
+
+// --- Protected: admin-only system settings (e.g. assessment session time limit) ---
+$router->get('/admin/settings', [AdminSettingsController::class, 'index']);
+$router->post('/admin/settings', [AdminSettingsController::class, 'update']);
 
 $router->get('/students', [StudentController::class, 'index']);
 
@@ -67,6 +85,18 @@ $router->get('/consultations', [ConsultationController::class, 'index']);
 $router->get('/consultations/{studentId}', [ConsultationController::class, 'show']);
 $router->post('/consultations/{studentId}', [ConsultationController::class, 'send']);
 $router->get('/consultations/{studentId}/messages', [ConsultationController::class, 'messages']);
+
+// --- Protected: konselor-only, read-only view of diaries students shared with them ---
+$router->get('/shared-diaries', [SharedDiaryController::class, 'index']);
+$router->get('/shared-diaries/{id}', [SharedDiaryController::class, 'show']);
+
+// --- Protected: konselor-only management of daily tips shown to mahasiswa ---
+$router->get('/tips', [DailyTipController::class, 'index']);
+$router->get('/tips/create', [DailyTipController::class, 'create']);
+$router->post('/tips', [DailyTipController::class, 'store']);
+$router->get('/tips/{id}/edit', [DailyTipController::class, 'edit']);
+$router->post('/tips/{id}', [DailyTipController::class, 'update']);
+$router->post('/tips/{id}/delete', [DailyTipController::class, 'destroy']);
 
 // --- Protected: admin-only management of konselor accounts ---
 $router->get('/admin/counselors', [AdminCounselorController::class, 'index']);

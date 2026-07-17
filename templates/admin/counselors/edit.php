@@ -24,7 +24,7 @@
             </div>
         <?php endif; ?>
 
-        <form method="post" action="/admin/counselors/<?= urlencode($counselor['id']) ?>" class="konselor-admin-form" enctype="multipart/form-data">
+        <form method="post" action="/admin/counselors/<?= urlencode($counselor['konselor_id']) ?>" class="konselor-admin-form" enctype="multipart/form-data">
 
             <div class="field-row">
                 <div class="field">
@@ -51,29 +51,73 @@
 
             <div class="field-row">
                 <div class="field">
-                    <label for="nip_nik">NIP / NIK</label>
-                    <input type="text" id="nip_nik" name="nip_nik" value="<?= htmlspecialchars($counselor['nip_nik'] ?? '') ?>" required>
+                    <label for="nomor_registrasi">Nomor Registrasi</label>
+                    <input type="text" id="nomor_registrasi" name="nomor_registrasi" value="<?= htmlspecialchars($counselor['nomor_registrasi'] ?? '') ?>" required>
                 </div>
+                <div class="field">
+                    <label for="profesi">Profesi</label>
+                    <select id="profesi" name="profesi" required>
+                        <?php $profesiVal = $counselor['profesi'] ?? ''; ?>
+                        <option value="" disabled <?= $profesiVal === '' ? 'selected' : '' ?>>Pilih profesi</option>
+                        <?php foreach (['Psikolog', 'Konselor', 'Psikiater'] as $option): ?>
+                            <option value="<?= $option ?>" <?= $profesiVal === $option ? 'selected' : '' ?>><?= $option ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field-row">
                 <div class="field">
                     <label for="spesialisasi">Spesialisasi</label>
                     <input type="text" id="spesialisasi" name="spesialisasi" value="<?= htmlspecialchars($counselor['spesialisasi'] ?? '') ?>" placeholder="Mis. Konseling Akademik (opsional)">
                 </div>
+                <div class="field">
+                    <label for="pendidikan">Pendidikan</label>
+                    <input type="text" id="pendidikan" name="pendidikan" value="<?= htmlspecialchars($counselor['pendidikan'] ?? '') ?>" placeholder="Mis. S2 Psikologi (opsional)">
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="pengalaman_tahun">Pengalaman (tahun)</label>
+                    <input type="number" id="pengalaman_tahun" name="pengalaman_tahun" min="0" value="<?= htmlspecialchars((string) ($counselor['pengalaman_tahun'] ?? 0)) ?>">
+                </div>
+                <div class="field">
+                    <label for="bahasa">Bahasa</label>
+                    <input type="text" id="bahasa" name="bahasa" value="<?= htmlspecialchars($counselor['bahasa'] ?? '') ?>" placeholder="Mis. Indonesia, Inggris (opsional)">
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="biaya_konsultasi">Biaya Konsultasi (Rp)</label>
+                    <input type="number" id="biaya_konsultasi" name="biaya_konsultasi" min="0" step="1000" value="<?= htmlspecialchars((string) ($counselor['biaya_konsultasi'] ?? 0)) ?>">
+                </div>
+                <div class="field">
+                    <label for="durasi_sesi">Durasi Sesi (menit)</label>
+                    <input type="number" id="durasi_sesi" name="durasi_sesi" min="1" value="<?= htmlspecialchars((string) ($counselor['durasi_sesi'] ?? 60)) ?>">
+                </div>
             </div>
 
             <div class="field">
-                <label for="jadwal_praktik">Jadwal Praktik</label>
-                <input type="text" id="jadwal_praktik" name="jadwal_praktik" value="<?= htmlspecialchars($counselor['jadwal_praktik'] ?? '') ?>" placeholder="Mis. Senin-Jumat, 09.00-15.00 (opsional)">
+                <label for="metode_konsultasi">Metode Konsultasi</label>
+                <select id="metode_konsultasi" name="metode_konsultasi">
+                    <?php $metodeVal = $counselor['metode_konsultasi'] ?? 'Online'; ?>
+                    <?php foreach (['Online', 'Offline', 'Hybrid'] as $option): ?>
+                        <option value="<?= $option ?>" <?= $metodeVal === $option ? 'selected' : '' ?>><?= $option ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="field">
-                <label for="biografi_singkat">Biografi Singkat</label>
-                <textarea id="biografi_singkat" name="biografi_singkat" placeholder="Ditampilkan di profil konselor (opsional)"><?= htmlspecialchars($counselor['biografi_singkat'] ?? '') ?></textarea>
+                <label for="biografi">Biografi</label>
+                <textarea id="biografi" name="biografi" placeholder="Ditampilkan di profil konselor (opsional)"><?= htmlspecialchars($counselor['biografi'] ?? '') ?></textarea>
             </div>
 
             <div class="field">
-                <?php if (!empty($counselor['profile'])): ?>
+                <?php if (!empty($counselor['foto_profil']) || !empty($counselor['profile_image'])): ?>
                     <div class="konselor-admin-avatar" style="width:56px;height:56px;font-size:1.2rem;margin-bottom:10px;">
-                        <img src="<?= htmlspecialchars($counselor['profile']) ?>" alt="" onerror="this.remove()">
+                        <img src="<?= htmlspecialchars($counselor['foto_profil'] ?: $counselor['profile_image']) ?>" alt="" onerror="this.remove()">
                     </div>
                 <?php endif; ?>
                 <label for="photo">Foto Profil</label>

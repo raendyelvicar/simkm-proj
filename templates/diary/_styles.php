@@ -306,4 +306,193 @@ return <<<'CSS'
     font-size: 0.92rem;
     white-space: pre-line;
 }
+
+.diary-form .field-hint {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.diary-form select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+}
+
+.diary-form select:disabled {
+    background: #f3f4f6;
+    color: var(--muted);
+}
+
+.diary-checkbox-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.diary-checkbox-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s ease;
+    margin: 0;
+}
+
+.diary-checkbox-pill input {
+    accent-color: var(--primary);
+}
+
+.diary-checkbox-pill:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.diary-checkbox-group-readonly .diary-checkbox-pill-active {
+    border: 1px solid var(--primary);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary-dark);
+    font-weight: 600;
+    cursor: default;
+}
+
+.diary-lainnya-input {
+    margin-top: 10px;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+}
+
+.diary-intensity-scale {
+    display: flex;
+    gap: 8px;
+}
+
+.diary-intensity-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s ease;
+    margin: 0;
+}
+
+.diary-intensity-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.diary-intensity-option:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary-dark);
+}
+
+.diary-gratitude-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.diary-gratitude-list input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+}
+
+.diary-gratitude-view {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+.diary-visibility {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.diary-visibility select {
+    max-width: 320px;
+}
+
+.diary-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.diary-section:first-of-type {
+    margin-top: 16px;
+}
+
+.diary-section h5 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px;
+}
+
+.diary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.diary-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.diary-badge-green  { background: #dcfce7; color: #15803d; }
+.diary-badge-yellow { background: #fef9c3; color: #a16207; }
+.diary-badge-orange { background: #ffedd5; color: #c2410c; }
+.diary-badge-red    { background: #fee2e2; color: #b91c1c; }
+.diary-badge-gray   { background: #f1f5f9; color: #475569; }
 CSS;

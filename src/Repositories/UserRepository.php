@@ -159,6 +159,52 @@ class UserRepository
         return $stmt->affected_rows > 0;
     }
 
+    /** @return array<string, int> fakultas name => mahasiswa count, for the staff dashboard distribution chart. */
+    public function countByFakultas(): array
+    {
+        $result = $this->db->query(
+            "SELECT fakultas, COUNT(*) AS total FROM users
+             WHERE role = 'mahasiswa' AND fakultas IS NOT NULL AND fakultas != ''
+             GROUP BY fakultas ORDER BY total DESC"
+        );
+
+        $counts = [];
+        while ($row = $result->fetch_assoc()) {
+            $counts[$row['fakultas']] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
+
+    /** Distinct jurusan values actually in use, optionally scoped to one fakultas — for filter dropdowns. */
+    public function distinctJurusan(?string $fakultas = null): array
+    {
+        if ($fakultas) {
+            $stmt = $this->db->prepare(
+                "SELECT DISTINCT jurusan FROM users
+                 WHERE role = 'mahasiswa' AND fakultas = ? AND jurusan IS NOT NULL AND jurusan != ''
+                 ORDER BY jurusan"
+            );
+            $stmt->bind_param('s', $fakultas);
+        } else {
+            $stmt = $this->db->prepare(
+                "SELECT DISTINCT jurusan FROM users
+                 WHERE role = 'mahasiswa' AND jurusan IS NOT NULL AND jurusan != ''
+                 ORDER BY jurusan"
+            );
+        }
+        $stmt->execute();
+
+        return array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'jurusan');
+    }
+
+    public function countActiveMahasiswa(): int
+    {
+        $result = $this->db->query("SELECT COUNT(*) AS c FROM users WHERE role = 'mahasiswa' AND status = 'active'");
+
+        return (int) ($result->fetch_assoc()['c'] ?? 0);
+    }
+
     public function allAdminEmails(): array
     {
         $result = $this->db->query("SELECT email FROM users WHERE role = 'admin' AND email != ''");

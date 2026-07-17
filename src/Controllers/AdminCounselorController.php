@@ -67,11 +67,18 @@ class AdminCounselorController
             $fields['username'],
             $fields['email'],
             password_hash($fields['password'], PASSWORD_DEFAULT),
-            $fields['nip_nik'],
+            $fields['nomor_registrasi'],
+            $fields['profesi'],
             $fields['spesialisasi'],
-            $fields['jadwal_praktik'],
-            $fields['biografi_singkat'],
-            $fields['status_aktif']
+            $fields['pendidikan'],
+            $fields['pengalaman_tahun'],
+            $fields['bahasa'],
+            $fields['biaya_konsultasi'],
+            $fields['durasi_sesi'],
+            $fields['metode_konsultasi'],
+            $fields['biografi'],
+            $fields['status_aktif'],
+            $image
         );
 
         if ($image) {
@@ -133,11 +140,18 @@ class AdminCounselorController
 
         $this->counselors->upsertProfile(
             (int) $id,
-            $fields['nip_nik'],
+            $fields['nomor_registrasi'],
+            $fields['profesi'],
             $fields['spesialisasi'],
-            $fields['jadwal_praktik'],
-            $fields['biografi_singkat'],
-            $fields['status_aktif']
+            $fields['pendidikan'],
+            $fields['pengalaman_tahun'],
+            $fields['bahasa'],
+            $fields['biaya_konsultasi'],
+            $fields['durasi_sesi'],
+            $fields['metode_konsultasi'],
+            $fields['biografi'],
+            $fields['status_aktif'],
+            $image
         );
 
         $_SESSION['success'] = 'Konselor berhasil diperbarui.';
@@ -146,7 +160,7 @@ class AdminCounselorController
 
     // POST /admin/counselors/{id}/status — soft delete (deactivate) / reactivate.
     // Only meaningful once a konselor profile row exists; a bare account must be
-    // completed via the edit form first (it needs a nip_nik to create that row).
+    // completed via the edit form first (it needs a nomor_registrasi to create that row).
     public function toggleStatus(Request $request, string $id): void
     {
         $counselor = $this->findOr404($id);
@@ -177,6 +191,9 @@ class AdminCounselorController
         return $counselor;
     }
 
+    private const PROFESI_OPTIONS = ['Psikolog', 'Konselor', 'Psikiater'];
+    private const METODE_OPTIONS = ['Online', 'Offline', 'Hybrid'];
+
     // Returns [fields, errors]. $editingUserId/$editingKonselorId are null when
     // creating, so the uniqueness checks don't collide with the record itself.
     private function validate(Request $request, ?int $editingUserId, ?int $editingKonselorId): array
@@ -185,10 +202,16 @@ class AdminCounselorController
         $username = trim($request->post('username', ''));
         $email = trim($request->post('email', ''));
         $password = $request->post('password', '');
-        $nipNik = trim($request->post('nip_nik', ''));
+        $nomorRegistrasi = trim($request->post('nomor_registrasi', ''));
+        $profesi = trim($request->post('profesi', ''));
         $spesialisasi = trim($request->post('spesialisasi', '')) ?: null;
-        $jadwalPraktik = trim($request->post('jadwal_praktik', '')) ?: null;
-        $biografiSingkat = trim($request->post('biografi_singkat', '')) ?: null;
+        $pendidikan = trim($request->post('pendidikan', '')) ?: null;
+        $pengalamanTahun = (int) $request->post('pengalaman_tahun', 0);
+        $bahasa = trim($request->post('bahasa', '')) ?: null;
+        $biayaKonsultasi = (float) $request->post('biaya_konsultasi', 0);
+        $durasiSesi = (int) $request->post('durasi_sesi', 60);
+        $metodeKonsultasi = trim($request->post('metode_konsultasi', 'Online'));
+        $biografi = trim($request->post('biografi', '')) ?: null;
         $statusAktif = $request->post('status_aktif') !== null;
 
         $fields = [
@@ -196,10 +219,16 @@ class AdminCounselorController
             'username' => $username,
             'email' => $email,
             'password' => $password,
-            'nip_nik' => $nipNik,
+            'nomor_registrasi' => $nomorRegistrasi,
+            'profesi' => $profesi,
             'spesialisasi' => $spesialisasi,
-            'jadwal_praktik' => $jadwalPraktik,
-            'biografi_singkat' => $biografiSingkat,
+            'pendidikan' => $pendidikan,
+            'pengalaman_tahun' => $pengalamanTahun,
+            'bahasa' => $bahasa,
+            'biaya_konsultasi' => $biayaKonsultasi,
+            'durasi_sesi' => $durasiSesi,
+            'metode_konsultasi' => $metodeKonsultasi,
+            'biografi' => $biografi,
             'status_aktif' => $statusAktif,
         ];
 
@@ -214,8 +243,23 @@ class AdminCounselorController
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Email tidak valid.';
         }
-        if ($nipNik === '') {
-            $errors[] = 'NIP/NIK wajib diisi.';
+        if ($nomorRegistrasi === '') {
+            $errors[] = 'Nomor registrasi wajib diisi.';
+        }
+        if (!in_array($profesi, self::PROFESI_OPTIONS, true)) {
+            $errors[] = 'Profesi wajib dipilih.';
+        }
+        if (!in_array($metodeKonsultasi, self::METODE_OPTIONS, true)) {
+            $errors[] = 'Metode konsultasi tidak valid.';
+        }
+        if ($pengalamanTahun < 0) {
+            $errors[] = 'Pengalaman tahun tidak boleh negatif.';
+        }
+        if ($biayaKonsultasi < 0) {
+            $errors[] = 'Biaya konsultasi tidak boleh negatif.';
+        }
+        if ($durasiSesi <= 0) {
+            $errors[] = 'Durasi sesi wajib diisi.';
         }
         if ($editingUserId === null && strlen($password) < 8) {
             $errors[] = 'Password minimal 8 karakter.';
@@ -234,8 +278,8 @@ class AdminCounselorController
             $errors[] = 'Email sudah digunakan.';
         }
 
-        if ($nipNik !== '' && $this->counselors->nipNikExists($nipNik, $editingKonselorId)) {
-            $errors[] = 'NIP/NIK sudah digunakan konselor lain.';
+        if ($nomorRegistrasi !== '' && $this->counselors->nomorRegistrasiExists($nomorRegistrasi, $editingKonselorId)) {
+            $errors[] = 'Nomor registrasi sudah digunakan konselor lain.';
         }
 
         return [$fields, $errors];

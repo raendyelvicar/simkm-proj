@@ -15,121 +15,103 @@ class CounselorRepository
         $this->db = Database::connection();
     }
 
-    // Anyone with a konselor account, left-joined with their extended profile
-    // (spesialisasi/bio/jadwal) so a counselor is discoverable as soon as
-    // their account exists, even before an admin fills in the konselor row.
-    // Returned as arrays (Konselor::toArray() merged with the user fields
-    // the views need).
     private const SELECT = "
-        SELECT u.id, u.nama, u.email, u.profile_image AS profile,
-               k.konselor_id, k.nip_nik, k.spesialisasi, k.jadwal_praktik,
-               k.biografi_singkat, k.status_aktif
+        SELECT
+            u.id,
+            u.nama,
+            u.username,
+            u.email,
+            u.profile_image,
+            k.*
         FROM users u
-        LEFT JOIN konselor k ON k.id = u.id
-        WHERE u.role = 'konselor'
-          AND (k.status_aktif IS NULL OR k.status_aktif = 1)
+        LEFT JOIN konselor k ON k.user_id = u.id
+        WHERE u.role='konselor'
     ";
 
-    public function all(): array
+    public function all(bool $onlyActive = true): array
     {
-        $result = $this->db->query(self::SELECT . ' ORDER BY u.nama ASC');
-
-        $counselors = [];
-        while ($row = $result->fetch_assoc()) {
-            $counselors[] = $this->hydrate($row);
+        $sql = self::SELECT;
+        if ($onlyActive) {
+            $sql .= " AND (k.status_aktif = 1 OR k.konselor_id IS NULL)";
         }
+        $sql .= " ORDER BY u.nama";
+        $result = $this->db->query($sql);
 
-        return $counselors;
+        $items = [];
+        while ($row = $result->fetch_assoc()) {
+            $items[] = $this->hydrate($row);
+        }
+        return $items;
     }
 
-    // $userId is users.id — the same id used as chat_messages.receiver_id.
     public function find(int $userId): ?array
     {
-        $stmt = $this->db->prepare(self::SELECT . ' AND u.id = ? LIMIT 1');
-        $stmt->bind_param('i', $userId);
+        $stmt = $this->db->prepare(self::SELECT . " AND u.id=? LIMIT 1");
+        $stmt->bind_param("i", $userId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-
         return $row ? $this->hydrate($row) : null;
     }
 
-    private function hydrate(array $row): array
+    // Unlike find(), which looks up by users.id, this looks up by konselor.konselor_id
+    // — the id other tables (rating_konselor, konselor_jadwal, diary_entries.shared_konselor_id) reference.
+    public function findByKonselorId(int $konselorId): ?array
     {
-        return array_merge((new Konselor($row))->toArray(), [
-            'nama'    => $row['nama'] ?? '',
-            'profile' => $row['profile'] ?? '',
-            'email'   => $row['email'] ?? '',
-        ]);
+        $stmt = $this->db->prepare(self::SELECT . " AND k.konselor_id=? LIMIT 1");
+        $stmt->bind_param("i", $konselorId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        return $row ? $this->hydrate($row) : null;
     }
 
-    // --- Admin management: sees every konselor account, active or not ---
-
-    private const ADMIN_SELECT = "
-        SELECT u.id, u.nama, u.username, u.email, u.profile_image AS profile,
-               k.konselor_id, k.nip_nik, k.spesialisasi, k.jadwal_praktik,
-               k.biografi_singkat, k.status_aktif
-        FROM users u
-        LEFT JOIN konselor k ON k.id = u.id
-        WHERE u.role = 'konselor'
-    ";
-
+    // Admin management: sees every konselor account, active or not.
     public function allForAdmin(): array
     {
-        $result = $this->db->query(self::ADMIN_SELECT . ' ORDER BY u.nama ASC');
+        $result = $this->db->query(self::SELECT . " ORDER BY u.nama");
 
-        $counselors = [];
+        $items = [];
         while ($row = $result->fetch_assoc()) {
-            $counselors[] = $this->hydrateAdmin($row);
+            $items[] = $this->hydrateAdmin($row);
         }
-
-        return $counselors;
+        return $items;
     }
 
     public function findForAdmin(int $userId): ?array
     {
-        $stmt = $this->db->prepare(self::ADMIN_SELECT . ' AND u.id = ? LIMIT 1');
-        $stmt->bind_param('i', $userId);
+        $stmt = $this->db->prepare(self::SELECT . " AND u.id=? LIMIT 1");
+        $stmt->bind_param("i", $userId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-
         return $row ? $this->hydrateAdmin($row) : null;
     }
 
     private function hydrateAdmin(array $row): array
     {
         return array_merge($this->hydrate($row), [
-            'username'    => $row['username'] ?? '',
             'has_profile' => $row['konselor_id'] !== null,
         ]);
     }
 
-    public function nipNikExists(string $nipNik, ?int $excludeKonselorId = null): bool
-    {
-        if ($excludeKonselorId !== null) {
-            $stmt = $this->db->prepare('SELECT 1 FROM konselor WHERE nip_nik = ? AND konselor_id != ? LIMIT 1');
-            $stmt->bind_param('si', $nipNik, $excludeKonselorId);
-        } else {
-            $stmt = $this->db->prepare('SELECT 1 FROM konselor WHERE nip_nik = ? LIMIT 1');
-            $stmt->bind_param('s', $nipNik);
-        }
-        $stmt->execute();
-
-        return (bool) $stmt->get_result()->fetch_row();
-    }
-
     // Creates the login account (role=konselor) and its extended profile together.
-    // Rolled back as one unit so a duplicate nip_nik can't leave a bare,
+    // Rolled back as one unit so a duplicate nomor_registrasi can't leave a bare,
     // profile-less user account behind.
     public function createCounselor(
         string $nama,
         string $username,
         string $email,
         string $hashedPassword,
-        string $nipNik,
+        string $nomorRegistrasi,
+        string $profesi,
         ?string $spesialisasi,
-        ?string $jadwalPraktik,
-        ?string $biografiSingkat,
-        bool $statusAktif
+        ?string $pendidikan,
+        int $pengalamanTahun,
+        ?string $bahasa,
+        float $biayaKonsultasi,
+        int $durasiSesi,
+        string $metodeKonsultasi,
+        ?string $biografi,
+        bool $statusAktif,
+        ?string $fotoProfil = null
     ): int {
         $this->db->begin_transaction();
 
@@ -142,13 +124,23 @@ class CounselorRepository
             $stmt->execute();
             $userId = (int) $this->db->insert_id;
 
-            $statusInt = $statusAktif ? 1 : 0;
-            $stmt = $this->db->prepare(
-                'INSERT INTO konselor (id, nip_nik, spesialisasi, jadwal_praktik, status_aktif, biografi_singkat)
-                 VALUES (?, ?, ?, ?, ?, ?)'
-            );
-            $stmt->bind_param('isssis', $userId, $nipNik, $spesialisasi, $jadwalPraktik, $statusInt, $biografiSingkat);
-            $stmt->execute();
+            $konselor = new Konselor([
+                'user_id' => $userId,
+                'nomor_registrasi' => $nomorRegistrasi,
+                'profesi' => $profesi,
+                'spesialisasi' => $spesialisasi,
+                'pendidikan' => $pendidikan,
+                'pengalaman_tahun' => $pengalamanTahun,
+                'bahasa' => $bahasa,
+                'biaya_konsultasi' => $biayaKonsultasi,
+                'durasi_sesi' => $durasiSesi,
+                'metode_konsultasi' => $metodeKonsultasi,
+                'foto_profil' => $fotoProfil,
+                'biografi' => $biografi,
+                'status_verifikasi' => true,
+                'status_aktif' => $statusAktif,
+            ]);
+            $this->create($konselor);
 
             $this->db->commit();
 
@@ -183,35 +175,47 @@ class CounselorRepository
     // Creates the konselor row if this user doesn't have one yet, otherwise updates it.
     public function upsertProfile(
         int $userId,
-        string $nipNik,
+        string $nomorRegistrasi,
+        string $profesi,
         ?string $spesialisasi,
-        ?string $jadwalPraktik,
-        ?string $biografiSingkat,
-        bool $statusAktif
+        ?string $pendidikan,
+        int $pengalamanTahun,
+        ?string $bahasa,
+        float $biayaKonsultasi,
+        int $durasiSesi,
+        string $metodeKonsultasi,
+        ?string $biografi,
+        bool $statusAktif,
+        ?string $fotoProfil = null
     ): void {
-        $statusInt = $statusAktif ? 1 : 0;
-
-        $stmt = $this->db->prepare('SELECT konselor_id FROM konselor WHERE id = ? LIMIT 1');
+        $stmt = $this->db->prepare('SELECT konselor_id, foto_profil FROM konselor WHERE user_id = ? LIMIT 1');
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $existing = $stmt->get_result()->fetch_assoc();
 
-        if ($existing) {
-            $konselorId = (int) $existing['konselor_id'];
-            $stmt = $this->db->prepare(
-                'UPDATE konselor SET nip_nik = ?, spesialisasi = ?, jadwal_praktik = ?, biografi_singkat = ?, status_aktif = ?
-                 WHERE konselor_id = ?'
-            );
-            $stmt->bind_param('ssssii', $nipNik, $spesialisasi, $jadwalPraktik, $biografiSingkat, $statusInt, $konselorId);
-        } else {
-            $stmt = $this->db->prepare(
-                'INSERT INTO konselor (id, nip_nik, spesialisasi, jadwal_praktik, status_aktif, biografi_singkat)
-                 VALUES (?, ?, ?, ?, ?, ?)'
-            );
-            $stmt->bind_param('isssis', $userId, $nipNik, $spesialisasi, $jadwalPraktik, $statusInt, $biografiSingkat);
-        }
+        $konselor = new Konselor([
+            'konselor_id' => $existing['konselor_id'] ?? 0,
+            'user_id' => $userId,
+            'nomor_registrasi' => $nomorRegistrasi,
+            'profesi' => $profesi,
+            'spesialisasi' => $spesialisasi,
+            'pendidikan' => $pendidikan,
+            'pengalaman_tahun' => $pengalamanTahun,
+            'bahasa' => $bahasa,
+            'biaya_konsultasi' => $biayaKonsultasi,
+            'durasi_sesi' => $durasiSesi,
+            'metode_konsultasi' => $metodeKonsultasi,
+            'foto_profil' => $fotoProfil ?? ($existing['foto_profil'] ?? null),
+            'biografi' => $biografi,
+            'status_verifikasi' => true,
+            'status_aktif' => $statusAktif,
+        ]);
 
-        $stmt->execute();
+        if ($existing) {
+            $this->update($konselor);
+        } else {
+            $this->create($konselor);
+        }
     }
 
     // Soft delete / reactivate — only meaningful once a konselor row exists.
@@ -221,5 +225,97 @@ class CounselorRepository
         $stmt = $this->db->prepare('UPDATE konselor SET status_aktif = ? WHERE konselor_id = ?');
         $stmt->bind_param('ii', $status, $konselorId);
         $stmt->execute();
+    }
+
+    public function nomorRegistrasiExists(string $nomor, ?int $excludeId = null): bool
+    {
+        if ($excludeId) {
+            $stmt = $this->db->prepare("SELECT 1 FROM konselor WHERE nomor_registrasi=? AND konselor_id<>? LIMIT 1");
+            $stmt->bind_param("si", $nomor, $excludeId);
+        } else {
+            $stmt = $this->db->prepare("SELECT 1 FROM konselor WHERE nomor_registrasi=? LIMIT 1");
+            $stmt->bind_param("s", $nomor);
+        }
+        $stmt->execute();
+        return (bool)$stmt->get_result()->fetch_row();
+    }
+
+    public function create(Konselor $k): int
+    {
+        $stmt = $this->db->prepare(
+            "INSERT INTO konselor
+            (user_id,nomor_registrasi,profesi,spesialisasi,pendidikan,pengalaman_tahun,bahasa,biaya_konsultasi,durasi_sesi,metode_konsultasi,foto_profil,biografi,status_verifikasi,status_aktif)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        );
+        $ver = $k->statusVerifikasi ? 1 : 0;
+        $aktif = $k->statusAktif ? 1 : 0;
+        $stmt->bind_param(
+            "issssisdisssii",
+            $k->userId,
+            $k->nomorRegistrasi,
+            $k->profesi,
+            $k->spesialisasi,
+            $k->pendidikan,
+            $k->pengalamanTahun,
+            $k->bahasa,
+            $k->biayaKonsultasi,
+            $k->durasiSesi,
+            $k->metodeKonsultasi,
+            $k->fotoProfil,
+            $k->biografi,
+            $ver,
+            $aktif
+        );
+        $stmt->execute();
+        return (int)$this->db->insert_id;
+    }
+
+    public function update(Konselor $k): void
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE konselor SET
+            nomor_registrasi=?, profesi=?, spesialisasi=?, pendidikan=?,
+            pengalaman_tahun=?, bahasa=?, biaya_konsultasi=?, durasi_sesi=?,
+            metode_konsultasi=?, foto_profil=?, biografi=?,
+            status_verifikasi=?, status_aktif=?
+            WHERE konselor_id=?"
+        );
+        $ver = $k->statusVerifikasi ? 1 : 0;
+        $aktif = $k->statusAktif ? 1 : 0;
+        $stmt->bind_param(
+            "ssssisdisssiii",
+            $k->nomorRegistrasi,
+            $k->profesi,
+            $k->spesialisasi,
+            $k->pendidikan,
+            $k->pengalamanTahun,
+            $k->bahasa,
+            $k->biayaKonsultasi,
+            $k->durasiSesi,
+            $k->metodeKonsultasi,
+            $k->fotoProfil,
+            $k->biografi,
+            $ver,
+            $aktif,
+            $k->konselorId
+        );
+        $stmt->execute();
+    }
+
+    public function delete(int $konselorId): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM konselor WHERE konselor_id=?");
+        $stmt->bind_param("i", $konselorId);
+        $stmt->execute();
+    }
+
+    private function hydrate(array $row): array
+    {
+        return array_merge((new Konselor($row))->toArray(), [
+            'nama' => $row['nama'],
+            'username' => $row['username'],
+            'email' => $row['email'],
+            'profile_image' => $row['profile_image']
+        ]);
     }
 }

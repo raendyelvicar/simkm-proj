@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+
+$role = $role ?? ($_SESSION['role'] ?? '');
+$isStaff = in_array($role, ['admin', 'konselor'], true);
+ob_start(); ?>
 
 <div class="article-page">
     <div class="page-head">
@@ -6,7 +10,7 @@
             <h1>Artikel</h1>
             <p>Bacaan seputar kesehatan mental untuk mahasiswa.</p>
         </div>
-        <?php if (!empty($_SESSION['user_id'])): ?>
+        <?php if ($isStaff): ?>
             <a href="/article/create" class="btn-article btn-article-primary">+ Tulis Artikel</a>
         <?php endif; ?>
     </div>
@@ -38,7 +42,7 @@
                             </div>
                         <?php endif; ?>
 
-                        <?php if (!empty($_SESSION['user_id']) && (int) $_SESSION['user_id'] === (int) $article['user_id']): ?>
+                        <?php if ($isStaff && (!empty($_SESSION['user_id']) && (int) $_SESSION['user_id'] === (int) $article['user_id'])): ?>
                             <div class="article-actions">
                                 <a href="/article/<?= urlencode($article['id']) ?>/edit" class="btn-article btn-article-ghost btn-article-sm">Edit</a>
                                 <form method="post" action="/article/<?= urlencode($article['id']) ?>/delete"

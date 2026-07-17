@@ -16,6 +16,7 @@
                     <tr>
                         <th>Nama</th>
                         <th>Username / Email</th>
+                        <th>Profesi</th>
                         <th>Spesialisasi</th>
                         <th>Status</th>
                         <th>Aksi</th>
@@ -27,8 +28,8 @@
                             <td>
                                 <div class="konselor-admin-name">
                                     <div class="konselor-admin-avatar">
-                                        <?php if (!empty($counselor['profile'])): ?>
-                                            <img src="<?= htmlspecialchars($counselor['profile']) ?>"
+                                        <?php if (!empty($counselor['foto_profil']) || !empty($counselor['profile_image'])): ?>
+                                            <img src="<?= htmlspecialchars($counselor['foto_profil'] ?: $counselor['profile_image']) ?>"
                                                 alt="<?= htmlspecialchars($counselor['nama']) ?>"
                                                 onerror="this.remove()">
                                         <?php endif; ?>
@@ -41,6 +42,7 @@
                                 <?= htmlspecialchars($counselor['username']) ?><br>
                                 <span style="color:var(--muted); font-size:0.8rem;"><?= htmlspecialchars($counselor['email']) ?></span>
                             </td>
+                            <td><?= htmlspecialchars($counselor['profesi'] ?: '-') ?></td>
                             <td><?= htmlspecialchars($counselor['spesialisasi'] ?: '-') ?></td>
                             <td>
                                 <?php if (!$counselor['has_profile']): ?>
@@ -53,11 +55,11 @@
                             </td>
                             <td>
                                 <div class="konselor-admin-actions">
-                                    <a href="/admin/counselors/<?= urlencode($counselor['id']) ?>/edit"
+                                    <a href="/admin/counselors/<?= urlencode($counselor['user_id']) ?>/edit"
                                         class="btn-konselor-admin btn-konselor-admin-ghost btn-konselor-admin-sm">Edit</a>
 
                                     <?php if ($counselor['has_profile']): ?>
-                                        <form method="post" action="/admin/counselors/<?= urlencode($counselor['id']) ?>/status"
+                                        <form method="post" action="/admin/counselors/<?= urlencode($counselor['user_id']) ?>/status"
                                             onsubmit="return confirm('<?= $counselor['status_aktif'] ? 'Nonaktifkan konselor ini? Ia tidak akan tampil di daftar konselor untuk mahasiswa.' : 'Aktifkan kembali konselor ini?' ?>');"
                                             style="display:inline;">
                                             <button type="submit" class="btn-konselor-admin btn-konselor-admin-danger btn-konselor-admin-sm">

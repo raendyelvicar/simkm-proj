@@ -247,14 +247,16 @@ function navActive(string $path, string $currentPath): string
                     <span>🏠</span>
                     <span class="nav-label">Dashboard</span>
                 </a>
-                <a href="/diary" class="nav-link <?= navActive('/diary', $currentPath) ?>">
-                    <span>📖</span>
-                    <span class="nav-label">Diary</span>
-                </a>
-                <a href="/assessment" class="nav-link <?= navActive('/assessment', $currentPath) ?>">
-                    <span>📝</span>
-                    <span class="nav-label">Assessment</span>
-                </a>
+                <?php if (in_array($role, ['mahasiswa', 'konselor'], true)): ?>
+                    <a href="/diary" class="nav-link <?= navActive('/diary', $currentPath) ?>">
+                        <span>📖</span>
+                        <span class="nav-label">Diary</span>
+                    </a>
+                    <a href="/assessment" class="nav-link <?= navActive('/assessment', $currentPath) ?>">
+                        <span>📝</span>
+                        <span class="nav-label">Assessment</span>
+                    </a>
+                <?php endif; ?>
                 <a href="/article" class="nav-link <?= navActive('/article', $currentPath) ?>">
                     <span>📰</span>
                     <span class="nav-label">Artikel</span>
@@ -264,13 +266,23 @@ function navActive(string $path, string $currentPath): string
                         <span>💬</span>
                         <span class="nav-label">Konsultasi Masuk</span>
                     </a>
-                <?php else: ?>
+                    <a href="/tips" class="nav-link <?= navActive('/tips', $currentPath) ?>">
+                        <span>💡</span>
+                        <span class="nav-label">Tips Harian</span>
+                    </a>
+                    <a href="/shared-diaries" class="nav-link <?= navActive('/shared-diaries', $currentPath) ?>">
+                        <span>📔</span>
+                        <span class="nav-label">Diary Dibagikan</span>
+                    </a>
+                <?php endif; ?>
+                <?php if ($role === 'mahasiswa'): ?>
                     <a href="/counselor" class="nav-link <?= navActive('/counselor', $currentPath) ?>">
                         <span>💬</span>
                         <span class="nav-label">Konselor</span>
                     </a>
                 <?php endif; ?>
-                <?php if (in_array($role, ['admin', 'konselor'], true)): ?>
+
+                <?php if (in_array($role, ['admin'], true)): ?>
                     <a href="/students" class="nav-link <?= navActive('/students', $currentPath) ?>">
                         <span>🎓</span>
                         <span class="nav-label">Data Mahasiswa</span>
@@ -284,6 +296,10 @@ function navActive(string $path, string $currentPath): string
                     <a href="/admin/approvals" class="nav-link <?= navActive('/admin/approvals', $currentPath) ?>">
                         <span>✅</span>
                         <span class="nav-label">Persetujuan Akun</span>
+                    </a>
+                    <a href="/admin/settings" class="nav-link <?= navActive('/admin/settings', $currentPath) ?>">
+                        <span>⚙️</span>
+                        <span class="nav-label">Pengaturan</span>
                     </a>
                 <?php endif; ?>
                 <a href="/profile" class="nav-link <?= navActive('/profile', $currentPath) ?>">

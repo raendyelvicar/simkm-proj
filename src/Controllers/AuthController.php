@@ -198,6 +198,10 @@ class AuthController
         $_SESSION['username'] = $user->username;
         $_SESSION['role']     = $user->role;
 
+        if ($user->role === 'mahasiswa') {
+            $_SESSION['show_daily_tip'] = true;
+        }
+
         Response::redirect('/dashboard');
     }
 

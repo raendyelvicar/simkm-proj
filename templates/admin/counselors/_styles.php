@@ -239,6 +239,8 @@ return <<<'CSS'
 .konselor-admin-form input[type="text"],
 .konselor-admin-form input[type="email"],
 .konselor-admin-form input[type="password"],
+.konselor-admin-form input[type="number"],
+.konselor-admin-form select,
 .konselor-admin-form textarea {
     width: 100%;
     border: 1px solid var(--border);
@@ -252,6 +254,7 @@ return <<<'CSS'
 }
 
 .konselor-admin-form input:focus,
+.konselor-admin-form select:focus,
 .konselor-admin-form textarea:focus {
     outline: none;
     border-color: var(--primary);

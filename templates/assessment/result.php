@@ -1,45 +1,130 @@
-<?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
-    exit;
-}
+<?php ob_start(); ?>
 
-require '../config/db.php';
+<div class="assess-page">
+    <div class="page-head">
+        <div>
+            <h1>Hasil <?= htmlspecialchars($meta['short_title']) ?></h1>
+            <p><?= htmlspecialchars($meta['title']) ?></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/assessment/history/<?= (int) $submission['id'] ?>/pdf" class="btn btn-outline-secondary btn-sm">⬇️ Unduh PDF</a>
+            <a href="/assessment" class="btn btn-outline-secondary btn-sm">&larr; Kembali</a>
+        </div>
+    </div>
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$uid = (int)$_SESSION['user_id'];
+    <div class="assess-card mb-3">
+        <div class="assess-score-hero">
+            <div class="text-muted small">Total Skor</div>
+            <div class="score"><?= (int) $submission['total_score'] ?> / <?= (int) $submission['max_score'] ?></div>
+            <?php if ($submission['category_percentage'] !== null): ?>
+                <div class="text-muted small mb-2"><?= $submission['category_percentage'] ?>%</div>
+            <?php endif; ?>
+            <span class="assess-badge <?= assessment_badge_class($submission['category']) ?>" style="font-size:1rem;">
+                <?= htmlspecialchars($submission['category']) ?>
+            </span>
+            <?php if (!empty($submission['is_timed_out'])): ?>
+                <span class="assess-badge assess-badge-gray" style="font-size:1rem;">Waktu Habis</span>
+            <?php endif; ?>
+            <div class="text-muted small mt-2">
+                <?= htmlspecialchars(date('d F Y, H:i', strtotime($submission['submitted_at']))) ?>
+                <?php if (!empty($isStaff) && !empty($submission['nama'])): ?>
+                    &middot; <?= htmlspecialchars($submission['nama']) ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
-$stmt = $mysqli->prepare("SELECT * FROM assessment_results WHERE id=? AND user_id=?");
-$stmt->bind_param("ii", $id, $uid);
-$stmt->execute();
-$res = $stmt->get_result();
+    <div class="assess-card assess-card-body mb-3">
+        <h5 class="mb-2">Kesimpulan</h5>
+        <p class="mb-0"><?= htmlspecialchars($feedback) ?></p>
+    </div>
 
-if ($res->num_rows == 0) {
-    die("Hasil assessment tidak ditemukan.");
-}
+    <?php if (!empty($combined)): ?>
+        <div class="assess-card assess-card-body mb-3">
+            <h5 class="mb-2">🧭 Klasifikasi Gabungan (PWB + BDI-II)</h5>
+            <p class="text-muted small mb-2">Berdasarkan hasil PWB dan BDI-II terakhirmu (<?= htmlspecialchars($combined['other_type_label']) ?> diisi <?= htmlspecialchars(date('d M Y', strtotime($combined['other_submitted_at']))) ?>).</p>
+            <span class="assess-badge <?= assessment_level_badge_class($combined['level']) ?>" style="font-size:1rem;">
+                Level <?= (int) $combined['level'] ?> &middot; Risiko <?= htmlspecialchars($combined['risk_label']) ?>
+            </span>
+            <div class="mt-3">
+                <div class="mb-1"><strong>Rekomendasi:</strong> <?= htmlspecialchars($combined['recommendation']) ?></div>
+                <div class="mb-1"><strong>Fitur:</strong> <?= htmlspecialchars($combined['features']) ?></div>
+                <div class="text-muted small"><?= htmlspecialchars($combined['purpose']) ?></div>
+            </div>
+        </div>
+    <?php endif; ?>
 
-$row = $res->fetch_assoc();
-?>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Hasil Assessment</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-</head>
-<body>
-<div class="container">
-    <h2>Hasil Self-Assessment</h2>
-    
-    <p><strong>Tanggal:</strong> <?= $row['created_at'] ?></p>
-    <p><strong>Skor:</strong> <?= $row['score'] ?></p>
-    <p><strong>Kategori:</strong> <?= htmlspecialchars($row['category']) ?></p>
+    <?php if (!empty($tips)): ?>
+        <div class="assess-card assess-card-body mb-3">
+            <h5 class="mb-2">💡 Tips Menjaga Kesehatan Mental</h5>
+            <ul class="mb-0">
+                <?php foreach ($tips as $tip): ?>
+                    <li><?= htmlspecialchars($tip) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
 
-    <br>
+    <?php if (in_array($submission['category'], ['Sedang', 'Berat'], true)): ?>
+        <div class="assess-card assess-card-body mb-3 <?= $submission['category'] === 'Berat' ? 'border border-danger' : '' ?>">
+            <h5 class="mb-2"><?= $submission['category'] === 'Berat' ? '🚨 Segera Hubungi Konselor' : '💬 Rekomendasi Tindak Lanjut' ?></h5>
+            <p class="text-muted">Kamu dapat berdiskusi dengan konselor kampus melalui fitur Chat Konselor untuk mendapatkan pendampingan yang sesuai.</p>
+            <a href="/counselor" class="btn <?= $submission['category'] === 'Berat' ? 'btn-danger' : 'btn-warning' ?>">
+                <?= $submission['category'] === 'Berat' ? 'Hubungi Konselor Sekarang' : 'Lihat Konselor' ?>
+            </a>
+        </div>
+    <?php elseif ($submission['category'] === 'Ringan'): ?>
+        <div class="assess-card assess-card-body mb-3">
+            <h5 class="mb-2">📰 Rekomendasi Bacaan</h5>
+            <p class="text-muted">Baca artikel seputar manajemen stres dan relaksasi untuk membantu mengelola kondisimu.</p>
+            <a href="/article" class="btn btn-secondary">Baca Artikel</a>
+        </div>
+    <?php endif; ?>
 
-    <a href="assessment/export_dompdf.php?id=<?= $row['id'] ?>" class="call">📄 Export PDF</a>
-    <a href=" /AplikasiSkripsi/redirect_dashboard.php" class="btn">⬅Kembali ke Dashboard</a>
+    <?php if (!empty($submission['dimension_scores'])): ?>
+        <div class="assess-card assess-card-body mb-3">
+            <h5 class="mb-3">Detail Hasil per Dimensi</h5>
+            <div class="assess-dimension-grid">
+                <?php foreach ($submission['dimension_scores'] as $dim): ?>
+                    <div class="assess-dimension-card">
+                        <h6><?= htmlspecialchars($dim['label']) ?></h6>
+                        <div class="mb-2">
+                            <span class="assess-badge <?= assessment_badge_class($dim['category']) ?>"><?= htmlspecialchars($dim['category']) ?></span>
+                            <span class="text-muted small ms-1"><?= (int) $dim['score'] ?> / <?= (int) $dim['max_score'] ?></span>
+                        </div>
+                        <p class="small text-muted mb-0"><?= htmlspecialchars($dim['feedback']) ?></p>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <div class="assess-card assess-card-body mb-3">
+        <h5 class="mb-3">Rincian Jawaban</h5>
+        <div class="table-responsive">
+            <table class="table assess-table table-sm">
+                <thead><tr><th style="width:60%">Pertanyaan</th><th>Jawaban</th><th class="text-center">Skor</th></tr></thead>
+                <tbody>
+                    <?php foreach ($answers as $answer): ?>
+                        <tr>
+                            <td><?= (int) $answer['order_no'] ?>. <?= htmlspecialchars($answer['question_text']) ?></td>
+                            <td><?= htmlspecialchars($answer['label']) ?></td>
+                            <td class="text-center"><?= (int) $answer['score_value'] ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="/assessment/start" class="btn btn-primary btn-sm">Isi Ulang</a>
+        <a href="/assessment/history" class="btn btn-outline-secondary btn-sm">Lihat Riwayat</a>
+    </div>
 </div>
-</body>
-</html>
+
+<?php
+$content = ob_get_clean();
+$pageTitle = $title ?? 'Hasil Assessment';
+$extraStyles = require __DIR__ . '/_styles.php';
+require __DIR__ . '/../layouts/index.php';

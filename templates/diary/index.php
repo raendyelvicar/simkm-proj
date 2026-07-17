@@ -17,25 +17,32 @@
                 <thead>
                     <tr>
                         <th>Tanggal</th>
-                        <th>Mood</th>
+                        <th>Intensitas</th>
+                        <th>Emosi</th>
                         <th>Ringkasan</th>
+                        <th>Privasi</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($entries as $entry): ?>
-                        <?php $mood = mood_meta($entry['mood_level'] ?? ''); ?>
                         <tr>
                             <td class="diary-date">
                                 <?= htmlspecialchars($entry['entry_date'] ? date('d M Y', strtotime($entry['entry_date'])) : '-') ?>
                             </td>
                             <td>
-                                <span class="mood-pill mood-<?= $mood['slug'] ?>">
-                                    <?= $mood['emoji'] ?> <?= htmlspecialchars($entry['mood_level'] ?? '-') ?>
+                                <span class="diary-badge <?= diary_intensity_badge_class((int) ($entry['intensitas_emosi'] ?? 0)) ?>">
+                                    <?= (int) ($entry['intensitas_emosi'] ?? 0) ?> / 5
                                 </span>
                             </td>
+                            <td>
+                                <?= htmlspecialchars(implode(', ', $entry['emosi_list'] ?? []) ?: '-') ?>
+                            </td>
                             <td class="diary-snippet">
-                                <?= nl2br(htmlspecialchars(substr($entry['content'] ?? '', 0, 80))) ?>&hellip;
+                                <?= htmlspecialchars(mb_substr($entry['situasi'] ?? '', 0, 80)) ?><?= mb_strlen($entry['situasi'] ?? '') > 80 ? '…' : '' ?>
+                            </td>
+                            <td>
+                                <?= !empty($entry['is_private']) ? 'Private' : 'Dibagikan' ?>
                             </td>
                             <td>
                                 <div class="diary-actions">
