@@ -10,6 +10,9 @@
 .env.*
 !.env.copy
 
+# Local DB dump used to seed a new deployment — contains real password hashes/data
+/database/mental_health_dump.sql
+
 # Editor/OS junk
 .DS_Store
 .idea/
