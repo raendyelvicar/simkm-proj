@@ -18,7 +18,6 @@ use App\Controllers\AdminCounselorController;
 use App\Controllers\AdminApprovalController;
 use App\Controllers\ArticleController;
 use App\Controllers\StudentController;
-use App\Controllers\ReportController;
 use App\Controllers\DailyTipController;
 use App\Controllers\SharedDiaryController;
 
@@ -120,13 +119,3 @@ $router->post('/article/{id}', [ArticleController::class, 'update']);
 $router->post('/article/{id}/delete', [ArticleController::class, 'destroy']);
 
 $router->get('/jurusan', [App\Controllers\LookupController::class, 'getJurusan']);
-
-
-$router->get('/report/user', [ReportController::class, 'user']);
-$router->get('/report/diary', [ReportController::class, 'diary']);
-$router->get('/report/assessment', [ReportController::class, 'assessment']);
-$router->get('/report/consultation', [ReportController::class, 'consultation']);
-$router->get('/report/stress', [ReportController::class, 'stress']);
-$router->get('/report/activity', [ReportController::class, 'activity']);
-$router->get('/report/statistic-mood', [ReportController::class, 'statistikMood']);
-$router->get('/report/export', [ReportController::class, 'export']);
