@@ -20,4 +20,8 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader \
     && chown -R www-data:www-data /var/www/html/public/uploads
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 80
+ENTRYPOINT ["docker-entrypoint.sh"]
