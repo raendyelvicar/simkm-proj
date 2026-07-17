@@ -7,6 +7,7 @@ use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\CounselorRepository;
 use App\Repositories\DiaryRepository;
+use App\Repositories\MonitoringPeriodRepository;
 
 class DiaryController
 {
@@ -16,12 +17,14 @@ class DiaryController
 
     private DiaryRepository $diaries;
     private CounselorRepository $counselors;
+    private MonitoringPeriodRepository $monitoring;
 
     public function __construct()
     {
         AuthMiddleware::handle();
         $this->diaries = new DiaryRepository();
         $this->counselors = new CounselorRepository();
+        $this->monitoring = new MonitoringPeriodRepository();
     }
 
     // GET /diary — list only the logged-in user's own entries
@@ -196,13 +199,16 @@ class DiaryController
         return $entry;
     }
 
-    // Konselor accounts that actually have a completed, active profile — the only
-    // ones a diary entry's shared_konselor_id foreign key can point to.
+    // Konselor accounts a diary entry can be shared with: must have a completed profile
+    // AND currently be monitoring this student (an active booking-confirmed window) —
+    // sharing is one of the things a monitoring period unlocks.
     private function availableKonselors(): array
     {
+        $activeIds = $this->monitoring->activeKonselorIdsForStudent((int) $_SESSION['user_id']);
+
         return array_values(array_filter(
             $this->counselors->all(),
-            fn ($c) => (int) $c['konselor_id'] > 0
+            fn ($c) => (int) $c['konselor_id'] > 0 && in_array((int) $c['konselor_id'], $activeIds, true)
         ));
     }
 

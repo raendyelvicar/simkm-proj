@@ -29,6 +29,24 @@ class ArticleRepository
         return $articles;
     }
 
+    // Most recently published articles, for previews like the landing page's "Artikel Terbaru" section.
+    public function latest(int $limit = 3): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT * FROM articles ORDER BY published_at DESC, id DESC LIMIT ?'
+        );
+        $stmt->bind_param('i', $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $articles = [];
+        while ($row = $result->fetch_assoc()) {
+            $articles[] = new Article($row);
+        }
+
+        return $articles;
+    }
+
     public function find(int $id): ?Article
     {
         $stmt = $this->db->prepare('SELECT * FROM articles WHERE id = ? LIMIT 1');

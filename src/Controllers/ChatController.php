@@ -7,17 +7,20 @@ use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\ChatRepository;
 use App\Repositories\CounselorRepository;
+use App\Repositories\MonitoringPeriodRepository;
 
 class ChatController
 {
     private ChatRepository $chats;
     private CounselorRepository $counselors;
+    private MonitoringPeriodRepository $monitoring;
 
     public function __construct()
     {
         AuthMiddleware::handle();
         $this->chats = new ChatRepository();
         $this->counselors = new CounselorRepository();
+        $this->monitoring = new MonitoringPeriodRepository();
     }
 
     // GET /chat/{counselorId}
@@ -25,6 +28,12 @@ class ChatController
     {
         $counselor = $this->findCounselorOr404($counselorId);
         if (!$counselor) {
+            return;
+        }
+
+        if (!$this->hasAccess($counselor)) {
+            $_SESSION['error'] = 'Ajukan booking dan tunggu konfirmasi konselor sebelum memulai chat.';
+            Response::redirect('/counselor/' . $counselorId);
             return;
         }
 
@@ -43,7 +52,7 @@ class ChatController
         $counselor = $this->counselors->find((int) $counselorId);
         $message = trim($request->post('message', ''));
 
-        if ($counselor && $message !== '') {
+        if ($counselor && $this->hasAccess($counselor) && $message !== '') {
             $this->chats->send((int) $_SESSION['user_id'], $counselor['user_id'], $message);
         }
 
@@ -60,8 +69,13 @@ class ChatController
             return;
         }
 
+        if (!$this->hasAccess($counselor)) {
+            Response::json(['messages' => []], 403);
+            return;
+        }
+
         $afterId = (int) $request->get('after', 0);
-        $messages = $this->chats->conversationSince((int) $_SESSION['user_id'], $counselor['id'], $afterId);
+        $messages = $this->chats->conversationSince((int) $_SESSION['user_id'], $counselor['user_id'], $afterId);
 
         Response::json([
             'messages' => array_map(fn($message) => $message->toArray(), $messages),
@@ -79,5 +93,15 @@ class ChatController
         }
 
         return $counselor;
+    }
+
+    // True while this counselor has an active monitoring period with the logged-in student.
+    private function hasAccess(array $counselor): bool
+    {
+        if ((int) $counselor['konselor_id'] === 0) {
+            return false;
+        }
+
+        return $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['konselor_id']);
     }
 }

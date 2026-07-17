@@ -22,7 +22,7 @@
             <a href="/">Beranda</a>
             <a href="#fitur">Fitur</a>
             <a href="#cara-kerja">Cara Kerja</a>
-            <a href="/counselor">Konselor</a>
+            <a href="/article">Artikel</a>
             <div class="nav-auth">
                 <a href="/login" class="btn-nav btn-nav-ghost">Login</a>
                 <a href="/register" class="btn-nav btn-nav-primary">Daftar</a>
@@ -141,6 +141,41 @@
             </div>
         </section>
 
+        <!-- ARTICLES -->
+        <?php if (!empty($articles)): ?>
+            <section class="block articles">
+                <div class="section-head">
+                    <div class="section-eyebrow">Bacaan Pilihan</div>
+                    <h2>Artikel Terbaru</h2>
+                    <p>Wawasan dan strategi seputar kesehatan mental untuk membantumu menjaga kesejahteraan.</p>
+                </div>
+
+                <div class="article-preview-grid">
+                    <?php foreach ($articles as $article): ?>
+                        <div class="article-preview-card">
+                            <?php if (!empty($article['image'])): ?>
+                                <a href="/article/<?= urlencode($article['id']) ?>" class="article-preview-thumb">
+                                    <img src="<?= htmlspecialchars($article['image']) ?>" alt="<?= htmlspecialchars($article['title']) ?>" loading="lazy">
+                                </a>
+                            <?php endif; ?>
+                            <div class="article-preview-body">
+                                <?php if (!empty($article['category'])): ?>
+                                    <span class="article-preview-category"><?= htmlspecialchars($article['category']) ?></span>
+                                <?php endif; ?>
+                                <h3><a href="/article/<?= urlencode($article['id']) ?>"><?= htmlspecialchars($article['title']) ?></a></h3>
+                                <p class="article-preview-snippet"><?= htmlspecialchars(substr(strip_tags($article['content']), 0, 110)) ?>&hellip;</p>
+                                <div class="article-preview-date"><?= htmlspecialchars($article['published_at'] ? date('d M Y', strtotime($article['published_at'])) : '-') ?></div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="section-cta">
+                    <a href="/article">Lihat Semua Artikel</a>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <!-- ROLES -->
         <section class="block roles">
             <div class="section-head">
@@ -207,7 +242,7 @@
                     <a href="/">Beranda</a>
                     <a href="#fitur">Fitur</a>
                     <a href="#cara-kerja">Cara Kerja</a>
-                    <a href="/counselor">Konselor</a>
+                    <a href="/article">Artikel</a>
                 </div>
                 <div>
                     <h4>Akun</h4>

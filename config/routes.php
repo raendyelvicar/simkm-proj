@@ -14,6 +14,10 @@ use App\Controllers\AdminSettingsController;
 use App\Controllers\CounselorController;
 use App\Controllers\ChatController;
 use App\Controllers\ConsultationController;
+use App\Controllers\BookingController;
+use App\Controllers\CounselorScheduleController;
+use App\Controllers\BookingQueueController;
+use App\Controllers\AdminScheduleController;
 use App\Controllers\AdminCounselorController;
 use App\Controllers\AdminApprovalController;
 use App\Controllers\ArticleController;
@@ -85,6 +89,25 @@ $router->get('/consultations/{studentId}', [ConsultationController::class, 'show
 $router->post('/consultations/{studentId}', [ConsultationController::class, 'send']);
 $router->get('/consultations/{studentId}/messages', [ConsultationController::class, 'messages']);
 
+// --- Protected: mahasiswa-only booking requests with a counselor ---
+$router->get('/bookings', [BookingController::class, 'index']);
+$router->get('/bookings/create/{counselorId}', [BookingController::class, 'create']);
+$router->post('/bookings', [BookingController::class, 'store']);
+$router->post('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+
+// --- Protected: konselor-only view of their own available time slots (adding new
+// slots is admin-only, see /admin/counselors/{id}/schedule below) ---
+$router->get('/schedule', [CounselorScheduleController::class, 'index']);
+$router->post('/schedule/{id}/toggle', [CounselorScheduleController::class, 'toggle']);
+
+// --- Protected: konselor-only queue of pending booking requests ---
+$router->get('/booking-requests', [BookingQueueController::class, 'index']);
+$router->post('/booking-requests/{id}/confirm', [BookingQueueController::class, 'confirm']);
+$router->post('/booking-requests/{id}/reject', [BookingQueueController::class, 'reject']);
+$router->post('/booking-requests/{id}/extend', [BookingQueueController::class, 'extend']);
+$router->post('/booking-requests/{id}/complete', [BookingQueueController::class, 'complete']);
+$router->post('/booking-requests/{id}/no-show', [BookingQueueController::class, 'noShow']);
+
 // --- Protected: konselor-only, read-only view of diaries students shared with them ---
 $router->get('/shared-diaries', [SharedDiaryController::class, 'index']);
 $router->get('/shared-diaries/{id}', [SharedDiaryController::class, 'show']);
@@ -104,6 +127,11 @@ $router->post('/admin/counselors', [AdminCounselorController::class, 'store']);
 $router->get('/admin/counselors/{id}/edit', [AdminCounselorController::class, 'edit']);
 $router->post('/admin/counselors/{id}', [AdminCounselorController::class, 'update']);
 $router->post('/admin/counselors/{id}/status', [AdminCounselorController::class, 'toggleStatus']);
+
+// --- Protected: admin-only — add/manage a specific counselor's bookable schedule slots ---
+$router->get('/admin/counselors/{id}/schedule', [AdminScheduleController::class, 'index']);
+$router->post('/admin/counselors/{id}/schedule', [AdminScheduleController::class, 'store']);
+$router->post('/admin/counselors/{id}/schedule/{jadwalId}/toggle', [AdminScheduleController::class, 'toggle']);
 
 // --- Protected: admin-only approval queue for pending mahasiswa registrations ---
 $router->get('/admin/approvals', [AdminApprovalController::class, 'index']);

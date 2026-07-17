@@ -59,6 +59,11 @@
                                         class="btn-konselor-admin btn-konselor-admin-ghost btn-konselor-admin-sm">Edit</a>
 
                                     <?php if ($counselor['has_profile']): ?>
+                                        <a href="/admin/counselors/<?= urlencode($counselor['user_id']) ?>/schedule"
+                                            class="btn-konselor-admin btn-konselor-admin-ghost btn-konselor-admin-sm">Jadwal</a>
+                                    <?php endif; ?>
+
+                                    <?php if ($counselor['has_profile']): ?>
                                         <form method="post" action="/admin/counselors/<?= urlencode($counselor['user_id']) ?>/status"
                                             onsubmit="return confirm('<?= $counselor['status_aktif'] ? 'Nonaktifkan konselor ini? Ia tidak akan tampil di daftar konselor untuk mahasiswa.' : 'Aktifkan kembali konselor ini?' ?>');"
                                             style="display:inline;">

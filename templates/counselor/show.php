@@ -46,7 +46,11 @@
         <?php endif; ?> -->
 
         <div>
-            <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Mulai Konsultasi</a>
+            <?php if (!empty($hasActiveMonitoring)): ?>
+                <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Mulai Konsultasi</a>
+            <?php elseif (($_SESSION['role'] ?? '') === 'mahasiswa'): ?>
+                <a href="/bookings/create/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">📅 Ajukan Booking Konsultasi</a>
+            <?php endif; ?>
         </div>
     </div>
 </div>

@@ -5,22 +5,30 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\CounselorRepository;
+use App\Repositories\MonitoringPeriodRepository;
 
 class CounselorController
 {
     private CounselorRepository $counselors;
+    private MonitoringPeriodRepository $monitoring;
 
     public function __construct()
     {
         $this->counselors = new CounselorRepository();
+        $this->monitoring = new MonitoringPeriodRepository();
     }
 
     // GET /counselor — public
     public function index(Request $request): void
     {
+        $activeMonitoringKonselorIds = ($_SESSION['role'] ?? '') === 'mahasiswa'
+            ? $this->monitoring->activeKonselorIdsForStudent((int) $_SESSION['user_id'])
+            : [];
+
         Response::view('counselor/index', [
             'title' => 'Konselor',
             'counselors' => $this->counselors->all(),
+            'activeMonitoringKonselorIds' => $activeMonitoringKonselorIds,
         ]);
     }
 
@@ -35,9 +43,13 @@ class CounselorController
             return;
         }
 
+        $hasActiveMonitoring = ($_SESSION['role'] ?? '') === 'mahasiswa'
+            && $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['konselor_id']);
+
         Response::view('counselor/show', [
             'title' => $counselor['nama'] ?: 'Detail Konselor',
             'counselor' => $counselor,
+            'hasActiveMonitoring' => $hasActiveMonitoring,
         ]);
     }
 }

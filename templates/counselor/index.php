@@ -45,7 +45,11 @@
 
                         <div class="counselor-actions">
                             <a href="/counselor/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-ghost">Lihat Profil</a>
-                            <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Konsultasi</a>
+                            <?php if (in_array((int) $counselor['konselor_id'], $activeMonitoringKonselorIds ?? [], true)): ?>
+                                <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Konsultasi</a>
+                            <?php elseif (($_SESSION['role'] ?? '') === 'mahasiswa'): ?>
+                                <a href="/bookings/create/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">📅 Booking</a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

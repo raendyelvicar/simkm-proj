@@ -1,44 +1,52 @@
 <?php ob_start(); ?>
 
-<div class="card p-4" style="max-width:640px;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h4 mb-0">Tambah Tips</h3>
-        <a href="/tips" class="btn btn-outline-secondary btn-sm">&larr; Kembali</a>
+<div class="tips-page">
+    <div class="page-head">
+        <div>
+            <h1>Tambah Tips</h1>
+            <p>Tips baru akan tampil sebagai popup untuk mahasiswa setelah login.</p>
+        </div>
+        <a href="/tips" class="btn-tips btn-tips-ghost">&larr; Kembali</a>
     </div>
 
-    <?php if (!empty($errors)): ?>
-        <div class="alert alert-danger">
-            <?php foreach ($errors as $error): ?>
-                <div><?= htmlspecialchars($error) ?></div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+    <div class="tips-detail">
+        <?php if (!empty($errors)): ?>
+            <div class="tips-alert tips-alert-error">
+                <?php foreach ($errors as $error): ?>
+                    <div><?= htmlspecialchars($error) ?></div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
-    <form method="post" action="/tips">
-        <div class="mb-3">
-            <label for="title" class="form-label">Judul Tips</label>
-            <input type="text" id="title" name="title" class="form-control" required value="<?= htmlspecialchars($old['title'] ?? '') ?>">
-        </div>
+        <form method="post" action="/tips" class="tips-form">
+            <div class="field">
+                <label for="title">Judul Tips</label>
+                <input type="text" id="title" name="title" required value="<?= htmlspecialchars($old['title'] ?? '') ?>">
+            </div>
 
-        <div class="mb-3">
-            <label for="content" class="form-label">Isi Tips</label>
-            <textarea id="content" name="content" class="form-control" rows="4" required><?= htmlspecialchars($old['content'] ?? '') ?></textarea>
-        </div>
+            <div class="field">
+                <label for="content">Isi Tips</label>
+                <textarea id="content" name="content" required><?= htmlspecialchars($old['content'] ?? '') ?></textarea>
+            </div>
 
-        <div class="form-check mb-3">
-            <input type="checkbox" id="is_active" name="is_active" value="1" class="form-check-input"
-                <?= !isset($old['is_active']) || $old['is_active'] ? 'checked' : '' ?>>
-            <label for="is_active" class="form-check-label">Aktifkan tips ini agar tampil ke mahasiswa</label>
-        </div>
+            <div class="field">
+                <label class="tips-check">
+                    <input type="checkbox" name="is_active" value="1"
+                        <?= !isset($old['is_active']) || $old['is_active'] ? 'checked' : '' ?>>
+                    <span>Aktifkan tips ini agar tampil ke mahasiswa</span>
+                </label>
+            </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Simpan</button>
-            <a href="/tips" class="btn btn-outline-secondary">Batal</a>
-        </div>
-    </form>
+            <div class="tips-form-actions">
+                <button type="submit" class="btn-tips btn-tips-primary">Simpan</button>
+                <a href="/tips" class="btn-tips btn-tips-ghost">Batal</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <?php
 $content = ob_get_clean();
 $pageTitle = $title ?? 'Tambah Tips';
+$extraStyles = require __DIR__ . '/_styles.php';
 require __DIR__ . '/../layouts/index.php';

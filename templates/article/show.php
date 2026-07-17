@@ -46,6 +46,6 @@
 
 <?php
 $content = ob_get_clean();
-$pageTitle = $title ?? 'Detail Artikel';
+$pageTitle = 'Artikel - ' . ($article['title'] ?? 'Detail Artikel');
 $extraStyles = require __DIR__ . '/_styles.php';
-require __DIR__ . '/../layouts/index.php';
+require __DIR__ . '/../layouts/' . (!empty($_SESSION['user_id']) ? 'index.php' : 'public.php');

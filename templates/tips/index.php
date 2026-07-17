@@ -1,63 +1,66 @@
 <?php ob_start(); ?>
 
-<div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="tips-page">
+    <div class="page-head">
         <div>
-            <h3 class="h4 mb-1">💡 Tips Harian</h3>
-            <p class="text-muted mb-0">Kelola tips yang ditampilkan sebagai popup untuk mahasiswa setelah login.</p>
+            <h1>💡 Tips Harian</h1>
+            <p>Kelola tips yang ditampilkan sebagai popup untuk mahasiswa setelah login.</p>
         </div>
-        <a href="/tips/create" class="btn btn-primary">+ Tambah Tips</a>
+        <a href="/tips/create" class="btn-tips btn-tips-primary">+ Tambah Tips</a>
     </div>
 
-    <?php if (!empty($tips)): ?>
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Judul Tips</th>
-                        <th>Isi Tips</th>
-                        <th>Status</th>
-                        <th>Dibuat</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($tips as $tip): ?>
+    <div class="tips-card">
+        <?php if (!empty($tips)): ?>
+            <div class="tips-table-scroll">
+                <table class="tips-table">
+                    <thead>
                         <tr>
-                            <td><?= htmlspecialchars($tip['title']) ?></td>
-                            <td style="max-width:420px;"><?= nl2br(htmlspecialchars($tip['content'])) ?></td>
-                            <td>
-                                <?php if ($tip['is_active']): ?>
-                                    <span class="badge text-bg-success">Aktif</span>
-                                <?php else: ?>
-                                    <span class="badge text-bg-secondary">Nonaktif</span>
-                                <?php endif; ?>
-                            </td>
-                            <td><?= htmlspecialchars(date('d M Y', strtotime($tip['created_at']))) ?></td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <a href="/tips/<?= urlencode($tip['id']) ?>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <form method="post" action="/tips/<?= urlencode($tip['id']) ?>/delete"
-                                        onsubmit="return confirm('Hapus tips ini?');" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>Judul Tips</th>
+                            <th>Isi Tips</th>
+                            <th>Status</th>
+                            <th>Dibuat</th>
+                            <th>Aksi</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php else: ?>
-        <div class="text-center py-5">
-            <div class="mb-2" style="font-size:2rem;">💡</div>
-            <p class="text-muted">Belum ada tips harian.</p>
-            <a href="/tips/create" class="btn btn-primary">+ Tambah Tips</a>
-        </div>
-    <?php endif; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($tips as $tip): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($tip['title']) ?></td>
+                                <td class="tips-content-snippet"><?= nl2br(htmlspecialchars($tip['content'])) ?></td>
+                                <td>
+                                    <?php if ($tip['is_active']): ?>
+                                        <span class="status-pill status-pill-active">Aktif</span>
+                                    <?php else: ?>
+                                        <span class="status-pill status-pill-inactive">Nonaktif</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= htmlspecialchars(date('d M Y', strtotime($tip['created_at']))) ?></td>
+                                <td>
+                                    <div class="tips-actions">
+                                        <a href="/tips/<?= urlencode($tip['id']) ?>/edit" class="btn-tips btn-tips-ghost btn-tips-sm">Edit</a>
+                                        <form method="post" action="/tips/<?= urlencode($tip['id']) ?>/delete"
+                                            onsubmit="return confirm('Hapus tips ini?');" style="display:inline;">
+                                            <button type="submit" class="btn-tips btn-tips-danger btn-tips-sm">Hapus</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="tips-empty">
+                <div class="tips-empty-icon">💡</div>
+                <p>Belum ada tips harian.</p>
+                <a href="/tips/create" class="btn-tips btn-tips-primary">+ Tambah Tips</a>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php
 $content = ob_get_clean();
 $pageTitle = $title ?? 'Tips Harian';
+$extraStyles = require __DIR__ . '/_styles.php';
 require __DIR__ . '/../layouts/index.php';

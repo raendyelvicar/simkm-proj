@@ -149,6 +149,56 @@ function navActive(string $path, string $currentPath): string
             display: none;
         }
 
+        .sidebar .nav-group {
+            margin-bottom: 8px;
+        }
+
+        .sidebar .nav-group-toggle {
+            cursor: pointer;
+            list-style: none;
+            margin-bottom: 0;
+        }
+
+        .sidebar .nav-group-toggle::-webkit-details-marker,
+        .sidebar .nav-group-toggle::marker {
+            display: none;
+            content: '';
+        }
+
+        .sidebar .nav-group-toggle .nav-group-chevron {
+            margin-left: auto;
+            font-size: 0.65rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar .nav-group[open] > .nav-group-toggle .nav-group-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar .nav-group[open] > .nav-group-toggle {
+            color: white;
+        }
+
+        .sidebar .nav-group-children {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-left: 16px;
+            margin: 4px 0 8px;
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar .nav-group-children .nav-link {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            margin-bottom: 0;
+        }
+
+        .sidebar.collapsed .nav-group-children,
+        .sidebar.collapsed .nav-group-toggle .nav-group-chevron {
+            display: none;
+        }
+
         .content-wrapper {
             flex: 1;
             display: flex;
@@ -243,26 +293,76 @@ function navActive(string $path, string $currentPath): string
                 }
             </script>
             <?php
-            // roles omitted => visible to everyone logged in. Order here is render order.
+            // roles omitted => visible to everyone logged in. Items with 'children' render
+            // as a collapsible group instead of a direct link. Order here is render order.
+            function navGroupHasActiveChild(array $children, string $currentPath): bool
+            {
+                foreach ($children as $child) {
+                    if (navActive($child['path'], $currentPath) === 'active') {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             $navItems = [
                 ['path' => '/dashboard', 'icon' => '🏠', 'label' => 'Dashboard'],
                 ['path' => '/assessment', 'icon' => '📝', 'label' => 'Assessment', 'roles' => ['mahasiswa', 'konselor']],
                 ['path' => '/article', 'icon' => '📰', 'label' => 'Artikel'],
-                ['path' => '/consultations', 'icon' => '💬', 'label' => 'Konsultasi Masuk', 'roles' => ['konselor']],
+                [
+                    'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['konselor'],
+                    'children' => [
+                        ['path' => '/consultations', 'icon' => '📨', 'label' => 'Konsultasi Masuk'],
+                        ['path' => '/booking-requests', 'icon' => '📥', 'label' => 'Permintaan Booking'],
+                        ['path' => '/schedule', 'icon' => '📅', 'label' => 'Jadwal Konsultasi'],
+                        ['path' => '/shared-diaries', 'icon' => '📔', 'label' => 'Diary Dibagikan'],
+                    ],
+                ],
                 ['path' => '/tips', 'icon' => '💡', 'label' => 'Tips Harian', 'roles' => ['konselor']],
-                ['path' => '/shared-diaries', 'icon' => '📔', 'label' => 'Diary Dibagikan', 'roles' => ['konselor']],
                 ['path' => '/diary', 'icon' => '📖', 'label' => 'Diary', 'roles' => ['mahasiswa']],
-                ['path' => '/counselor', 'icon' => '💬', 'label' => 'Konselor', 'roles' => ['mahasiswa']],
-                ['path' => '/students', 'icon' => '🎓', 'label' => 'Data Mahasiswa', 'roles' => ['admin']],
-                ['path' => '/admin/counselors', 'icon' => '🧑‍⚕️', 'label' => 'Kelola Konselor', 'roles' => ['admin']],
-                ['path' => '/admin/approvals', 'icon' => '✅', 'label' => 'Persetujuan Akun', 'roles' => ['admin']],
-                ['path' => '/admin/settings', 'icon' => '⚙️', 'label' => 'Pengaturan', 'roles' => ['admin']],
+                [
+                    'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['mahasiswa'],
+                    'children' => [
+                        ['path' => '/counselor', 'icon' => '🧑‍⚕️', 'label' => 'Cari Konselor'],
+                        ['path' => '/bookings', 'icon' => '📅', 'label' => 'Booking Saya'],
+                    ],
+                ],
+                [
+                    'icon' => '🛠️', 'label' => 'Administrasi', 'roles' => ['admin'],
+                    'children' => [
+                        ['path' => '/students', 'icon' => '🎓', 'label' => 'Data Mahasiswa'],
+                        ['path' => '/admin/counselors', 'icon' => '🧑‍⚕️', 'label' => 'Kelola Konselor'],
+                        ['path' => '/admin/approvals', 'icon' => '✅', 'label' => 'Persetujuan Akun'],
+                        ['path' => '/admin/settings', 'icon' => '⚙️', 'label' => 'Pengaturan'],
+                    ],
+                ],
                 ['path' => '/profile', 'icon' => '👤', 'label' => 'Profil'],
             ];
             ?>
             <nav>
                 <?php foreach ($navItems as $item): ?>
-                    <?php if (empty($item['roles']) || in_array($role, $item['roles'], true)): ?>
+                    <?php if (!empty($item['roles']) && !in_array($role, $item['roles'], true)): ?>
+                        <?php continue; ?>
+                    <?php endif; ?>
+
+                    <?php if (!empty($item['children'])): ?>
+                        <details class="nav-group" <?= navGroupHasActiveChild($item['children'], $currentPath) ? 'open' : '' ?>>
+                            <summary class="nav-link nav-group-toggle">
+                                <span><?= $item['icon'] ?></span>
+                                <span class="nav-label"><?= htmlspecialchars($item['label']) ?></span>
+                                <span class="nav-group-chevron">▾</span>
+                            </summary>
+                            <div class="nav-group-children">
+                                <?php foreach ($item['children'] as $child): ?>
+                                    <a href="<?= $child['path'] ?>" class="nav-link <?= navActive($child['path'], $currentPath) ?>">
+                                        <span><?= $child['icon'] ?></span>
+                                        <span class="nav-label"><?= htmlspecialchars($child['label']) ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                    <?php else: ?>
                         <a href="<?= $item['path'] ?>" class="nav-link <?= navActive($item['path'], $currentPath) ?>">
                             <span><?= $item['icon'] ?></span>
                             <span class="nav-label"><?= htmlspecialchars($item['label']) ?></span>
