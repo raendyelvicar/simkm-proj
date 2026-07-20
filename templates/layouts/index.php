@@ -321,6 +321,7 @@ function navActive(string $path, string $currentPath): string
                 ],
                 ['path' => '/tips', 'icon' => '💡', 'label' => 'Tips Harian', 'roles' => ['konselor']],
                 ['path' => '/diary', 'icon' => '📖', 'label' => 'Diary', 'roles' => ['mahasiswa']],
+                ['path' => '/self-help', 'icon' => '🌱', 'label' => 'Self Help', 'roles' => ['mahasiswa']],
                 [
                     'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['mahasiswa'],
                     'children' => [

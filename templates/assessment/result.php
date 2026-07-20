@@ -39,6 +39,31 @@
         <p class="mb-0"><?= htmlspecialchars($feedback) ?></p>
     </div>
 
+    <?php if (!empty($combined)): ?>
+        <div class="assess-card assess-card-body mb-3">
+            <span class="assess-badge <?= assessment_level_badge_class($combined['level']) ?>">
+                Level <?= (int) $combined['level'] ?> &middot; Risiko <?= htmlspecialchars($combined['risk_label']) ?>
+            </span>
+            <div class="mt-2">
+                <strong><?= htmlspecialchars($combined['recommendation']) ?></strong>
+                <div class="text-muted small"><?= htmlspecialchars($combined['purpose']) ?></div>
+            </div>
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+                <?php if ($combined['level'] >= 6): ?>
+                    <a href="/counselor" class="btn btn-danger btn-sm">Hubungi Konselor</a>
+                    <a href="/self-help/pfa" class="btn btn-outline-danger btn-sm">Bantuan Segera (PFA)</a>
+                <?php elseif ($combined['level'] >= 2): ?>
+                    <a href="/self-help" class="btn btn-warning btn-sm">Buka Self Help</a>
+                    <?php if ($combined['level'] >= 3): ?>
+                        <a href="/diary" class="btn btn-outline-warning btn-sm">Isi Diary</a>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <a href="/article" class="btn btn-secondary btn-sm">Baca Artikel</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php if (!empty($tips)): ?>
         <div class="assess-card assess-card-body mb-3">
             <h5 class="mb-2">💡 Tips Menjaga Kesehatan Mental</h5>

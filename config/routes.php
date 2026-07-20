@@ -24,6 +24,7 @@ use App\Controllers\ArticleController;
 use App\Controllers\StudentController;
 use App\Controllers\DailyTipController;
 use App\Controllers\SharedDiaryController;
+use App\Controllers\SelfHelpController;
 
 $router->get('/', [HomeController::class, 'index']);
 
@@ -147,3 +148,15 @@ $router->post('/article/{id}', [ArticleController::class, 'update']);
 $router->post('/article/{id}/delete', [ArticleController::class, 'destroy']);
 
 $router->get('/jurusan', [App\Controllers\LookupController::class, 'getJurusan']);
+
+// --- Protected: mahasiswa self-help features (breathing, gratitude, activities, PFA) ---
+$router->get('/self-help', [SelfHelpController::class, 'index']);
+$router->get('/self-help/breathing', [SelfHelpController::class, 'breathing']);
+$router->get('/self-help/gratitude', [SelfHelpController::class, 'gratitude']);
+$router->get('/self-help/pfa', [SelfHelpController::class, 'pfa']);
+$router->get('/self-help/activities', [SelfHelpController::class, 'activities']);
+$router->get('/self-help/activities/create', [SelfHelpController::class, 'createActivity']);
+$router->post('/self-help/activities', [SelfHelpController::class, 'storeActivity']);
+$router->post('/self-help/activities/{id}/complete', [SelfHelpController::class, 'completeActivity']);
+$router->post('/self-help/activities/{id}/skip', [SelfHelpController::class, 'skipActivity']);
+$router->post('/self-help/activities/{id}/delete', [SelfHelpController::class, 'destroyActivity']);

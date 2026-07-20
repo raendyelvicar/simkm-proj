@@ -92,6 +92,16 @@ class DiaryRepository
         ]);
     }
 
+    // Self Help > Gratitude & Self Reflection view: entries that actually carry
+    // gratitude and/or self-reflection content, most recent first.
+    public function findWithReflectionByUserId(int $userId, int $limit = 10): array
+    {
+        return array_slice(array_values(array_filter(
+            $this->findByUserId($userId),
+            fn (DiaryEntry $entry) => !empty($entry->gratitudeList) || !empty($entry->selfReflection)
+        )), 0, $limit);
+    }
+
     public function create(
         int $userId,
         string $entryDate,

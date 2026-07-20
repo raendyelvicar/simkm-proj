@@ -317,13 +317,25 @@
                 <div class="assess-card assess-card-body mb-3 border border-danger">
                     <h5 class="mb-2">🚨 Segera Hubungi Konselor</h5>
                     <p class="text-muted">Tingkat risikomu tergolong tinggi. Kamu dapat berdiskusi dengan konselor kampus melalui fitur Chat Konselor untuk mendapatkan pendampingan psikologis awal sebelum bantuan profesional.</p>
-                    <a href="/counselor" class="btn btn-danger">Hubungi Konselor Sekarang</a>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="/counselor" class="btn btn-danger">Hubungi Konselor Sekarang</a>
+                        <a href="/self-help/pfa" class="btn btn-outline-danger">Buka Bantuan Segera (PFA)</a>
+                    </div>
                 </div>
             <?php elseif ($combined['level'] >= 3): ?>
                 <div class="assess-card assess-card-body mb-3">
                     <h5 class="mb-2">📔 Rekomendasi Self Help</h5>
-                    <p class="text-muted">Isi Diary Terstruktur secara rutin untuk membantu mengenali emosi, memonitor perkembangan kondisimu, dan meningkatkan coping skill.</p>
-                    <a href="/diary" class="btn btn-warning">Isi Diary</a>
+                    <p class="text-muted">Gunakan fitur Self Help dan isi Diary Terstruktur secara rutin untuk membantu mengenali emosi, memonitor perkembangan kondisimu, dan meningkatkan coping skill.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="/self-help" class="btn btn-warning">Buka Self Help</a>
+                        <a href="/diary" class="btn btn-outline-warning">Isi Diary</a>
+                    </div>
+                </div>
+            <?php elseif ($combined['level'] === 2): ?>
+                <div class="assess-card assess-card-body mb-3">
+                    <h5 class="mb-2">🌱 Rekomendasi Self Help Dasar</h5>
+                    <p class="text-muted">Coba latihan pernapasan sederhana dan rencanakan aktivitas positif untuk mencegah kondisimu berkembang menjadi lebih berat.</p>
+                    <a href="/self-help" class="btn btn-warning">Buka Self Help</a>
                 </div>
             <?php else: ?>
                 <div class="assess-card assess-card-body mb-3">
