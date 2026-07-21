@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="konselor-admin-page">
     <div class="page-head">
@@ -42,15 +46,40 @@
         </form>
     </div>
 
+    <div class="konselor-admin-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Dari Tanggal</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Sampai Tanggal</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['date_to'] ?? '') ?>">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status_aktif" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <option value="1" <?= ($filters['status_aktif'] ?? '') === '1' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= ($filters['status_aktif'] ?? '') === '0' ? 'selected' : '' ?>>Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/admin/counselors/<?= urlencode($counselor['user_id']) ?>/schedule" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
     <div class="konselor-admin-card">
         <?php if (!empty($slots)): ?>
             <table class="konselor-admin-table">
                 <thead>
                     <tr>
-                        <th>Tanggal</th>
-                        <th>Jam</th>
+                        <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $queryParams) ?></th>
+                        <th><?= sort_link('jam_mulai', 'Jam', $sort, $dir, $queryParams) ?></th>
                         <th>Kuota</th>
-                        <th>Status</th>
+                        <th><?= sort_link('status_aktif', 'Status', $sort, $dir, $queryParams) ?></th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -78,10 +107,14 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> jadwal ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="konselor-admin-empty">
                 <div class="konselor-admin-empty-icon">📅</div>
-                <p>Belum ada jadwal untuk konselor ini. Tambahkan di atas.</p>
+                <p>Tidak ada jadwal yang cocok, atau belum ada jadwal untuk konselor ini. Tambahkan di atas.</p>
             </div>
         <?php endif; ?>
     </div>

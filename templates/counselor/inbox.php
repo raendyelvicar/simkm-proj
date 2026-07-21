@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="counselor-page">
     <div class="page-head">
@@ -6,6 +10,25 @@
             <h1>Konsultasi Masuk</h1>
             <p>Mahasiswa yang telah mengirim pesan konsultasi kepada Anda.</p>
         </div>
+    </div>
+
+    <div class="counselor-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted mb-1">Cari Mahasiswa</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari nama...">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Urutkan</label>
+                <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <?= sort_options(['last_message_at' => 'Pesan Terakhir', 'nama' => 'Nama Mahasiswa'], $sort, $dir) ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Cari</button>
+                <a href="/consultations" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     <?php if (!empty($threads)): ?>
@@ -35,10 +58,14 @@
                 </a>
             <?php endforeach; ?>
         </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <span class="text-muted small"><?= (int) $total ?> mahasiswa ditemukan</span>
+            <?= pagination_links($page, $totalPages, $queryParams) ?>
+        </div>
     <?php else: ?>
         <div class="counselor-empty">
             <div class="counselor-empty-icon">💬</div>
-            <p>Belum ada mahasiswa yang mengirim pesan konsultasi.</p>
+            <p>Tidak ada mahasiswa yang cocok, atau belum ada pesan konsultasi.</p>
         </div>
     <?php endif; ?>
 </div>

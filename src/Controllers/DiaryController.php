@@ -14,6 +14,7 @@ class DiaryController
     private const EMOTION_OPTIONS = ['Sedih', 'Cemas', 'Marah', 'Kecewa', 'Takut', 'Malu', 'Bingung', 'Lainnya'];
     private const PHYSICAL_OPTIONS = ['Jantung berdebar', 'Sulit bernapas', 'Tegang', 'Sulit tidur', 'Pusing', 'Menangis', 'Lainnya'];
     private const GRATITUDE_SLOTS = 3;
+    private const PER_PAGE = 10;
 
     private DiaryRepository $diaries;
     private CounselorRepository $counselors;
@@ -30,11 +31,27 @@ class DiaryController
     // GET /diary — list only the logged-in user's own entries
     public function index(Request $request): void
     {
-        $entries = $this->diaries->findByUserId((int) $_SESSION['user_id']);
+        $filters = [
+            'search'    => trim((string) $request->get('q', '')),
+            'date_from' => $request->get('date_from') ?: null,
+            'date_to'   => $request->get('date_to') ?: null,
+        ];
+        $sort = (string) $request->get('sort', 'entry_date');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->diaries->paginatedByUserId((int) $_SESSION['user_id'], $filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('diary/index', [
-            'title' => 'Diary',
-            'entries' => array_map(fn ($entry) => $entry->toArray(), $entries),
+            'title'      => 'Diary',
+            'entries'    => array_map(fn ($entry) => $entry->toArray(), $result['items']),
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 

@@ -121,21 +121,6 @@ class UserRepository
         return (int) $this->db->insert_id;
     }
 
-    // Accounts awaiting admin review — always mahasiswa, since konselor/admin
-    // accounts are created directly with status=active by an admin.
-    public function allPendingMahasiswa(): array
-    {
-        $result = $this->db->query(
-            "SELECT * FROM users WHERE role = 'mahasiswa' AND status = 'pending' ORDER BY created_at ASC"
-        );
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = new User($row);
-        }
-
-        return $users;
-    }
 
     public function approve(int $id, int $approvedBy): bool
     {
@@ -210,6 +195,127 @@ class UserRepository
         $result = $this->db->query("SELECT email FROM users WHERE role = 'admin' AND email != ''");
 
         return $result ? array_column($result->fetch_all(MYSQLI_ASSOC), 'email') : [];
+    }
+
+    private const PENDING_SORTABLE = [
+        'nama'       => 'nama',
+        'created_at' => 'created_at',
+    ];
+
+    /**
+     * Search/filter/sort/paginate over pending mahasiswa registrations — backs /admin/approvals.
+     * @param array $filters ['search'=>?, 'fakultas'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedPendingMahasiswa(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = " WHERE role = 'mahasiswa' AND status = 'pending'";
+        $params = [];
+        $types = '';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (nama LIKE ? OR npm LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+        if (!empty($filters['fakultas'])) {
+            $where .= ' AND fakultas = ?';
+            $params[] = $filters['fakultas'];
+            $types .= 's';
+        }
+
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM users{$where}");
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::PENDING_SORTABLE[$sort] ?? 'created_at';
+        $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare("SELECT * FROM users{$where} ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?");
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = (new User($row))->toArray();
+        }
+
+        return ['items' => $items, 'total' => $total];
+    }
+
+    private const MAHASISWA_SORTABLE = [
+        'nama'       => 'nama',
+        'npm'        => 'npm',
+        'fakultas'   => 'fakultas',
+        'status'     => 'status',
+        'created_at' => 'created_at',
+    ];
+
+    /**
+     * Search/filter/sort/paginate over the mahasiswa roster — backs /students.
+     * @param array $filters ['search'=>?, 'fakultas'=>?, 'jurusan'=>?, 'status'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedMahasiswa(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = " WHERE role = 'mahasiswa'";
+        $params = [];
+        $types = '';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (nama LIKE ? OR npm LIKE ? OR email LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like, $like]);
+            $types .= 'sss';
+        }
+        if (!empty($filters['fakultas'])) {
+            $where .= ' AND fakultas = ?';
+            $params[] = $filters['fakultas'];
+            $types .= 's';
+        }
+        if (!empty($filters['jurusan'])) {
+            $where .= ' AND jurusan = ?';
+            $params[] = $filters['jurusan'];
+            $types .= 's';
+        }
+        if (!empty($filters['status'])) {
+            $where .= ' AND status = ?';
+            $params[] = $filters['status'];
+            $types .= 's';
+        }
+
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM users{$where}");
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::MAHASISWA_SORTABLE[$sort] ?? 'created_at';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
+            "SELECT * FROM users{$where} ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?"
+        );
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = (new User($row))->toArray();
+        }
+
+        return ['items' => $items, 'total' => $total];
     }
 
     // $profileImage left null keeps the existing photo untouched.

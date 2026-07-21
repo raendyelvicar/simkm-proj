@@ -44,6 +44,65 @@ class CounselorRepository
         return $items;
     }
 
+    private const PUBLIC_SORTABLE = [
+        'nama'             => 'u.nama',
+        'pengalaman_tahun' => 'k.pengalaman_tahun',
+        'biaya_konsultasi' => 'k.biaya_konsultasi',
+    ];
+
+    /**
+     * Search/filter/sort/paginate the public, active-only konselor directory — backs /counselor.
+     * @param array $filters ['search'=>?, 'profesi'=>?, 'metode_konsultasi'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedActive(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = ' AND (k.status_aktif = 1 OR k.konselor_id IS NULL)';
+        $params = [];
+        $types = '';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (u.nama LIKE ? OR k.spesialisasi LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+        if (!empty($filters['profesi'])) {
+            $where .= ' AND k.profesi = ?';
+            $params[] = $filters['profesi'];
+            $types .= 's';
+        }
+        if (!empty($filters['metode_konsultasi'])) {
+            $where .= ' AND k.metode_konsultasi = ?';
+            $params[] = $filters['metode_konsultasi'];
+            $types .= 's';
+        }
+
+        $countStmt = $this->db->prepare('SELECT COUNT(*) AS c FROM (' . self::SELECT . $where . ') x');
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::PUBLIC_SORTABLE[$sort] ?? 'u.nama';
+        $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(self::SELECT . $where . " ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?");
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = $this->hydrate($row);
+        }
+
+        return ['items' => $items, 'total' => $total];
+    }
+
     public function find(int $userId): ?array
     {
         $stmt = $this->db->prepare(self::SELECT . " AND u.id=? LIMIT 1");
@@ -64,16 +123,65 @@ class CounselorRepository
         return $row ? $this->hydrate($row) : null;
     }
 
-    // Admin management: sees every konselor account, active or not.
-    public function allForAdmin(): array
+    private const ADMIN_SORTABLE = [
+        'nama'             => 'u.nama',
+        'profesi'          => 'k.profesi',
+        'pengalaman_tahun' => 'k.pengalaman_tahun',
+        'created_at'       => 'k.created_at',
+    ];
+
+    /**
+     * Admin management: search/filter/sort/paginate over every konselor account
+     * (active or not, profile-complete or not) — backs /admin/counselors.
+     * @param array $filters ['search'=>?, 'profesi'=>?, 'status_aktif'=>'1'|'0'|null]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedForAdmin(array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $result = $this->db->query(self::SELECT . " ORDER BY u.nama");
+        $where = '';
+        $params = [];
+        $types = '';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (u.nama LIKE ? OR k.nomor_registrasi LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+        if (!empty($filters['profesi'])) {
+            $where .= ' AND k.profesi = ?';
+            $params[] = $filters['profesi'];
+            $types .= 's';
+        }
+        if (($filters['status_aktif'] ?? '') !== '') {
+            $where .= ' AND k.status_aktif = ?';
+            $params[] = (int) $filters['status_aktif'];
+            $types .= 'i';
+        }
+
+        $countStmt = $this->db->prepare('SELECT COUNT(*) AS c FROM (' . self::SELECT . $where . ') x');
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::ADMIN_SORTABLE[$sort] ?? 'u.nama';
+        $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(self::SELECT . $where . " ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?");
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
 
         $items = [];
+        $result = $dataStmt->get_result();
         while ($row = $result->fetch_assoc()) {
             $items[] = $this->hydrateAdmin($row);
         }
-        return $items;
+
+        return ['items' => $items, 'total' => $total];
     }
 
     public function findForAdmin(int $userId): ?array

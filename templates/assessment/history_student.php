@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="assess-page">
     <div class="page-head">
@@ -47,10 +51,10 @@
                 <table class="table assess-table align-middle">
                     <thead>
                         <tr>
-                            <th>Jenis</th>
-                            <th>Tanggal</th>
-                            <th>Skor</th>
-                            <th>Kategori</th>
+                            <th><?= sort_link('type', 'Jenis', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('submitted_at', 'Tanggal', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('total_score', 'Skor', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('category', 'Kategori', $sort, $dir, $queryParams) ?></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -77,7 +81,7 @@
             </div>
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <span class="text-muted small"><?= (int) $total ?> submission ditemukan</span>
-                <?= pagination_links($page, $totalPages, array_filter($filters, fn ($v) => $v !== null && $v !== '')) ?>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
             </div>
         <?php endif; ?>
     </div>

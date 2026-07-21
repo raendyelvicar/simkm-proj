@@ -13,6 +13,8 @@ use App\Repositories\KonselorJadwalRepository;
 // A booking must be confirmed by the counselor (see BookingQueueController) before chat unlocks.
 class BookingController
 {
+    private const PER_PAGE = 10;
+
     private BookingKonselingRepository $bookings;
     private KonselorJadwalRepository $jadwals;
     private CounselorRepository $counselors;
@@ -34,9 +36,23 @@ class BookingController
     // GET /bookings
     public function index(Request $request): void
     {
+        $filters = ['status' => $request->get('status') ?: null];
+        $sort = (string) $request->get('sort', 'tanggal');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->bookings->paginatedForStudent((int) $_SESSION['user_id'], $filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
         Response::view('booking/index', [
-            'title' => 'Booking Saya',
-            'bookings' => $this->bookings->allForStudent((int) $_SESSION['user_id']),
+            'title'      => 'Booking Saya',
+            'bookings'   => $result['items'],
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 

@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="tips-page">
     <div class="page-head">
@@ -9,16 +13,37 @@
         <a href="/tips/create" class="btn-tips btn-tips-primary">+ Tambah Tips</a>
     </div>
 
+    <div class="tips-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted mb-1">Cari Tips</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari judul/isi...">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="is_active" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <option value="1" <?= ($filters['is_active'] ?? '') === '1' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= ($filters['is_active'] ?? '') === '0' ? 'selected' : '' ?>>Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/tips" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
     <div class="tips-card">
         <?php if (!empty($tips)): ?>
             <div class="tips-table-scroll">
                 <table class="tips-table">
                     <thead>
                         <tr>
-                            <th>Judul Tips</th>
+                            <th><?= sort_link('title', 'Judul Tips', $sort, $dir, $queryParams) ?></th>
                             <th>Isi Tips</th>
                             <th>Status</th>
-                            <th>Dibuat</th>
+                            <th><?= sort_link('created_at', 'Dibuat', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -49,10 +74,14 @@
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> tips ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="tips-empty">
                 <div class="tips-empty-icon">💡</div>
-                <p>Belum ada tips harian.</p>
+                <p>Tidak ada tips yang cocok, atau belum ada tips harian.</p>
                 <a href="/tips/create" class="btn-tips btn-tips-primary">+ Tambah Tips</a>
             </div>
         <?php endif; ?>

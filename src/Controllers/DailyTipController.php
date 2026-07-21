@@ -11,6 +11,8 @@ use App\Repositories\DailyTipRepository;
 // as a popup right after login.
 class DailyTipController
 {
+    private const PER_PAGE = 10;
+
     private DailyTipRepository $tips;
 
     public function __construct()
@@ -28,9 +30,26 @@ class DailyTipController
     // GET /tips
     public function index(Request $request): void
     {
+        $filters = [
+            'search'    => trim((string) $request->get('q', '')),
+            'is_active' => $request->get('is_active', ''),
+        ];
+        $sort = (string) $request->get('sort', 'created_at');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->tips->paginated($filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
         Response::view('tips/index', [
-            'title' => 'Tips Harian',
-            'tips' => array_map(fn($tip) => $tip->toArray(), $this->tips->all()),
+            'title'      => 'Tips Harian',
+            'tips'       => array_map(fn ($tip) => $tip->toArray(), $result['items']),
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 

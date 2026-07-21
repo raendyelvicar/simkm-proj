@@ -1,6 +1,8 @@
 <?php
 $statusLabels = ['planned' => 'Direncanakan', 'done' => 'Selesai', 'skipped' => 'Dilewati'];
 $statusBadge = ['planned' => 'activity-badge-yellow', 'done' => 'activity-badge-green', 'skipped' => 'activity-badge-gray'];
+$queryParams = $_GET;
+unset($queryParams['page']);
 ob_start();
 ?>
 
@@ -16,16 +18,34 @@ ob_start();
         </div>
     </div>
 
+    <div class="activity-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <?php foreach ($statusLabels as $key => $label): ?>
+                        <option value="<?= $key ?>" <?= ($filters['status'] ?? '') === $key ? 'selected' : '' ?>><?= $label ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/self-help/activities" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
     <div class="activity-card">
         <?php if (!empty($items)): ?>
             <div class="activity-table-scroll">
                 <table class="activity-table">
                     <thead>
                         <tr>
-                            <th>Tanggal</th>
-                            <th>Aktivitas</th>
+                            <th><?= sort_link('planned_date', 'Tanggal', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('title', 'Aktivitas', $sort, $dir, $queryParams) ?></th>
                             <th>Mood</th>
-                            <th>Status</th>
+                            <th><?= sort_link('status', 'Status', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -84,10 +104,14 @@ ob_start();
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> aktivitas ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="activity-empty">
                 <div class="activity-empty-icon">🌤️</div>
-                <p>Belum ada aktivitas yang direncanakan. Mulai dari satu hal kecil yang ingin kamu lakukan hari ini.</p>
+                <p>Tidak ada aktivitas yang cocok, atau belum ada yang direncanakan. Mulai dari satu hal kecil yang ingin kamu lakukan hari ini.</p>
                 <a href="/self-help/activities/create" class="btn-activity btn-activity-primary">+ Tambah Aktivitas</a>
             </div>
         <?php endif; ?>

@@ -14,6 +14,8 @@ use App\Services\AssessmentScoringService;
 // "Self Help + PFA" recommendations produced by AssessmentScoringService::combinedLevel().
 class SelfHelpController
 {
+    private const ACTIVITIES_PER_PAGE = 10;
+
     private ActivityPlanRepository $activities;
     private DiaryRepository $diaries;
     private AssessmentRepository $assessments;
@@ -69,9 +71,23 @@ class SelfHelpController
     {
         $userId = (int) $_SESSION['user_id'];
 
+        $filters = ['status' => $request->get('status') ?: null];
+        $sort = (string) $request->get('sort', 'planned_date');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->activities->paginatedByUserId($userId, $filters, $sort, $dir, $page, self::ACTIVITIES_PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::ACTIVITIES_PER_PAGE));
+
         Response::view('selfhelp/activities/index', [
-            'title' => 'Rencana Aktivitas Positif',
-            'items' => array_map(fn ($a) => $a->toArray(), $this->activities->findByUserId($userId)),
+            'title'      => 'Rencana Aktivitas Positif',
+            'items'      => array_map(fn ($a) => $a->toArray(), $result['items']),
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 

@@ -15,16 +15,56 @@ class DailyTipRepository
         $this->db = Database::connection();
     }
 
-    public function all(): array
-    {
-        $result = $this->db->query('SELECT * FROM daily_tips ORDER BY created_at DESC');
+    private const SORTABLE = [
+        'title'      => 'title',
+        'created_at' => 'created_at',
+    ];
 
-        $tips = [];
-        while ($row = $result->fetch_assoc()) {
-            $tips[] = new DailyTip($row);
+    /**
+     * Search/sort/paginate the daily-tips pool — backs /tips.
+     * @return array{items: array, total: int}
+     */
+    public function paginated(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = ' WHERE 1=1';
+        $params = [];
+        $types = '';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (title LIKE ? OR content LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+        if (($filters['is_active'] ?? '') !== '') {
+            $where .= ' AND is_active = ?';
+            $params[] = (int) $filters['is_active'];
+            $types .= 'i';
         }
 
-        return $tips;
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM daily_tips{$where}");
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::SORTABLE[$sort] ?? 'created_at';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare("SELECT * FROM daily_tips{$where} ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?");
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = new DailyTip($row);
+        }
+
+        return ['items' => $items, 'total' => $total];
     }
 
     public function find(int $id): ?DailyTip

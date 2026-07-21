@@ -9,6 +9,8 @@ use App\Repositories\UserRepository;
 
 class StudentController
 {
+    private const PER_PAGE = 10;
+
     private UserRepository $users;
 
     public function __construct()
@@ -28,8 +30,30 @@ class StudentController
     // GET /students
     public function index(Request $request): void
     {
-        $students = array_map(fn ($student) => $student->toArray(), $this->users->allByRole('mahasiswa'));
+        $filters = [
+            'search'   => trim((string) $request->get('q', '')),
+            'fakultas' => $request->get('fakultas') ?: null,
+            'jurusan'  => $request->get('jurusan') ?: null,
+            'status'   => $request->get('status') ?: null,
+        ];
+        $sort = (string) $request->get('sort', 'created_at');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) $request->get('page', 1));
 
-        Response::view('students/index', ['title' => 'Data Mahasiswa', 'students' => $students]);
+        $result = $this->users->paginatedMahasiswa($filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
+        Response::view('students/index', [
+            'title'           => 'Data Mahasiswa',
+            'students'        => $result['items'],
+            'total'           => $result['total'],
+            'page'            => $page,
+            'totalPages'      => $totalPages,
+            'sort'            => $sort,
+            'dir'             => $dir,
+            'filters'         => $filters,
+            'fakultasOptions' => array_keys($this->users->countByFakultas()),
+            'jurusanOptions'  => $this->users->distinctJurusan(),
+        ]);
     }
 }

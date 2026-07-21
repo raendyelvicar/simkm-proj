@@ -9,6 +9,8 @@ use App\Repositories\ArticleRepository;
 
 class ArticleController
 {
+    private const PER_PAGE = 9;
+
     private ArticleRepository $articles;
 
     public function __construct()
@@ -19,12 +21,36 @@ class ArticleController
     // GET /article — public, everyone can view
     public function index(Request $request): void
     {
-        $articles = $this->articles->all();
+        $filters = [
+            'search'   => trim((string) $request->get('q', '')),
+            'category' => $request->get('category') ?: null,
+        ];
+        [$sort, $dir] = $this->parseSort((string) $request->get('sort', 'published_at:desc'));
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->articles->paginated($filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('article/index', [
-            'title' => 'Artikel',
-            'articles' => array_map(fn ($article) => $article->toArray(), $articles),
+            'title'             => 'Artikel',
+            'articles'          => array_map(fn ($article) => $article->toArray(), $result['items']),
+            'total'             => $result['total'],
+            'page'              => $page,
+            'totalPages'        => $totalPages,
+            'sort'              => $sort,
+            'dir'               => $dir,
+            'filters'           => $filters,
+            'categoryOptions'   => $this->articles->distinctCategories(),
         ]);
+    }
+
+    // The sort dropdown posts a single combined "column:dir" value (see sort_options()
+    // in src/Helpers/functions.php) since a card grid has no <th> to attach a link to.
+    private function parseSort(string $combined): array
+    {
+        [$sort, $dir] = array_pad(explode(':', $combined, 2), 2, 'desc');
+
+        return [$sort, $dir === 'asc' ? 'asc' : 'desc'];
     }
 
     // GET /article/{id} — public

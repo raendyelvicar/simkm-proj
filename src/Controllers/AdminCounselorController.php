@@ -12,6 +12,8 @@ use App\Repositories\UserRepository;
 // together with its extended profile (konselor row), and edits/deactivates them.
 class AdminCounselorController
 {
+    private const PER_PAGE = 10;
+
     private CounselorRepository $counselors;
     private UserRepository $users;
 
@@ -31,9 +33,27 @@ class AdminCounselorController
     // GET /admin/counselors
     public function index(Request $request): void
     {
+        $filters = [
+            'search'       => trim((string) $request->get('q', '')),
+            'profesi'      => $request->get('profesi') ?: null,
+            'status_aktif' => $request->get('status_aktif', ''),
+        ];
+        $sort = (string) $request->get('sort', 'nama');
+        $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->counselors->paginatedForAdmin($filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
         Response::view('admin/counselors/index', [
-            'title' => 'Kelola Konselor',
-            'counselors' => $this->counselors->allForAdmin(),
+            'title'       => 'Kelola Konselor',
+            'counselors'  => $result['items'],
+            'total'       => $result['total'],
+            'page'        => $page,
+            'totalPages'  => $totalPages,
+            'sort'        => $sort,
+            'dir'         => $dir,
+            'filters'     => $filters,
         ]);
     }
 

@@ -12,6 +12,8 @@ use App\Repositories\KonselorJadwalRepository;
 // Reachable from the "Jadwal" link on that counselor's row in /admin/counselors.
 class AdminScheduleController
 {
+    private const PER_PAGE = 10;
+
     private CounselorRepository $counselors;
     private KonselorJadwalRepository $jadwals;
 
@@ -36,11 +38,36 @@ class AdminScheduleController
             return;
         }
 
-        Response::view('admin/counselors/schedule', [
-            'title' => 'Jadwal ' . ($counselor['nama'] ?: 'Konselor'),
-            'counselor' => $counselor,
-            'slots' => array_map(fn ($s) => $s->toArray(), $this->jadwals->allByKonselorId((int) $counselor['konselor_id'])),
-        ]);
+        Response::view('admin/counselors/schedule', array_merge(
+            ['title' => 'Jadwal ' . ($counselor['nama'] ?: 'Konselor'), 'counselor' => $counselor],
+            $this->scheduleViewData($request, (int) $counselor['konselor_id'])
+        ));
+    }
+
+    // Shared by index() and store()'s error-redisplay branch.
+    private function scheduleViewData(Request $request, int $konselorId): array
+    {
+        $filters = [
+            'date_from'    => $request->get('date_from') ?: null,
+            'date_to'      => $request->get('date_to') ?: null,
+            'status_aktif' => $request->get('status_aktif', ''),
+        ];
+        $sort = (string) $request->get('sort', 'tanggal');
+        $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->jadwals->paginatedByKonselorId($konselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
+        return [
+            'slots'      => $result['items'],
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
+        ];
     }
 
     // POST /admin/counselors/{id}/schedule
@@ -73,13 +100,15 @@ class AdminScheduleController
         }
 
         if ($errors) {
-            Response::view('admin/counselors/schedule', [
-                'title' => 'Jadwal ' . ($counselor['nama'] ?: 'Konselor'),
-                'counselor' => $counselor,
-                'slots' => array_map(fn ($s) => $s->toArray(), $this->jadwals->allByKonselorId((int) $counselor['konselor_id'])),
-                'errors' => $errors,
-                'old' => compact('tanggal', 'jamMulai', 'jamSelesai', 'kuota'),
-            ]);
+            Response::view('admin/counselors/schedule', array_merge(
+                [
+                    'title' => 'Jadwal ' . ($counselor['nama'] ?: 'Konselor'),
+                    'counselor' => $counselor,
+                    'errors' => $errors,
+                    'old' => compact('tanggal', 'jamMulai', 'jamSelesai', 'kuota'),
+                ],
+                $this->scheduleViewData($request, (int) $counselor['konselor_id'])
+            ));
             return;
         }
 

@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="approval-admin-page">
     <div class="page-head">
@@ -6,7 +10,20 @@
             <h1>✅ Persetujuan Akun</h1>
             <p>Tinjau pendaftaran mahasiswa baru sebelum akunnya bisa digunakan untuk login.</p>
         </div>
-        <span class="approval-admin-count"><?= count($pending) ?> Menunggu</span>
+        <span class="approval-admin-count"><?= (int) $total ?> Menunggu</span>
+    </div>
+
+    <div class="approval-admin-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Cari Nama / NPM</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari...">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/admin/approvals" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     <div class="approval-admin-card">
@@ -15,11 +32,11 @@
                 <table class="approval-admin-table">
                     <thead>
                         <tr>
-                            <th>Nama</th>
+                            <th><?= sort_link('nama', 'Nama', $sort, $dir, $queryParams) ?></th>
                             <th>NPM</th>
                             <th>Fakultas / Jurusan</th>
                             <th>Kontak</th>
-                            <th>Daftar Pada</th>
+                            <th><?= sort_link('created_at', 'Daftar Pada', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -70,6 +87,10 @@
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> akun menunggu</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
             </div>
         <?php else: ?>
             <div class="approval-admin-empty">

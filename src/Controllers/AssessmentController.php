@@ -7,6 +7,7 @@ use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Models\AssessmentSubmission;
 use App\Repositories\AssessmentRepository;
+use App\Repositories\AssessmentRetakeGrantRepository;
 use App\Repositories\UserRepository;
 use App\Services\AssessmentScoringService;
 use App\Support\AssessmentMeta;
@@ -20,6 +21,7 @@ class AssessmentController
     private const PER_PAGE = 10;
 
     private AssessmentRepository $assessments;
+    private AssessmentRetakeGrantRepository $retakeGrants;
     private AssessmentScoringService $scoring;
     private UserRepository $users;
 
@@ -27,6 +29,7 @@ class AssessmentController
     {
         AuthMiddleware::handle();
         $this->assessments = new AssessmentRepository();
+        $this->retakeGrants = new AssessmentRetakeGrantRepository();
         $this->scoring = new AssessmentScoringService();
         $this->users = new UserRepository();
     }
@@ -44,8 +47,8 @@ class AssessmentController
                 'countsBdi2'            => $this->assessments->countsByCategory('bdi2'),
                 'countsPwb'             => $this->assessments->countsByCategory('pwb'),
                 'recentFlagged'         => array_map(
-                    fn ($s) => $s->toArray(),
-                    $this->assessments->recentByCategories(['Berat', 'Rendah'], 5)
+                    fn($s) => $s->toArray(),
+                    $this->assessments->recentByCategories(['Berat', 'Rendah'], 6)
                 ),
                 'fakultasCounts'        => $this->users->countByFakultas(),
                 'pwbDimensionAverages'  => $this->assessments->pwbDimensionAverages(),
@@ -74,6 +77,7 @@ class AssessmentController
             'latestBdi2' => $latestBdi2,
             'latestPwb'  => $latestPwb,
             'combined'   => $combined,
+            'canRetake'  => $this->retakeGrants->canStartNewSession($userId),
         ]);
     }
 
@@ -123,18 +127,29 @@ class AssessmentController
 
         $type = $request->get('type');
         $type = in_array($type, self::TYPES, true) ? $type : null;
-        $submissions = $this->assessments->submissionsForUser((int) $_SESSION['user_id'], $type);
+        $filters = ['type' => $type];
+        $sort = (string) $request->get('sort', 'submitted_at');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->assessments->submissionsForUserFiltered((int) $_SESSION['user_id'], $filters, $page, self::PER_PAGE, $sort, $dir);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('assessment/history', [
             'title'       => 'Riwayat Assessment',
             'isStaff'     => false,
             'type'        => $type,
             'meta'        => self::META,
-            'submissions' => array_map(fn ($s) => $s->toArray(), $submissions),
+            'submissions' => array_map(fn ($s) => $s->toArray(), $result['items']),
+            'total'       => $result['total'],
+            'page'        => $page,
+            'totalPages'  => $totalPages,
+            'sort'        => $sort,
+            'dir'         => $dir,
         ]);
     }
 
-    // GET /assessment/history (staff branch) — students grouped one row each, with search/filter/pagination.
+    // GET /assessment/history (staff branch) — students grouped one row each, with search/filter/sort/pagination.
     private function staffHistory(Request $request): void
     {
         $filters = [
@@ -144,9 +159,11 @@ class AssessmentController
             'bdi2_category' => $request->get('bdi2_category') ?: null,
             'pwb_category'  => $request->get('pwb_category') ?: null,
         ];
+        $sort = (string) $request->get('sort', 'last_submitted_at');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
         $page = max(1, (int) $request->get('page', 1));
 
-        $result = $this->assessments->studentAssessmentSummaries($filters, $page, self::PER_PAGE);
+        $result = $this->assessments->studentAssessmentSummaries($filters, $page, self::PER_PAGE, $sort, $dir);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('assessment/history', [
@@ -157,6 +174,8 @@ class AssessmentController
             'total'           => $result['total'],
             'page'            => $page,
             'totalPages'      => $totalPages,
+            'sort'            => $sort,
+            'dir'             => $dir,
             'filters'         => $filters,
             'fakultasOptions' => array_keys($this->users->countByFakultas()),
             'jurusanOptions'  => $this->users->distinctJurusan(),
@@ -182,19 +201,23 @@ class AssessmentController
             'type'     => in_array($request->get('type'), self::TYPES, true) ? $request->get('type') : null,
             'category' => $request->get('category') ?: null,
         ];
+        $sort = (string) $request->get('sort', 'submitted_at');
+        $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
         $page = max(1, (int) $request->get('page', 1));
 
-        $result = $this->assessments->submissionsForUserFiltered((int) $id, $filters, $page, self::PER_PAGE);
+        $result = $this->assessments->submissionsForUserFiltered((int) $id, $filters, $page, self::PER_PAGE, $sort, $dir);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('assessment/history_student', [
             'title'       => 'Riwayat Assessment — ' . $student->nama,
             'meta'        => self::META,
             'student'     => $student->toArray(),
-            'submissions' => array_map(fn ($s) => $s->toArray(), $result['items']),
+            'submissions' => array_map(fn($s) => $s->toArray(), $result['items']),
             'total'       => $result['total'],
             'page'        => $page,
             'totalPages'  => $totalPages,
+            'sort'        => $sort,
+            'dir'         => $dir,
             'filters'     => $filters,
         ]);
     }

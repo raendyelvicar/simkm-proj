@@ -15,18 +15,65 @@ class ArticleRepository
         $this->db = Database::connection();
     }
 
-    public function all(): array
-    {
-        $result = $this->db->query(
-            'SELECT * FROM articles ORDER BY published_at DESC, id DESC'
-        );
+    private const SORTABLE = [
+        'title'         => 'title',
+        'published_at'  => 'published_at',
+    ];
 
-        $articles = [];
-        while ($row = $result->fetch_assoc()) {
-            $articles[] = new Article($row);
+    /**
+     * Search/filter/sort/paginate published articles — backs /article.
+     * @param array $filters ['search'=>?, 'category'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginated(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = ' WHERE 1=1';
+        $params = [];
+        $types = '';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (title LIKE ? OR content LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+        if (!empty($filters['category'])) {
+            $where .= ' AND category = ?';
+            $params[] = $filters['category'];
+            $types .= 's';
         }
 
-        return $articles;
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM articles{$where}");
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::SORTABLE[$sort] ?? 'published_at';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare("SELECT * FROM articles{$where} ORDER BY {$orderCol} {$orderDir}, id DESC LIMIT ? OFFSET ?");
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = new Article($row);
+        }
+
+        return ['items' => $items, 'total' => $total];
+    }
+
+    /** Distinct non-empty category values in use — for the filter dropdown. */
+    public function distinctCategories(): array
+    {
+        $result = $this->db->query("SELECT DISTINCT category FROM articles WHERE category IS NOT NULL AND category != '' ORDER BY category");
+
+        return array_column($result->fetch_all(MYSQLI_ASSOC), 'category');
     }
 
     // Most recently published articles, for previews like the landing page's "Artikel Terbaru" section.

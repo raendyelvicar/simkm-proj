@@ -10,6 +10,11 @@
     </div>
 
     <div class="assess-card assess-card-body mb-3">
+        <?php if (!empty($grant)): ?>
+            <div class="alert alert-success mb-4">
+                ✅ Direkomendasikan oleh <strong><?= htmlspecialchars($grant['konselor_nama']) ?></strong> pada <?= htmlspecialchars(date('d M Y', strtotime($grant['granted_at']))) ?>.
+            </div>
+        <?php endif; ?>
         <div class="alert alert-warning mb-4">
             ⏱️ Sesi ini memiliki batas waktu <strong><?= (int) $timeLimitMinutes ?> menit</strong> untuk mengisi kedua instrumen. Jika waktu habis, jawaban yang sudah kamu isi akan otomatis dikirim.
         </div>

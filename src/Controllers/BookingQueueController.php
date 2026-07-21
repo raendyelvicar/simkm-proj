@@ -5,9 +5,11 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
+use App\Repositories\AssessmentRetakeGrantRepository;
 use App\Repositories\BookingKonselingRepository;
 use App\Repositories\CounselorRepository;
 use App\Repositories\MonitoringPeriodRepository;
+use App\Repositories\SesiKonselingRepository;
 
 // Konselor-only: review and respond to pending booking requests from students.
 // Confirming a booking starts a monitoring period (see MonitoringPeriodRepository) —
@@ -17,9 +19,12 @@ class BookingQueueController
     private const DEFAULT_DURATION_DAYS = 30;
     private const MIN_DAYS = 1;
     private const MAX_DAYS = 365;
+    private const PER_PAGE = 10;
 
     private BookingKonselingRepository $bookings;
     private MonitoringPeriodRepository $monitoring;
+    private SesiKonselingRepository $sesi;
+    private AssessmentRetakeGrantRepository $retakeGrants;
     private int $konselorId;
 
     public function __construct()
@@ -33,6 +38,8 @@ class BookingQueueController
 
         $this->bookings = new BookingKonselingRepository();
         $this->monitoring = new MonitoringPeriodRepository();
+        $this->sesi = new SesiKonselingRepository();
+        $this->retakeGrants = new AssessmentRetakeGrantRepository();
 
         $counselor = (new CounselorRepository())->find((int) $_SESSION['user_id']);
         $this->konselorId = (int) ($counselor['konselor_id'] ?? 0);
@@ -46,9 +53,23 @@ class BookingQueueController
     // GET /booking-requests
     public function index(Request $request): void
     {
+        $filters = ['search' => trim((string) $request->get('q', ''))];
+        $sort = (string) $request->get('sort', 'queue');
+        $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->bookings->paginatedQueue($this->konselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
         Response::view('booking-requests/index', [
-            'title' => 'Permintaan Booking',
-            'bookings' => $this->bookings->forKonselorQueue($this->konselorId),
+            'title'      => 'Permintaan Booking',
+            'bookings'   => $result['items'],
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 
@@ -105,6 +126,8 @@ class BookingQueueController
 
     // POST /booking-requests/{id}/complete — closes out a confirmed session. This also
     // ends the monitoring period immediately, revoking chat/diary-share access for it.
+    // Also records the session notes (catatan/rekomendasi/tindak lanjut) that feed
+    // Laporan Konseling — see SesiKonselingRepository.
     public function complete(Request $request, string $id): void
     {
         $booking = $this->bookings->findOwnedByKonselor((int) $id, $this->konselorId);
@@ -112,6 +135,17 @@ class BookingQueueController
         if ($booking && $booking->status === 'Confirmed') {
             $this->bookings->updateStatus((int) $id, 'Completed');
             $this->monitoring->endNowForBooking((int) $id, $this->konselorId);
+            $this->sesi->upsertForBooking(
+                (int) $id,
+                trim($request->post('catatan_konselor', '')) ?: null,
+                trim($request->post('rekomendasi', '')) ?: null,
+                trim($request->post('tindak_lanjut', '')) ?: null
+            );
+
+            if ($request->post('recommend_reassessment')) {
+                $this->retakeGrants->grant($booking->userId, (int) $id, $this->konselorId);
+            }
+
             $_SESSION['success'] = 'Booking ditandai selesai.';
         }
 

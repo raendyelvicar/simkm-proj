@@ -25,6 +25,7 @@ use App\Controllers\StudentController;
 use App\Controllers\DailyTipController;
 use App\Controllers\SharedDiaryController;
 use App\Controllers\SelfHelpController;
+use App\Controllers\LaporanController;
 
 $router->get('/', [HomeController::class, 'index']);
 
@@ -160,3 +161,31 @@ $router->post('/self-help/activities', [SelfHelpController::class, 'storeActivit
 $router->post('/self-help/activities/{id}/complete', [SelfHelpController::class, 'completeActivity']);
 $router->post('/self-help/activities/{id}/skip', [SelfHelpController::class, 'skipActivity']);
 $router->post('/self-help/activities/{id}/delete', [SelfHelpController::class, 'destroyActivity']);
+
+// --- Protected: Laporan hub + the 8 report pages. Each report enforces its own
+// role/scope rule inside LaporanController regardless of what the nav shows. ---
+$router->get('/laporan', [LaporanController::class, 'index']);
+
+$router->get('/laporan/self-assessment', [LaporanController::class, 'selfAssessment']);
+$router->get('/laporan/self-assessment/pdf', [LaporanController::class, 'selfAssessmentPdf']);
+
+$router->get('/laporan/diary', [LaporanController::class, 'diary']);
+$router->get('/laporan/diary/pdf', [LaporanController::class, 'diaryPdf']);
+
+$router->get('/laporan/self-help', [LaporanController::class, 'selfHelp']);
+$router->get('/laporan/self-help/pdf', [LaporanController::class, 'selfHelpPdf']);
+
+$router->get('/laporan/konseling', [LaporanController::class, 'konseling']);
+$router->get('/laporan/konseling/pdf', [LaporanController::class, 'konselingPdf']);
+
+$router->get('/laporan/risk-mapping', [LaporanController::class, 'riskMapping']);
+$router->get('/laporan/risk-mapping/pdf', [LaporanController::class, 'riskMappingPdf']);
+
+$router->get('/laporan/mood-analysis', [LaporanController::class, 'moodAnalysis']);
+$router->get('/laporan/mood-analysis/pdf', [LaporanController::class, 'moodAnalysisPdf']);
+
+$router->get('/laporan/engagement', [LaporanController::class, 'engagement']);
+$router->get('/laporan/engagement/pdf', [LaporanController::class, 'engagementPdf']);
+
+$router->get('/laporan/counselor-activity', [LaporanController::class, 'counselorActivity']);
+$router->get('/laporan/counselor-activity/pdf', [LaporanController::class, 'counselorActivityPdf']);

@@ -130,6 +130,46 @@ if (!function_exists('pagination_links')) {
     }
 }
 
+if (!function_exists('sort_link')) {
+    /**
+     * Renders a clickable column-header link that toggles asc/desc on the given
+     * column, preserving every other current query param (search/filters), and
+     * always resetting to page 1 (a re-sort invalidates the old page position).
+     */
+    function sort_link(string $column, string $label, ?string $currentSort, string $currentDir, array $queryParams = []): string
+    {
+        $isActive = $currentSort === $column;
+        $nextDir = $isActive && $currentDir === 'asc' ? 'desc' : 'asc';
+        $arrow = $isActive ? ($currentDir === 'asc' ? ' &uarr;' : ' &darr;') : '';
+
+        $url = '?' . http_build_query(array_merge($queryParams, ['sort' => $column, 'dir' => $nextDir, 'page' => 1]));
+
+        return '<a href="' . htmlspecialchars($url) . '" class="sortable-th' . ($isActive ? ' active' : '') . '">'
+            . htmlspecialchars($label) . $arrow . '</a>';
+    }
+}
+
+if (!function_exists('sort_options')) {
+    /**
+     * The dropdown-based equivalent of sort_link() for card-grid/row-list pages
+     * that have no <table> header to attach a clickable link to (Artikel, Konselor
+     * directory, Shared Diaries, Consultations inbox). $options is [value => label].
+     */
+    function sort_options(array $options, ?string $currentSort, string $currentDir): string
+    {
+        $html = '';
+        foreach ($options as $value => $label) {
+            foreach (['asc' => 'A-Z / Terlama', 'desc' => 'Z-A / Terbaru'] as $dir => $dirLabel) {
+                $selected = ($currentSort === $value && $currentDir === $dir) ? 'selected' : '';
+                $html .= '<option value="' . htmlspecialchars($value . ':' . $dir) . '" ' . $selected . '>'
+                    . htmlspecialchars($label) . ' (' . $dirLabel . ')</option>';
+            }
+        }
+
+        return $html;
+    }
+}
+
 if (!function_exists('dd')) {
     function dd(...$vars)
     {

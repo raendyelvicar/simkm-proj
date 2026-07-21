@@ -12,6 +12,8 @@ use App\Repositories\KonselorJadwalRepository;
 // Adding new slots is admin-only (see AdminScheduleController).
 class CounselorScheduleController
 {
+    private const PER_PAGE = 10;
+
     private KonselorJadwalRepository $jadwals;
     private int $konselorId;
 
@@ -38,9 +40,27 @@ class CounselorScheduleController
     // GET /schedule
     public function index(Request $request): void
     {
+        $filters = [
+            'date_from'    => $request->get('date_from') ?: null,
+            'date_to'      => $request->get('date_to') ?: null,
+            'status_aktif' => $request->get('status_aktif', ''),
+        ];
+        $sort = (string) $request->get('sort', 'tanggal');
+        $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->jadwals->paginatedByKonselorId($this->konselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
         Response::view('schedule/index', [
-            'title' => 'Jadwal Konsultasi',
-            'slots' => array_map(fn ($s) => $s->toArray(), $this->jadwals->allByKonselorId($this->konselorId)),
+            'title'      => 'Jadwal Konsultasi',
+            'slots'      => $result['items'],
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 

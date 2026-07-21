@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="schedule-page">
     <div class="page-head">
@@ -6,7 +10,32 @@
             <h1>📅 Jadwal Konsultasi</h1>
             <p>Tanggal yang bisa dibooking mahasiswa. Jadwal baru ditambahkan oleh admin.</p>
         </div>
-        <span class="schedule-count"><?= count($slots) ?> Jadwal</span>
+        <span class="schedule-count"><?= (int) $total ?> Jadwal</span>
+    </div>
+
+    <div class="schedule-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Dari Tanggal</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Sampai Tanggal</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['date_to'] ?? '') ?>">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status_aktif" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <option value="1" <?= ($filters['status_aktif'] ?? '') === '1' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= ($filters['status_aktif'] ?? '') === '0' ? 'selected' : '' ?>>Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/schedule" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     <div class="schedule-card">
@@ -15,10 +44,10 @@
                 <table class="schedule-table">
                     <thead>
                         <tr>
-                            <th>Tanggal</th>
-                            <th>Jam</th>
+                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('jam_mulai', 'Jam', $sort, $dir, $queryParams) ?></th>
                             <th>Kuota</th>
-                            <th>Status</th>
+                            <th><?= sort_link('status_aktif', 'Status', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -47,10 +76,14 @@
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> jadwal ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="schedule-empty">
                 <div class="schedule-empty-icon">📅</div>
-                <p>Belum ada jadwal konsultasi. Hubungi admin untuk menambahkan jadwal agar mahasiswa bisa mengajukan booking.</p>
+                <p>Tidak ada jadwal yang cocok, atau belum ada jadwal konsultasi. Hubungi admin untuk menambahkan jadwal agar mahasiswa bisa mengajukan booking.</p>
             </div>
         <?php endif; ?>
     </div>

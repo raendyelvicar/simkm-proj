@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\AssessmentRepository;
+use App\Repositories\AssessmentRetakeGrantRepository;
 use App\Repositories\AssessmentSessionRepository;
 use App\Repositories\SettingsRepository;
 use App\Services\AssessmentScoringService;
@@ -24,6 +25,7 @@ class AssessmentSessionController
 {
     private AssessmentSessionRepository $sessions;
     private AssessmentRepository $assessments;
+    private AssessmentRetakeGrantRepository $retakeGrants;
     private AssessmentScoringService $scoring;
     private SettingsRepository $settings;
 
@@ -32,6 +34,7 @@ class AssessmentSessionController
         AuthMiddleware::handle();
         $this->sessions = new AssessmentSessionRepository();
         $this->assessments = new AssessmentRepository();
+        $this->retakeGrants = new AssessmentRetakeGrantRepository();
         $this->scoring = new AssessmentScoringService();
         $this->settings = new SettingsRepository();
     }
@@ -40,11 +43,18 @@ class AssessmentSessionController
     public function start(Request $request): void
     {
         $this->requireMahasiswa();
+        $userId = (int) $_SESSION['user_id'];
+
+        if (!$this->retakeGrants->canStartNewSession($userId)) {
+            Response::view('assessment/session_locked', ['title' => 'Assessment Terkunci']);
+            return;
+        }
 
         Response::view('assessment/session_start', [
             'title'            => 'Mulai Self-Assessment',
             'meta'             => AssessmentMeta::META,
             'timeLimitMinutes' => $this->timeLimitMinutes(),
+            'grant'            => $this->retakeGrants->latestUnconsumed($userId),
         ]);
     }
 
@@ -63,7 +73,20 @@ class AssessmentSessionController
             return;
         }
 
-        $this->sessions->create($userId, $this->timeLimitMinutes() * 60);
+        // Re-checked server-side even though start() already gated the UI — never trust
+        // that a POST here was preceded by the corresponding GET.
+        $isFirstAttempt = $this->retakeGrants->isFirstAttempt($userId);
+        if (!$isFirstAttempt && !$this->retakeGrants->hasUnconsumed($userId)) {
+            Response::redirect('/assessment/start');
+            return;
+        }
+
+        $sessionId = $this->sessions->create($userId, $this->timeLimitMinutes() * 60);
+
+        if (!$isFirstAttempt) {
+            $this->retakeGrants->consumeOldestForUser($userId, $sessionId);
+        }
+
         Response::redirect('/assessment/session');
     }
 

@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="konselor-admin-page">
     <div class="page-head">
@@ -9,14 +13,44 @@
         <a href="/admin/counselors/create" class="btn-konselor-admin btn-konselor-admin-primary">+ Tambah Konselor</a>
     </div>
 
+    <div class="konselor-admin-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Cari Nama / No. Registrasi</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari konselor...">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Profesi</label>
+                <select name="profesi" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <?php foreach (['Psikolog', 'Konselor', 'Psikiater'] as $p): ?>
+                        <option value="<?= $p ?>" <?= ($filters['profesi'] ?? '') === $p ? 'selected' : '' ?>><?= $p ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status_aktif" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <option value="1" <?= ($filters['status_aktif'] ?? '') === '1' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= ($filters['status_aktif'] ?? '') === '0' ? 'selected' : '' ?>>Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/admin/counselors" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
     <div class="konselor-admin-card">
         <?php if (!empty($counselors)): ?>
             <table class="konselor-admin-table">
                 <thead>
                     <tr>
-                        <th>Nama</th>
+                        <th><?= sort_link('nama', 'Nama', $sort, $dir, $queryParams) ?></th>
                         <th>Username / Email</th>
-                        <th>Profesi</th>
+                        <th><?= sort_link('profesi', 'Profesi', $sort, $dir, $queryParams) ?></th>
                         <th>Spesialisasi</th>
                         <th>Status</th>
                         <th>Aksi</th>
@@ -78,10 +112,14 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> konselor ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="konselor-admin-empty">
                 <div class="konselor-admin-empty-icon">🧑‍⚕️</div>
-                <p>Belum ada akun konselor.</p>
+                <p>Tidak ada konselor yang cocok, atau belum ada akun konselor.</p>
                 <a href="/admin/counselors/create" class="btn-konselor-admin btn-konselor-admin-primary">+ Tambah Konselor</a>
             </div>
         <?php endif; ?>

@@ -12,6 +12,8 @@ use App\Repositories\UserRepository;
 // block the status change itself, since that's the record of truth.
 class AdminApprovalController
 {
+    private const PER_PAGE = 10;
+
     private UserRepository $users;
 
     public function __construct()
@@ -29,11 +31,26 @@ class AdminApprovalController
     // GET /admin/approvals
     public function index(Request $request): void
     {
-        $pending = array_map(fn ($user) => $user->toArray(), $this->users->allPendingMahasiswa());
+        $filters = [
+            'search'   => trim((string) $request->get('q', '')),
+            'fakultas' => $request->get('fakultas') ?: null,
+        ];
+        $sort = (string) $request->get('sort', 'created_at');
+        $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->users->paginatedPendingMahasiswa($filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('admin/approvals/index', [
-            'title' => 'Persetujuan Akun',
-            'pending' => $pending,
+            'title'      => 'Persetujuan Akun',
+            'pending'    => $result['items'],
+            'total'      => $result['total'],
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => $filters,
         ]);
     }
 

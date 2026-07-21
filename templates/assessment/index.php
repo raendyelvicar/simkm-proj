@@ -370,8 +370,14 @@
                             <p class="text-muted small mb-3">Kamu belum pernah mengisi assessment ini.</p>
                         <?php endif; ?>
 
-                        <div class="mt-auto d-flex gap-2">
-                            <a href="/assessment/start" class="btn btn-primary btn-sm"><?= $latest ? 'Isi Ulang' : 'Mulai' ?></a>
+                        <div class="mt-auto d-flex gap-2 align-items-center flex-wrap">
+                            <?php if (!$latest): ?>
+                                <a href="/assessment/start" class="btn btn-primary btn-sm">Mulai</a>
+                            <?php elseif (!empty($canRetake)): ?>
+                                <a href="/assessment/start" class="btn btn-primary btn-sm">Isi Ulang</a>
+                            <?php else: ?>
+                                <a href="/assessment/start" class="btn btn-outline-secondary btn-sm" title="Perlu rekomendasi konselor untuk mengisi ulang">🔒 Terkunci</a>
+                            <?php endif; ?>
                             <?php if ($latest): ?>
                                 <a href="/assessment/result/<?= (int) $latest['id'] ?>" class="btn btn-outline-secondary btn-sm">Lihat Hasil</a>
                             <?php endif; ?>

@@ -217,6 +217,24 @@ function navActive(string $path, string $currentPath): string
             box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
         }
 
+        /* Shared clickable column-header link, used by every sortable table app-wide
+           (see sort_link() in src/Helpers/functions.php). */
+        a.sortable-th {
+            color: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        a.sortable-th:hover {
+            color: var(--primary);
+        }
+
+        a.sortable-th.active {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
         .main-footer {
             border-top: 1px solid var(--border);
             background: var(--surface);
@@ -338,6 +356,7 @@ function navActive(string $path, string $currentPath): string
                         ['path' => '/admin/settings', 'icon' => '⚙️', 'label' => 'Pengaturan'],
                     ],
                 ],
+                ['path' => '/laporan', 'icon' => '📊', 'label' => 'Laporan'],
                 ['path' => '/profile', 'icon' => '👤', 'label' => 'Profil'],
             ];
             ?>

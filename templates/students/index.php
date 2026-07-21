@@ -9,13 +9,57 @@ $statusPills = [
 ob_start();
 ?>
 
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+?>
 <div class="student-admin-page">
     <div class="page-head">
         <div>
             <h1>🎓 Data Mahasiswa</h1>
             <p>Daftar mahasiswa yang terdaftar di sistem.</p>
         </div>
-        <span class="student-admin-count"><?= count($students) ?> Terdaftar</span>
+        <span class="student-admin-count"><?= (int) $total ?> Terdaftar</span>
+    </div>
+
+    <div class="student-admin-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Cari Nama / NPM / Email</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari mahasiswa...">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Fakultas</label>
+                <select name="fakultas" class="form-select form-select-sm">
+                    <option value="">Semua Fakultas</option>
+                    <?php foreach ($fakultasOptions as $f): ?>
+                        <option value="<?= htmlspecialchars($f) ?>" <?= ($filters['fakultas'] ?? '') === $f ? 'selected' : '' ?>><?= htmlspecialchars($f) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Jurusan</label>
+                <select name="jurusan" class="form-select form-select-sm">
+                    <option value="">Semua Jurusan</option>
+                    <?php foreach ($jurusanOptions as $j): ?>
+                        <option value="<?= htmlspecialchars($j) ?>" <?= ($filters['jurusan'] ?? '') === $j ? 'selected' : '' ?>><?= htmlspecialchars($j) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua Status</option>
+                    <?php foreach (['active', 'pending', 'rejected'] as $s): ?>
+                        <option value="<?= $s ?>" <?= ($filters['status'] ?? '') === $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/students" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     <div class="student-admin-card">
@@ -24,12 +68,12 @@ ob_start();
                 <table class="student-admin-table">
                     <thead>
                         <tr>
-                            <th>Nama</th>
-                            <th>NPM</th>
-                            <th>Fakultas / Jurusan</th>
+                            <th><?= sort_link('nama', 'Nama', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('npm', 'NPM', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('fakultas', 'Fakultas / Jurusan', $sort, $dir, $queryParams) ?></th>
                             <th>Kontak</th>
-                            <th>Status</th>
-                            <th>Terdaftar</th>
+                            <th><?= sort_link('status', 'Status', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('created_at', 'Terdaftar', $sort, $dir, $queryParams) ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -74,10 +118,14 @@ ob_start();
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> mahasiswa ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="student-admin-empty">
                 <div class="student-admin-empty-icon">🎓</div>
-                <p>Belum ada mahasiswa yang terdaftar.</p>
+                <p>Tidak ada mahasiswa yang cocok, atau belum ada yang terdaftar.</p>
             </div>
         <?php endif; ?>
     </div>

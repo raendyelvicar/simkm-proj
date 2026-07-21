@@ -102,25 +102,6 @@ class AssessmentRepository
         }
     }
 
-    /** @return AssessmentSubmission[] */
-    public function submissionsForUser(int $userId, ?string $type = null): array
-    {
-        if ($type !== null) {
-            $stmt = $this->db->prepare(
-                'SELECT * FROM assessment_submissions WHERE user_id = ? AND type = ? ORDER BY submitted_at DESC'
-            );
-            $stmt->bind_param('is', $userId, $type);
-        } else {
-            $stmt = $this->db->prepare(
-                'SELECT * FROM assessment_submissions WHERE user_id = ? ORDER BY submitted_at DESC'
-            );
-            $stmt->bind_param('i', $userId);
-        }
-        $stmt->execute();
-
-        return $this->hydrateAll($stmt->get_result());
-    }
-
     public function latestForUser(int $userId, string $type): ?AssessmentSubmission
     {
         $stmt = $this->db->prepare(
@@ -224,12 +205,19 @@ class AssessmentRepository
         return $this->hydrateAll($stmt->get_result());
     }
 
+    private const STAFF_HISTORY_SORTABLE = [
+        'nama'               => 'nama',
+        'fakultas'           => 'fakultas',
+        'last_submitted_at'  => 'last_submitted_at',
+        'total_submissions'  => 'total_submissions',
+    ];
+
     /**
      * Mahasiswa grouped by user with their assessment summary — backs the staff
      * "Riwayat Assessment" list (one row per student instead of per submission).
      * @return array{items: array, total: int}
      */
-    public function studentAssessmentSummaries(array $filters, int $page, int $perPage): array
+    public function studentAssessmentSummaries(array $filters, int $page, int $perPage, string $sort = 'last_submitted_at', string $dir = 'desc'): array
     {
         [$where, $params, $types] = $this->buildStudentSummaryWhere($filters);
 
@@ -250,8 +238,10 @@ class AssessmentRepository
         $countStmt->execute();
         $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
 
+        $orderCol = self::STAFF_HISTORY_SORTABLE[$sort] ?? 'last_submitted_at';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
         $offset = ($page - 1) * $perPage;
-        $dataStmt = $this->db->prepare($base . ' ORDER BY last_submitted_at DESC LIMIT ? OFFSET ?');
+        $dataStmt = $this->db->prepare($base . " ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?");
         $dataParams = [...$params, $perPage, $offset];
         $dataStmt->bind_param($types . 'ii', ...$dataParams);
         $dataStmt->execute();
@@ -300,12 +290,20 @@ class AssessmentRepository
         return [$where, $params, $types];
     }
 
+    private const SUBMISSIONS_SORTABLE = [
+        'submitted_at' => 'submitted_at',
+        'type'         => 'type',
+        'category'     => 'category',
+        'total_score'  => 'total_score',
+    ];
+
     /**
-     * One student's submissions, filterable by type/category, paginated — backs the
-     * staff-only per-student detail page linked from studentAssessmentSummaries().
+     * One student's submissions, filterable by type/category, sortable, paginated —
+     * backs both the staff-only per-student detail page and the mahasiswa's own
+     * "Riwayat Assessment" page (userId scoped to $_SESSION['user_id'] in that case).
      * @return array{items: AssessmentSubmission[], total: int}
      */
-    public function submissionsForUserFiltered(int $userId, array $filters, int $page, int $perPage): array
+    public function submissionsForUserFiltered(int $userId, array $filters, int $page, int $perPage, string $sort = 'submitted_at', string $dir = 'desc'): array
     {
         $where = ' WHERE user_id = ?';
         $params = [$userId];
@@ -327,8 +325,10 @@ class AssessmentRepository
         $countStmt->execute();
         $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
 
+        $orderCol = self::SUBMISSIONS_SORTABLE[$sort] ?? 'submitted_at';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
         $offset = ($page - 1) * $perPage;
-        $dataStmt = $this->db->prepare("SELECT * FROM assessment_submissions{$where} ORDER BY submitted_at DESC LIMIT ? OFFSET ?");
+        $dataStmt = $this->db->prepare("SELECT * FROM assessment_submissions{$where} ORDER BY {$orderCol} {$orderDir} LIMIT ? OFFSET ?");
         $dataParams = [...$params, $perPage, $offset];
         $dataStmt->bind_param($types . 'ii', ...$dataParams);
         $dataStmt->execute();

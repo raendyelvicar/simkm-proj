@@ -9,6 +9,8 @@ $statusPill = [
     'Confirmed' => 'status-pill-progress',
     'Completed' => 'status-pill-completed',
 ];
+$queryParams = $_GET;
+unset($queryParams['page']);
 ob_start();
 ?>
 
@@ -18,7 +20,20 @@ ob_start();
             <h1>📥 Permintaan Booking</h1>
             <p>Konfirmasi booking untuk membuka akses chat, lalu tandai selesai setelah sesi berakhir.</p>
         </div>
-        <span class="booking-queue-count"><?= count($bookings) ?> Booking</span>
+        <span class="booking-queue-count"><?= (int) $total ?> Booking</span>
+    </div>
+
+    <div class="booking-queue-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted mb-1">Cari Mahasiswa</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari nama/NPM...">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Cari</button>
+                <a href="/booking-requests" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     <div class="booking-queue-card">
@@ -27,11 +42,11 @@ ob_start();
                 <table class="booking-queue-table">
                     <thead>
                         <tr>
-                            <th>Mahasiswa</th>
-                            <th>Tanggal</th>
+                            <th><?= sort_link('student_nama', 'Mahasiswa', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $queryParams) ?></th>
                             <th>Jam</th>
                             <th>Keluhan</th>
-                            <th>Status</th>
+                            <th><?= sort_link('status', 'Status', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -71,10 +86,8 @@ ob_start();
                                                     class="booking-queue-input-sm" title="Tambah hari">
                                                 <button type="submit" class="btn-booking-queue btn-booking-queue-ghost">Perpanjang</button>
                                             </form>
-                                            <form method="post" action="/booking-requests/<?= urlencode($booking['booking_id']) ?>/complete"
-                                                onsubmit="return confirm('Tandai booking ini selesai? Akses chat dan berbagi diary mahasiswa untuk booking ini akan ditutup.');" style="display:inline;">
-                                                <button type="submit" class="btn-booking-queue btn-booking-queue-primary">Tandai Selesai</button>
-                                            </form>
+                                            <button type="button" class="btn-booking-queue btn-booking-queue-primary"
+                                                data-bs-toggle="modal" data-bs-target="#completeModal<?= (int) $booking['booking_id'] ?>">Tandai Selesai</button>
                                             <form method="post" action="/booking-requests/<?= urlencode($booking['booking_id']) ?>/no-show"
                                                 onsubmit="return confirm('Tandai mahasiswa tidak hadir?');" style="display:inline;">
                                                 <button type="submit" class="btn-booking-queue btn-booking-queue-danger">Tidak Hadir</button>
@@ -89,13 +102,58 @@ ob_start();
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> booking ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="booking-queue-empty">
                 <div class="booking-queue-empty-icon">📥</div>
-                <p>Belum ada booking.</p>
+                <p>Tidak ada booking yang cocok, atau belum ada booking.</p>
             </div>
         <?php endif; ?>
     </div>
+
+    <?php foreach ($bookings as $booking): ?>
+        <?php if ($booking['status'] === 'Confirmed'): ?>
+            <div class="modal fade" id="completeModal<?= (int) $booking['booking_id'] ?>" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <form method="post" action="/booking-requests/<?= (int) $booking['booking_id'] ?>/complete" class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Tandai Selesai — <?= htmlspecialchars($booking['student_nama'] ?: '-') ?></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">Akses chat dan berbagi diary mahasiswa untuk booking ini akan ditutup. Catatan berikut akan tampil pada Laporan Konseling.</p>
+                            <div class="mb-3">
+                                <label class="form-label">Catatan Konselor</label>
+                                <textarea name="catatan_konselor" class="form-control" rows="3" placeholder="Ringkasan sesi konseling"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Rekomendasi</label>
+                                <textarea name="rekomendasi" class="form-control" rows="2" placeholder="Rekomendasi untuk mahasiswa"></textarea>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label">Tindak Lanjut</label>
+                                <textarea name="tindak_lanjut" class="form-control" rows="2" placeholder="Rencana tindak lanjut (opsional)"></textarea>
+                            </div>
+                            <div class="form-check mt-3">
+                                <input type="checkbox" class="form-check-input" id="reassess<?= (int) $booking['booking_id'] ?>" name="recommend_reassessment" value="1">
+                                <label class="form-check-label" for="reassess<?= (int) $booking['booking_id'] ?>">
+                                    Rekomendasikan Assessment Ulang
+                                </label>
+                                <div class="form-text">Mahasiswa hanya bisa mengisi self-assessment berikutnya setelah direkomendasikan oleh konselor. Centang untuk membuka satu kesempatan pengisian ulang.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Tandai Selesai</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
 </div>
 
 <?php

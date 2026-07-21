@@ -6,6 +6,8 @@ $statusBadge = [
     'Cancelled' => 'booking-badge-gray',
     'No Show' => 'booking-badge-red',
 ];
+$queryParams = $_GET;
+unset($queryParams['page']);
 ob_start();
 ?>
 
@@ -18,16 +20,34 @@ ob_start();
         <a href="/counselor" class="btn-booking btn-booking-primary">+ Ajukan Booking</a>
     </div>
 
+    <div class="booking-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua</option>
+                    <?php foreach (['Pending', 'Confirmed', 'Completed', 'Cancelled', 'No Show'] as $s): ?>
+                        <option value="<?= $s ?>" <?= ($filters['status'] ?? '') === $s ? 'selected' : '' ?>><?= $s ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="/bookings" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
     <div class="booking-card">
         <?php if (!empty($bookings)): ?>
             <div class="booking-table-scroll">
                 <table class="booking-table">
                     <thead>
                         <tr>
-                            <th>Konselor</th>
-                            <th>Tanggal</th>
+                            <th><?= sort_link('konselor_nama', 'Konselor', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $queryParams) ?></th>
                             <th>Jam</th>
-                            <th>Status</th>
+                            <th><?= sort_link('status', 'Status', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -68,10 +88,14 @@ ob_start();
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> booking ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="booking-empty">
                 <div class="booking-empty-icon">📅</div>
-                <p>Belum ada booking. Pilih konselor untuk mengajukan booking konsultasi.</p>
+                <p>Tidak ada booking yang cocok, atau belum ada booking. Pilih konselor untuk mengajukan booking konsultasi.</p>
                 <a href="/counselor" class="btn-booking btn-booking-primary">Lihat Daftar Konselor</a>
             </div>
         <?php endif; ?>

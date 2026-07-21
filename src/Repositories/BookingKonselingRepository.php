@@ -54,23 +54,57 @@ class BookingKonselingRepository
         return $row ? new BookingKonseling($row) : null;
     }
 
-    // A student's own bookings, with the counselor's display name, users.id (for the chat
-    // link), and the current monitoring window (if any) joined in.
-    public function allForStudent(int $userId): array
+    private const STUDENT_SORTABLE = [
+        'tanggal'       => 'b.tanggal',
+        'status'        => 'b.status',
+        'konselor_nama' => 'u.nama',
+    ];
+
+    /**
+     * A student's own bookings, filter/sort/paginated — backs /bookings. Includes the
+     * counselor's display name, users.id (for the chat link), and the current
+     * monitoring window (if any) joined in.
+     * @param array $filters ['status'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedForStudent(int $userId, array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $stmt = $this->db->prepare(
-            'SELECT b.*, u.nama AS konselor_nama, u.id AS konselor_user_id, mp.end_date AS monitoring_end
+        $where = ' WHERE b.user_id = ?';
+        $params = [$userId];
+        $types = 'i';
+
+        if (!empty($filters['status'])) {
+            $where .= ' AND b.status = ?';
+            $params[] = $filters['status'];
+            $types .= 's';
+        }
+
+        $countStmt = $this->db->prepare(
+            "SELECT COUNT(*) AS c FROM booking_konseling b JOIN konselor k ON k.konselor_id = b.konselor_id{$where}"
+        );
+        $countStmt->bind_param($types, ...$params);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::STUDENT_SORTABLE[$sort] ?? 'b.created_at';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
+            "SELECT b.*, u.nama AS konselor_nama, u.id AS konselor_user_id, mp.end_date AS monitoring_end
              FROM booking_konseling b
              JOIN konselor k ON k.konselor_id = b.konselor_id
              JOIN users u ON u.id = k.user_id
              LEFT JOIN monitoring_periods mp ON mp.booking_id = b.booking_id
-             WHERE b.user_id = ?
-             ORDER BY b.created_at DESC'
+             {$where}
+             ORDER BY {$orderCol} {$orderDir}
+             LIMIT ? OFFSET ?"
         );
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
 
-        return $this->hydrateAll($stmt->get_result());
+        return ['items' => $this->hydrateAll($dataStmt->get_result()), 'total' => $total];
     }
 
     // Bookings for a konselor (konselor.konselor_id), with the student's display name/npm joined in.
@@ -89,23 +123,58 @@ class BookingKonselingRepository
         return $this->hydrateAll($stmt->get_result());
     }
 
+    private const QUEUE_SORTABLE = [
+        'tanggal'      => 'b.tanggal',
+        'status'       => 'b.status',
+        'student_nama' => 'u.nama',
+    ];
+
     // The konselor's booking queue: Pending, Confirmed ("On Progress"), and Completed
-    // bookings in one list, grouped by status then oldest-first within each group.
-    // Cancelled/No Show bookings are left out — they're closed out, nothing left to manage.
-    public function forKonselorQueue(int $konselorId): array
+    // bookings, searchable/sortable/paginated. Cancelled/No Show bookings are left out
+    // — they're closed out, nothing left to manage. Default sort ('queue') groups by
+    // status priority then oldest-first within each group, same as the original
+    // unpaginated ordering this replaces.
+    // @return array{items: array, total: int}
+    public function paginatedQueue(int $konselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $stmt = $this->db->prepare(
+        $where = " WHERE b.konselor_id = ? AND b.status IN ('Pending', 'Confirmed', 'Completed')";
+        $params = [$konselorId];
+        $types = 'i';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (u.nama LIKE ? OR u.npm LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+
+        $countStmt = $this->db->prepare(
+            "SELECT COUNT(*) AS c FROM booking_konseling b JOIN users u ON u.id = b.user_id{$where}"
+        );
+        $countStmt->bind_param($types, ...$params);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
+        $orderBy = isset(self::QUEUE_SORTABLE[$sort])
+            ? self::QUEUE_SORTABLE[$sort] . " {$orderDir}"
+            : "FIELD(b.status, 'Pending', 'Confirmed', 'Completed'), b.created_at ASC";
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
             "SELECT b.*, u.nama AS student_nama, u.npm AS student_npm, mp.end_date AS monitoring_end
              FROM booking_konseling b
              JOIN users u ON u.id = b.user_id
              LEFT JOIN monitoring_periods mp ON mp.booking_id = b.booking_id
-             WHERE b.konselor_id = ? AND b.status IN ('Pending', 'Confirmed', 'Completed')
-             ORDER BY FIELD(b.status, 'Pending', 'Confirmed', 'Completed'), b.created_at ASC"
+             {$where}
+             ORDER BY {$orderBy}
+             LIMIT ? OFFSET ?"
         );
-        $stmt->bind_param('i', $konselorId);
-        $stmt->execute();
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
 
-        return $this->hydrateAll($stmt->get_result());
+        return ['items' => $this->hydrateAll($dataStmt->get_result()), 'total' => $total];
     }
 
     public function updateStatus(int $bookingId, string $status): void

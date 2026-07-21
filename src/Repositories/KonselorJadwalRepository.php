@@ -15,26 +15,63 @@ class KonselorJadwalRepository
         $this->db = Database::connection();
     }
 
-    // All schedule slots for a konselor (konselor.konselor_id, not users.id).
-    public function allByKonselorId(int $konselorId, bool $onlyActive = false): array
+    private const SORTABLE = [
+        'tanggal'    => 'tanggal',
+        'jam_mulai'  => 'jam_mulai',
+        'status_aktif' => 'status_aktif',
+    ];
+
+    /**
+     * Search/filter/sort/paginate a konselor's schedule slots — backs both /schedule
+     * (konselor's own view) and /admin/counselors/{id}/schedule (admin view).
+     * @param array $filters ['date_from'=>?, 'date_to'=>?, 'status_aktif'=>'1'|'0'|null]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedByKonselorId(int $konselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $sql = 'SELECT * FROM konselor_jadwal WHERE konselor_id = ?';
-        if ($onlyActive) {
-            $sql .= ' AND status_aktif = 1';
+        $where = ' WHERE konselor_id = ?';
+        $params = [$konselorId];
+        $types = 'i';
+
+        if (!empty($filters['date_from'])) {
+            $where .= ' AND tanggal >= ?';
+            $params[] = $filters['date_from'];
+            $types .= 's';
         }
-        $sql .= ' ORDER BY tanggal, jam_mulai';
+        if (!empty($filters['date_to'])) {
+            $where .= ' AND tanggal <= ?';
+            $params[] = $filters['date_to'];
+            $types .= 's';
+        }
+        if (($filters['status_aktif'] ?? '') !== '') {
+            $where .= ' AND status_aktif = ?';
+            $params[] = (int) $filters['status_aktif'];
+            $types .= 'i';
+        }
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $konselorId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM konselor_jadwal{$where}");
+        $countStmt->bind_param($types, ...$params);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
 
-        $slots = [];
+        $orderCol = self::SORTABLE[$sort] ?? 'tanggal';
+        $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
+            "SELECT * FROM konselor_jadwal{$where} ORDER BY {$orderCol} {$orderDir}, jam_mulai ASC LIMIT ? OFFSET ?"
+        );
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
         while ($row = $result->fetch_assoc()) {
-            $slots[] = new KonselorJadwal($row);
+            $items[] = (new KonselorJadwal($row))->toArray();
         }
 
-        return $slots;
+        return ['items' => $items, 'total' => $total];
     }
 
     // The booking picker's data source: active, upcoming (or today), and still with

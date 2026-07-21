@@ -32,6 +32,63 @@ class DiaryRepository
         return $entries;
     }
 
+    private const OWN_SORTABLE = [
+        'entry_date' => 'entry_date',
+    ];
+
+    /**
+     * Search/filter/sort/paginate a mahasiswa's own diary entries — backs /diary.
+     * @param array $filters ['search'=>?, 'date_from'=>?, 'date_to'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedByUserId(int $userId, array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = ' WHERE user_id = ?';
+        $params = [$userId];
+        $types = 'i';
+
+        if (!empty($filters['search'])) {
+            $where .= ' AND (situasi LIKE ? OR pikiran_awal LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
+        }
+        if (!empty($filters['date_from'])) {
+            $where .= ' AND entry_date >= ?';
+            $params[] = $filters['date_from'];
+            $types .= 's';
+        }
+        if (!empty($filters['date_to'])) {
+            $where .= ' AND entry_date <= ?';
+            $params[] = $filters['date_to'];
+            $types .= 's';
+        }
+
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM diary_entries{$where}");
+        $countStmt->bind_param($types, ...$params);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::OWN_SORTABLE[$sort] ?? 'entry_date';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
+            "SELECT * FROM diary_entries{$where} ORDER BY {$orderCol} {$orderDir}, id DESC LIMIT ? OFFSET ?"
+        );
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = new DiaryEntry($row);
+        }
+
+        return ['items' => $items, 'total' => $total];
+    }
+
     public function find(int $id): ?DiaryEntry
     {
         $stmt = $this->db->prepare('SELECT * FROM diary_entries WHERE id = ? LIMIT 1');
@@ -42,28 +99,61 @@ class DiaryRepository
         return $row ? new DiaryEntry($row) : null;
     }
 
+    private const SHARED_SORTABLE = [
+        'entry_date'   => 'd.entry_date',
+        'student_nama' => 'u.nama',
+    ];
+
     // Konselor-side inbox: entries a student explicitly published to this konselor.
     // is_private=0 is redundant with shared_konselor_id being set (the app only ever
     // writes them together), but kept as a defensive filter.
-    public function findSharedWithKonselor(int $konselorId): array
+    /**
+     * Search/sort/paginate a konselor's shared-diary inbox — backs /shared-diaries.
+     * @return array{items: array, total: int}
+     */
+    public function paginatedSharedWithKonselor(int $konselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $stmt = $this->db->prepare(
-            'SELECT d.*, u.nama AS student_nama, u.npm AS student_npm
-             FROM diary_entries d
-             INNER JOIN users u ON u.id = d.user_id
-             WHERE d.shared_konselor_id = ? AND d.is_private = 0
-             ORDER BY d.entry_date DESC, d.id DESC'
-        );
-        $stmt->bind_param('i', $konselorId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $where = ' WHERE d.shared_konselor_id = ? AND d.is_private = 0';
+        $params = [$konselorId];
+        $types = 'i';
 
-        $entries = [];
-        while ($row = $result->fetch_assoc()) {
-            $entries[] = $this->hydrateShared($row);
+        if (!empty($filters['search'])) {
+            $where .= ' AND (u.nama LIKE ? OR u.npm LIKE ?)';
+            $like = '%' . $filters['search'] . '%';
+            $params = array_merge($params, [$like, $like]);
+            $types .= 'ss';
         }
 
-        return $entries;
+        $countStmt = $this->db->prepare(
+            "SELECT COUNT(*) AS c FROM diary_entries d INNER JOIN users u ON u.id = d.user_id{$where}"
+        );
+        $countStmt->bind_param($types, ...$params);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::SHARED_SORTABLE[$sort] ?? 'd.entry_date';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
+            "SELECT d.*, u.nama AS student_nama, u.npm AS student_npm
+             FROM diary_entries d
+             INNER JOIN users u ON u.id = d.user_id
+             {$where}
+             ORDER BY {$orderCol} {$orderDir}, d.id DESC
+             LIMIT ? OFFSET ?"
+        );
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = $this->hydrateShared($row);
+        }
+
+        return ['items' => $items, 'total' => $total];
     }
 
     // A single shared entry, scoped to the konselor it was shared with — a konselor

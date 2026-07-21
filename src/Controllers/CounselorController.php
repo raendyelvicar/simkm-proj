@@ -9,6 +9,8 @@ use App\Repositories\MonitoringPeriodRepository;
 
 class CounselorController
 {
+    private const PER_PAGE = 9;
+
     private CounselorRepository $counselors;
     private MonitoringPeriodRepository $monitoring;
 
@@ -25,11 +27,35 @@ class CounselorController
             ? $this->monitoring->activeKonselorIdsForStudent((int) $_SESSION['user_id'])
             : [];
 
+        $filters = [
+            'search'            => trim((string) $request->get('q', '')),
+            'profesi'           => $request->get('profesi') ?: null,
+            'metode_konsultasi' => $request->get('metode_konsultasi') ?: null,
+        ];
+        [$sort, $dir] = $this->parseSort((string) $request->get('sort', 'nama:asc'));
+        $page = max(1, (int) $request->get('page', 1));
+
+        $result = $this->counselors->paginatedActive($filters, $sort, $dir, $page, self::PER_PAGE);
+        $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
+
         Response::view('counselor/index', [
-            'title' => 'Konselor',
-            'counselors' => $this->counselors->all(),
+            'title'                       => 'Konselor',
+            'counselors'                  => $result['items'],
+            'total'                       => $result['total'],
+            'page'                        => $page,
+            'totalPages'                  => $totalPages,
+            'sort'                        => $sort,
+            'dir'                         => $dir,
+            'filters'                     => $filters,
             'activeMonitoringKonselorIds' => $activeMonitoringKonselorIds,
         ]);
+    }
+
+    private function parseSort(string $combined): array
+    {
+        [$sort, $dir] = array_pad(explode(':', $combined, 2), 2, 'asc');
+
+        return [$sort, $dir === 'desc' ? 'desc' : 'asc'];
     }
 
     // GET /counselor/{id} — public. $id is the counselor's users.id.

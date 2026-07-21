@@ -1,4 +1,8 @@
-<?php ob_start(); ?>
+<?php
+$queryParams = $_GET;
+unset($queryParams['page']);
+ob_start();
+?>
 
 <div class="diary-page">
     <div class="page-head">
@@ -6,9 +10,28 @@
             <h1>Diary Saya</h1>
             <p>Catatan harian dan perjalanan mood kamu.</p>
         </div>
-        <?php if (!empty($entries)): ?>
-            <a href="/diary/create" class="btn-diary btn-diary-primary">+ Tulis Diary</a>
-        <?php endif; ?>
+        <a href="/diary/create" class="btn-diary btn-diary-primary">+ Tulis Diary</a>
+    </div>
+
+    <div class="diary-card" style="padding:16px 20px;margin-bottom:16px;">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Cari Isi Diary</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari situasi/pikiran...">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Dari Tanggal</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted mb-1">Sampai Tanggal</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['date_to'] ?? '') ?>">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Cari</button>
+                <a href="/diary" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     <div class="diary-card">
@@ -16,7 +39,7 @@
             <table class="diary-table">
                 <thead>
                     <tr>
-                        <th>Tanggal</th>
+                        <th><?= sort_link('entry_date', 'Tanggal', $sort, $dir, $queryParams) ?></th>
                         <th>Intensitas</th>
                         <th>Emosi</th>
                         <th>Ringkasan</th>
@@ -58,10 +81,14 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <div class="d-flex justify-content-between align-items-center p-3">
+                <span class="text-muted small"><?= (int) $total ?> diary ditemukan</span>
+                <?= pagination_links($page, $totalPages, $queryParams) ?>
+            </div>
         <?php else: ?>
             <div class="diary-empty">
                 <div class="diary-empty-icon">📔</div>
-                <p>Belum ada diary. Yuk mulai menulis hari ini.</p>
+                <p>Tidak ada diary yang cocok, atau belum ada diary. Yuk mulai menulis hari ini.</p>
                 <a href="/diary/create" class="btn-diary btn-diary-primary">+ Tulis Diary</a>
             </div>
         <?php endif; ?>

@@ -13,6 +13,8 @@ use App\Repositories\UserRepository;
 // student-facing side of the same chat_messages table.
 class ConsultationController
 {
+    private const PER_PAGE = 10;
+
     private ChatRepository $chats;
     private UserRepository $users;
 
@@ -30,12 +32,55 @@ class ConsultationController
     }
 
     // GET /consultations
+    //
+    // threadsForCounselor() is an N+1-per-student query with no natural single-query
+    // WHERE/LIMIT to push into (it starts from a DISTINCT over chat_messages, not a
+    // students table) — bounded by "students who've ever messaged this konselor", not
+    // unbounded message history, so search/sort/pagination are applied in PHP over the
+    // already-materialized result rather than restructuring the query layer.
     public function index(Request $request): void
     {
+        $search = trim((string) $request->get('q', ''));
+        [$sort, $dir] = $this->parseSort((string) $request->get('sort', 'last_message_at:desc'));
+        $page = max(1, (int) $request->get('page', 1));
+
+        $threads = $this->chats->threadsForCounselor((int) $_SESSION['user_id']);
+
+        if ($search !== '') {
+            $threads = array_values(array_filter(
+                $threads,
+                fn ($t) => stripos($t['nama'] ?? '', $search) !== false
+            ));
+        }
+
+        usort($threads, function ($a, $b) use ($sort, $dir) {
+            $cmp = strcmp((string) ($a[$sort] ?? ''), (string) ($b[$sort] ?? ''));
+
+            return $dir === 'asc' ? $cmp : -$cmp;
+        });
+
+        $total = count($threads);
+        $totalPages = (int) max(1, ceil($total / self::PER_PAGE));
+        $page = min($page, $totalPages);
+        $pageThreads = array_slice($threads, ($page - 1) * self::PER_PAGE, self::PER_PAGE);
+
         Response::view('counselor/inbox', [
-            'title' => 'Konsultasi Masuk',
-            'threads' => $this->chats->threadsForCounselor((int) $_SESSION['user_id']),
+            'title'      => 'Konsultasi Masuk',
+            'threads'    => $pageThreads,
+            'total'      => $total,
+            'page'       => $page,
+            'totalPages' => $totalPages,
+            'sort'       => $sort,
+            'dir'        => $dir,
+            'filters'    => ['search' => $search],
         ]);
+    }
+
+    private function parseSort(string $combined): array
+    {
+        [$sort, $dir] = array_pad(explode(':', $combined, 2), 2, 'desc');
+
+        return [in_array($sort, ['last_message_at', 'nama'], true) ? $sort : 'last_message_at', $dir === 'asc' ? 'asc' : 'desc'];
     }
 
     // GET /consultations/{studentId}

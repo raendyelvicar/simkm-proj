@@ -15,21 +15,52 @@ class ActivityPlanRepository
         $this->db = Database::connection();
     }
 
-    public function findByUserId(int $userId): array
-    {
-        $stmt = $this->db->prepare(
-            'SELECT * FROM self_help_activities WHERE user_id = ? ORDER BY planned_date DESC, id DESC'
-        );
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    private const SORTABLE = [
+        'planned_date' => 'planned_date',
+        'title'        => 'title',
+        'status'       => 'status',
+    ];
 
-        $activities = [];
-        while ($row = $result->fetch_assoc()) {
-            $activities[] = new ActivityPlan($row);
+    /**
+     * Filter/sort/paginate a student's own activity plans — backs /self-help/activities.
+     * @param array $filters ['status'=>?]
+     * @return array{items: array, total: int}
+     */
+    public function paginatedByUserId(int $userId, array $filters, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $where = ' WHERE user_id = ?';
+        $params = [$userId];
+        $types = 'i';
+
+        if (!empty($filters['status'])) {
+            $where .= ' AND status = ?';
+            $params[] = $filters['status'];
+            $types .= 's';
         }
 
-        return $activities;
+        $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM self_help_activities{$where}");
+        $countStmt->bind_param($types, ...$params);
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
+
+        $orderCol = self::SORTABLE[$sort] ?? 'planned_date';
+        $orderDir = $dir === 'asc' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $dataStmt = $this->db->prepare(
+            "SELECT * FROM self_help_activities{$where} ORDER BY {$orderCol} {$orderDir}, id DESC LIMIT ? OFFSET ?"
+        );
+        $dataParams = [...$params, $perPage, $offset];
+        $dataStmt->bind_param($types . 'ii', ...$dataParams);
+        $dataStmt->execute();
+
+        $items = [];
+        $result = $dataStmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $items[] = new ActivityPlan($row);
+        }
+
+        return ['items' => $items, 'total' => $total];
     }
 
     public function find(int $id): ?ActivityPlan
