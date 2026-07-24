@@ -1,0 +1,10 @@
+digraph ERD {
+  rankdir=TB;
+  concentrate=true;
+  graph [fontname="Helvetica", nodesep=0.5, ranksep=1.3, splines=polyline, bgcolor="white"];
+  node [shape=plaintext, fontname="Helvetica"];
+  edge [fontname="Helvetica", fontsize=9, fontcolor="#475569", color="#94a3b8", arrowhead=crow, arrowtail=none, dir=back];
+
+  "schema_migrations" [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="5"><tr><td bgcolor="#1e293b" align="center"><font color="white" point-size="13"><b>schema_migrations</b></font></td></tr><tr><td align="left" port="migration"><b>🔑 migration</b> <font color="#64748b" point-size="10">varchar(255)</font></td></tr><tr><td align="left" port="applied_at">applied_at <font color="#64748b" point-size="10">datetime NOT NULL</font></td></tr></table>>];
+
+}

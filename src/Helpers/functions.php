@@ -97,7 +97,7 @@ if (!function_exists('pagination_links')) {
             return '';
         }
 
-        $url = fn (int $p) => '?' . http_build_query(array_merge($queryParams, ['page' => $p]));
+        $url = fn(int $p) => '?' . http_build_query(array_merge($queryParams, ['page' => $p]));
 
         $window = 2;
         $items = [];
@@ -109,7 +109,7 @@ if (!function_exists('pagination_links')) {
             }
         }
 
-        $html = '<nav><ul class="pagination pagination-sm mb-0">';
+        $html = '<nav><ul class="pagination pagination-sm mt-3 mb-0">';
         $html .= '<li class="page-item' . ($page <= 1 ? ' disabled' : '') . '">'
             . '<a class="page-link" href="' . htmlspecialchars($url(max(1, $page - 1))) . '">&laquo;</a></li>';
 

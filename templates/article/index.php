@@ -17,33 +17,38 @@ ob_start(); ?>
         <?php endif; ?>
     </div>
 
-    <div class="article-card" style="padding:16px 20px;margin-bottom:20px;">
-        <form method="get" class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small text-muted mb-1">Cari Artikel</label>
-                <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari judul/isi...">
-            </div>
-            <div class="col-auto">
-                <label class="form-label small text-muted mb-1">Kategori</label>
-                <select name="category" class="form-select form-select-sm">
-                    <option value="">Semua Kategori</option>
-                    <?php foreach ($categoryOptions as $c): ?>
-                        <option value="<?= htmlspecialchars($c) ?>" <?= ($filters['category'] ?? '') === $c ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-auto">
-                <label class="form-label small text-muted mb-1">Urutkan</label>
-                <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <?= sort_options(['published_at' => 'Tanggal Publikasi', 'title' => 'Judul'], $sort, $dir) ?>
-                </select>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
-                <a href="/article" class="btn btn-sm btn-outline-secondary">Reset</a>
-            </div>
-        </form>
-    </div>
+
+    <?php if (!empty($role)): ?>
+        <div class="article-card" style="padding:16px 20px;margin-bottom:20px;">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted mb-1">Cari Artikel</label>
+                    <input type="text" name="q" class="form-control form-control-sm" value="<?= htmlspecialchars($filters['search'] ?? '') ?>" placeholder="Cari judul/isi...">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small text-muted mb-1">Kategori</label>
+                    <select name="category" class="form-select form-select-sm">
+                        <option value="">Semua Kategori</option>
+                        <?php foreach ($categoryOptions as $c): ?>
+                            <option value="<?= htmlspecialchars($c) ?>" <?= ($filters['category'] ?? '') === $c ? 'selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small text-muted mb-1">Urutkan</label>
+                    <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <?= sort_options(['published_at' => 'Tanggal Publikasi', 'title' => 'Judul'], $sort, $dir) ?>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                    <a href="/article" class="btn btn-sm btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    <?php endif; ?>
+
+
 
     <?php if (!empty($articles)): ?>
         <div class="article-grid">
@@ -86,7 +91,6 @@ ob_start(); ?>
             <?php endforeach; ?>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-3">
-            <span class="text-muted small"><?= (int) $total ?> artikel ditemukan</span>
             <?= pagination_links($page, $totalPages, $queryParams) ?>
         </div>
     <?php else: ?>

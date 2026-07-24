@@ -17,6 +17,7 @@ $roleLabels = [
     'counselor' => 'Konselor',
     'student'   => 'Mahasiswa',
 ];
+$isStudent = $user->role === 'student';
 
 $hasPhoto = !empty($user->profile)
     && file_exists(__DIR__ . '/../../public/uploads/profile/' . $user->profile);
@@ -79,10 +80,12 @@ ob_start();
                 <label class="form-label">Nama</label>
                 <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($user->name) ?>" required>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">NPM</label>
-                <input type="text" class="form-control" value="<?= htmlspecialchars($user->student_number) ?>" disabled>
-            </div>
+            <?php if ($isStudent): ?>
+                <div class="col-md-6">
+                    <label class="form-label">NPM</label>
+                    <input type="text" class="form-control" value="<?= htmlspecialchars($user->student_number) ?>" disabled>
+                </div>
+            <?php endif; ?>
             <div class="col-md-6">
                 <label class="form-label">Email</label>
                 <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($user->email) ?>" required>
@@ -99,14 +102,16 @@ ob_start();
                     <option value="Female" <?= $user->gender === 'Female' ? 'selected' : '' ?>>Perempuan</option>
                 </select>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Fakultas</label>
-                <input type="text" name="faculty" class="form-control" value="<?= htmlspecialchars($user->faculty) ?>">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Jurusan</label>
-                <input type="text" name="major" class="form-control" value="<?= htmlspecialchars($user->major) ?>">
-            </div>
+            <?php if ($isStudent): ?>
+                <div class="col-md-6">
+                    <label class="form-label">Fakultas</label>
+                    <input type="text" name="faculty" class="form-control" value="<?= htmlspecialchars($user->faculty) ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Jurusan</label>
+                    <input type="text" name="major" class="form-control" value="<?= htmlspecialchars($user->major) ?>">
+                </div>
+            <?php endif; ?>
             <?php if ($user->createdAt !== ''): ?>
                 <div class="col-md-6">
                     <label class="form-label">Bergabung Sejak</label>

@@ -1,0 +1,10 @@
+digraph ERD {
+  rankdir=TB;
+  concentrate=true;
+  graph [fontname="Helvetica", nodesep=0.5, ranksep=1.3, splines=polyline, bgcolor="white"];
+  node [shape=plaintext, fontname="Helvetica"];
+  edge [fontname="Helvetica", fontsize=9, fontcolor="#475569", color="#94a3b8", arrowhead=crow, arrowtail=none, dir=back];
+
+  "app_settings" [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="5"><tr><td bgcolor="#1e293b" align="center"><font color="white" point-size="13"><b>app_settings</b></font></td></tr><tr><td align="left" port="setting_key"><b>🔑 setting_key</b> <font color="#64748b" point-size="10">varchar(100)</font></td></tr><tr><td align="left" port="setting_value">setting_value <font color="#64748b" point-size="10">varchar(255) NOT NULL</font></td></tr><tr><td align="left" port="updated_at">updated_at <font color="#64748b" point-size="10">datetime NOT NULL</font></td></tr></table>>];
+
+}

@@ -64,13 +64,13 @@ header {
     opacity: 0.85;
 }
 
-nav {
+header nav {
     display: flex;
     align-items: center;
     gap: 26px;
 }
 
-nav a {
+header nav a {
     color: #fff;
     text-decoration: none;
     font-weight: 500;
@@ -78,7 +78,7 @@ nav a {
     opacity: 0.92;
 }
 
-nav a:hover {
+header nav a:hover {
     opacity: 1;
     text-decoration: underline;
 }
@@ -586,7 +586,7 @@ footer {
         text-align: center;
     }
 
-    nav {
+    header nav {
         flex-wrap: wrap;
         justify-content: center;
         gap: 12px 18px;
@@ -623,4 +623,45 @@ footer {
     footer {
         padding: 40px 20px 20px;
     }
+}
+
+/* Pager used by pagination_links() (see src/Helpers/functions.php) on public,
+   logged-out pages (Artikel, Konselor) — these pages don't load Bootstrap CSS,
+   so its `.pagination`/`.page-link` classes need their own styling here. */
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+}
+
+.pagination .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 14px;
+    text-decoration: none;
+    background: var(--surface);
+}
+
+.pagination .page-link:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.pagination .page-item.disabled .page-link {
+    opacity: 0.45;
+    pointer-events: none;
 }
