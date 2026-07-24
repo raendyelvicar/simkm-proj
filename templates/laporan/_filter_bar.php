@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Shared filter bar for every Laporan report: date range + (optionally) student name
  * search + report-specific extra fields + Cari/Reset/Export PDF/Print buttons.
@@ -6,7 +7,7 @@
  * Expects, from the including template's scope:
  * @var array $filters        ['date_from' => 'Y-m-d', 'date_to' => 'Y-m-d', 'search' => string]
  * @var string $pdfUrl        URL for the "Export PDF" button (query string appended automatically)
- * @var bool $showSearch      whether to show the "Nama Mahasiswa" field (default true)
+ * @var bool $showSearch      whether to show the "Name Student" field (default true)
  * @var array $extraFields    optional list of ['name','label','type'=>'text'|'select','value','options'=>[val=>label]]
  */
 $showSearch = $showSearch ?? true;
@@ -50,8 +51,8 @@ $pdfHref = $pdfUrl . '?' . http_build_query($currentQuery);
         <div class="lap-filter-actions">
             <button type="submit" class="lap-btn lap-btn-primary">🔍 Cari</button>
             <a href="<?= htmlspecialchars(strtok($_SERVER['REQUEST_URI'], '?')) ?>" class="lap-btn lap-btn-ghost">↺ Reset</a>
-            <a href="<?= htmlspecialchars($pdfHref) ?>" class="lap-btn lap-btn-ghost" target="_blank">📄 Export PDF</a>
-            <button type="button" class="lap-btn lap-btn-ghost" onclick="window.print()">🖨️ Print</button>
+            <a href="<?= htmlspecialchars($pdfHref) ?>" class="lap-btn lap-btn-ghost" target="_blank">📄 Unduh PDF</a>
+            <button type="button" class="lap-btn lap-btn-ghost" onclick="window.print()">🖨️ Cetak</button>
         </div>
     </form>
 </div>

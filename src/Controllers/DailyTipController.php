@@ -7,7 +7,7 @@ use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\DailyTipRepository;
 
-// Konselor-only CRUD over the shared pool of daily tips shown to mahasiswa
+// Counselor-only CRUD over the shared pool of daily tips shown to student
 // as a popup right after login.
 class DailyTipController
 {
@@ -19,9 +19,9 @@ class DailyTipController
     {
         AuthMiddleware::handle();
 
-        if (($_SESSION['role'] ?? '') !== 'konselor') {
+        if (($_SESSION['role'] ?? '') !== 'counselor') {
             http_response_code(403);
-            exit('Forbidden: konselor only.');
+            exit('Forbidden: counselor only.');
         }
 
         $this->tips = new DailyTipRepository();

@@ -4,14 +4,14 @@ $username = $username ?? ($_SESSION['username'] ?? '');
 
 $roleLabels = [
     'admin'     => 'Admin',
-    'konselor'  => 'Konselor',
-    'mahasiswa' => 'Mahasiswa',
+    'counselor'  => 'Konselor',
+    'student' => 'Mahasiswa',
 ];
 $roleLabel = $roleLabels[$role] ?? ucfirst($role);
-$isStaff = in_array($role, ['admin', 'konselor'], true);
+$isStaff = in_array($role, ['admin', 'counselor'], true);
 $isAdmin = $role === 'admin';
-$isCounselor = $role === 'konselor';
-$isStudent = $role === 'mahasiswa';
+$isCounselor = $role === 'counselor';
+$isStudent = $role === 'student';
 
 ob_start();
 ?>

@@ -20,26 +20,27 @@ ob_start();
             </div>
             <div class="col-auto">
                 <label class="form-label small text-muted mb-1">Profesi</label>
-                <select name="profesi" class="form-select form-select-sm">
+                <?php $professionLabels = ['Psychologist' => 'Psikolog', 'Counselor' => 'Konselor', 'Psychiatrist' => 'Psikiater']; ?>
+                <select name="profession" class="form-select form-select-sm">
                     <option value="">Semua</option>
-                    <?php foreach (['Psikolog', 'Konselor', 'Psikiater'] as $p): ?>
-                        <option value="<?= $p ?>" <?= ($filters['profesi'] ?? '') === $p ? 'selected' : '' ?>><?= $p ?></option>
+                    <?php foreach (['Psychologist', 'Counselor', 'Psychiatrist'] as $p): ?>
+                        <option value="<?= $p ?>" <?= ($filters['profession'] ?? '') === $p ? 'selected' : '' ?>><?= $professionLabels[$p] ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-auto">
                 <label class="form-label small text-muted mb-1">Metode</label>
-                <select name="metode_konsultasi" class="form-select form-select-sm">
+                <select name="consultation_method" class="form-select form-select-sm">
                     <option value="">Semua</option>
                     <?php foreach (['Online', 'Offline', 'Hybrid'] as $m): ?>
-                        <option value="<?= $m ?>" <?= ($filters['metode_konsultasi'] ?? '') === $m ? 'selected' : '' ?>><?= $m ?></option>
+                        <option value="<?= $m ?>" <?= ($filters['consultation_method'] ?? '') === $m ? 'selected' : '' ?>><?= $m ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-auto">
                 <label class="form-label small text-muted mb-1">Urutkan</label>
                 <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <?= sort_options(['nama' => 'Nama', 'pengalaman_tahun' => 'Pengalaman', 'biaya_konsultasi' => 'Biaya'], $sort, $dir) ?>
+                    <?= sort_options(['name' => 'Nama', 'experience_years' => 'Pengalaman', 'consultation_fee' => 'Biaya'], $sort, $dir) ?>
                 </select>
             </div>
             <div class="col-auto">
@@ -54,41 +55,41 @@ ob_start();
             <?php foreach ($counselors as $counselor): ?>
                 <div class="counselor-card">
                     <div class="counselor-avatar">
-                        <?php $photo = $counselor['foto_profil'] ?: $counselor['profile_image']; ?>
-                        <?php if (!empty($photo)): ?>
+                        <?php $photo = profile_photo_url($counselor['profile_photo'] ?: $counselor['profile_image']); ?>
+                        <?php if ($photo): ?>
                             <img src="<?= htmlspecialchars($photo) ?>"
-                                alt="<?= htmlspecialchars($counselor['nama']) ?>"
+                                alt="<?= htmlspecialchars($counselor['name']) ?>"
                                 onerror="this.remove()">
                         <?php endif; ?>
-                        <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($counselor['nama'] !== '' ? $counselor['nama'] : '?', 0, 1))) ?></span>
+                        <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($counselor['name'] !== '' ? $counselor['name'] : '?', 0, 1))) ?></span>
                     </div>
 
                     <div class="counselor-card-body">
-                        <h2><?= htmlspecialchars($counselor['nama'] !== '' ? $counselor['nama'] : 'Konselor') ?></h2>
+                        <h2><?= htmlspecialchars($counselor['name'] !== '' ? $counselor['name'] : 'Konselor') ?></h2>
 
-                        <?php if (!empty($counselor['profesi'])): ?>
-                            <span class="category-pill"><?= htmlspecialchars($counselor['profesi']) ?></span>
+                        <?php if (!empty($counselor['profession'])): ?>
+                            <span class="category-pill"><?= htmlspecialchars($professionLabels[$counselor['profession']] ?? $counselor['profession']) ?></span>
                         <?php endif; ?>
-                        <?php if (!empty($counselor['spesialisasi'])): ?>
-                            <span class="category-pill"><?= htmlspecialchars($counselor['spesialisasi']) ?></span>
-                        <?php endif; ?>
-
-                        <?php if (!empty($counselor['biografi'])): ?>
-                            <p class="counselor-bio"><?= htmlspecialchars(substr($counselor['biografi'], 0, 110)) ?>&hellip;</p>
+                        <?php if (!empty($counselor['specialization'])): ?>
+                            <span class="category-pill"><?= htmlspecialchars($counselor['specialization']) ?></span>
                         <?php endif; ?>
 
-                        <?php if (!empty($counselor['metode_konsultasi'])): ?>
-                            <div class="counselor-meta">💻 <?= htmlspecialchars($counselor['metode_konsultasi']) ?> &middot; <?= (int) $counselor['durasi_sesi'] ?> menit</div>
+                        <?php if (!empty($counselor['biography'])): ?>
+                            <p class="counselor-bio"><?= htmlspecialchars(substr($counselor['biography'], 0, 110)) ?>&hellip;</p>
                         <?php endif; ?>
-                        <!-- <?php if (!empty($counselor['biaya_konsultasi'])): ?>
-                            <div class="counselor-meta">💳 Rp<?= number_format((float) $counselor['biaya_konsultasi'], 0, ',', '.') ?></div>
+
+                        <?php if (!empty($counselor['consultation_method'])): ?>
+                            <div class="counselor-meta">💻 <?= htmlspecialchars($counselor['consultation_method']) ?> &middot; <?= (int) $counselor['session_duration'] ?> menit</div>
+                        <?php endif; ?>
+                        <!-- <?php if (!empty($counselor['consultation_fee'])): ?>
+                            <div class="counselor-meta">💳 Rp<?= number_format((float) $counselor['consultation_fee'], 0, ',', '.') ?></div>
                         <?php endif; ?> -->
 
                         <div class="counselor-actions">
                             <a href="/counselor/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-ghost">Lihat Profil</a>
-                            <?php if (in_array((int) $counselor['konselor_id'], $activeMonitoringKonselorIds ?? [], true)): ?>
+                            <?php if (in_array((int) $counselor['counselor_id'], $activeMonitoringCounselorIds ?? [], true)): ?>
                                 <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Konsultasi</a>
-                            <?php elseif (($_SESSION['role'] ?? '') === 'mahasiswa'): ?>
+                            <?php elseif (($_SESSION['role'] ?? '') === 'student'): ?>
                                 <a href="/bookings/create/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">📅 Booking</a>
                             <?php endif; ?>
                         </div>

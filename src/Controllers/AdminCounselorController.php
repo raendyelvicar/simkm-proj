@@ -8,8 +8,8 @@ use App\Middleware\AuthMiddleware;
 use App\Repositories\CounselorRepository;
 use App\Repositories\UserRepository;
 
-// Admin CRUD over konselor accounts: creates the login (users row, role=konselor)
-// together with its extended profile (konselor row), and edits/deactivates them.
+// Admin CRUD over counselor accounts: creates the login (users row, role=counselor)
+// together with its extended profile (counselor row), and edits/deactivates them.
 class AdminCounselorController
 {
     private const PER_PAGE = 10;
@@ -35,10 +35,10 @@ class AdminCounselorController
     {
         $filters = [
             'search'       => trim((string) $request->get('q', '')),
-            'profesi'      => $request->get('profesi') ?: null,
-            'status_aktif' => $request->get('status_aktif', ''),
+            'profession'      => $request->get('profession') ?: null,
+            'is_active' => $request->get('is_active', ''),
         ];
-        $sort = (string) $request->get('sort', 'nama');
+        $sort = (string) $request->get('sort', 'name');
         $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
         $page = max(1, (int) $request->get('page', 1));
 
@@ -46,7 +46,7 @@ class AdminCounselorController
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('admin/counselors/index', [
-            'title'       => 'Kelola Konselor',
+            'title'       => 'Kelola Counselor',
             'counselors'  => $result['items'],
             'total'       => $result['total'],
             'page'        => $page,
@@ -60,7 +60,7 @@ class AdminCounselorController
     // GET /admin/counselors/create
     public function create(Request $request): void
     {
-        Response::view('admin/counselors/create', ['title' => 'Tambah Konselor']);
+        Response::view('admin/counselors/create', ['title' => 'Tambah Counselor']);
     }
 
     // POST /admin/counselors
@@ -75,7 +75,7 @@ class AdminCounselorController
 
         if ($errors) {
             Response::view('admin/counselors/create', [
-                'title' => 'Tambah Konselor',
+                'title' => 'Tambah Counselor',
                 'errors' => $errors,
                 'old' => $fields,
             ]);
@@ -83,21 +83,21 @@ class AdminCounselorController
         }
 
         $userId = $this->counselors->createCounselor(
-            $fields['nama'],
+            $fields['name'],
             $fields['username'],
             $fields['email'],
             password_hash($fields['password'], PASSWORD_DEFAULT),
-            $fields['nomor_registrasi'],
-            $fields['profesi'],
-            $fields['spesialisasi'],
-            $fields['pendidikan'],
-            $fields['pengalaman_tahun'],
-            $fields['bahasa'],
-            $fields['biaya_konsultasi'],
-            $fields['durasi_sesi'],
-            $fields['metode_konsultasi'],
-            $fields['biografi'],
-            $fields['status_aktif'],
+            $fields['registration_number'],
+            $fields['profession'],
+            $fields['specialization'],
+            $fields['education'],
+            $fields['experience_years'],
+            $fields['languages'],
+            $fields['consultation_fee'],
+            $fields['session_duration'],
+            $fields['consultation_method'],
+            $fields['biography'],
+            $fields['is_active'],
             $image
         );
 
@@ -105,7 +105,7 @@ class AdminCounselorController
             $this->counselors->updateUserProfileImage($userId, $image);
         }
 
-        $_SESSION['success'] = 'Konselor berhasil ditambahkan.';
+        $_SESSION['success'] = 'Counselor berhasil ditambahkan.';
         Response::redirect('/admin/counselors');
     }
 
@@ -118,7 +118,7 @@ class AdminCounselorController
         }
 
         Response::view('admin/counselors/edit', [
-            'title' => 'Edit Konselor',
+            'title' => 'Edit Counselor',
             'counselor' => $counselor,
         ]);
     }
@@ -131,8 +131,8 @@ class AdminCounselorController
             return;
         }
 
-        $editingKonselorId = $counselor['has_profile'] ? (int) $counselor['konselor_id'] : null;
-        [$fields, $errors] = $this->validate($request, (int) $id, $editingKonselorId);
+        $editingCounselorId = $counselor['has_profile'] ? (int) $counselor['counselor_id'] : null;
+        [$fields, $errors] = $this->validate($request, (int) $id, $editingCounselorId);
         [$image, $imageError] = $this->handleImageUpload($request);
 
         if ($imageError) {
@@ -141,14 +141,14 @@ class AdminCounselorController
 
         if ($errors) {
             Response::view('admin/counselors/edit', [
-                'title' => 'Edit Konselor',
+                'title' => 'Edit Counselor',
                 'counselor' => array_merge($counselor, $fields),
                 'errors' => $errors,
             ]);
             return;
         }
 
-        $this->counselors->updateUserBasic((int) $id, $fields['nama'], $fields['username'], $fields['email']);
+        $this->counselors->updateUserBasic((int) $id, $fields['name'], $fields['username'], $fields['email']);
 
         if ($fields['password'] !== '') {
             $this->counselors->updateUserPassword((int) $id, password_hash($fields['password'], PASSWORD_DEFAULT));
@@ -160,27 +160,27 @@ class AdminCounselorController
 
         $this->counselors->upsertProfile(
             (int) $id,
-            $fields['nomor_registrasi'],
-            $fields['profesi'],
-            $fields['spesialisasi'],
-            $fields['pendidikan'],
-            $fields['pengalaman_tahun'],
-            $fields['bahasa'],
-            $fields['biaya_konsultasi'],
-            $fields['durasi_sesi'],
-            $fields['metode_konsultasi'],
-            $fields['biografi'],
-            $fields['status_aktif'],
+            $fields['registration_number'],
+            $fields['profession'],
+            $fields['specialization'],
+            $fields['education'],
+            $fields['experience_years'],
+            $fields['languages'],
+            $fields['consultation_fee'],
+            $fields['session_duration'],
+            $fields['consultation_method'],
+            $fields['biography'],
+            $fields['is_active'],
             $image
         );
 
-        $_SESSION['success'] = 'Konselor berhasil diperbarui.';
+        $_SESSION['success'] = 'Counselor berhasil diperbarui.';
         Response::redirect('/admin/counselors');
     }
 
     // POST /admin/counselors/{id}/status — soft delete (deactivate) / reactivate.
-    // Only meaningful once a konselor profile row exists; a bare account must be
-    // completed via the edit form first (it needs a nomor_registrasi to create that row).
+    // Only meaningful once a counselor profile row exists; a bare account must be
+    // completed via the edit form first (it needs a registration_number to create that row).
     public function toggleStatus(Request $request, string $id): void
     {
         $counselor = $this->findOr404($id);
@@ -189,10 +189,10 @@ class AdminCounselorController
         }
 
         if ($counselor['has_profile']) {
-            $this->counselors->setActive((int) $counselor['konselor_id'], !$counselor['status_aktif']);
-            $_SESSION['success'] = $counselor['status_aktif']
-                ? 'Konselor berhasil dinonaktifkan.'
-                : 'Konselor berhasil diaktifkan kembali.';
+            $this->counselors->setActive((int) $counselor['counselor_id'], !$counselor['is_active']);
+            $_SESSION['success'] = $counselor['is_active']
+                ? 'Counselor berhasil dinonaktifkan.'
+                : 'Counselor berhasil diaktifkan kembali.';
         }
 
         Response::redirect('/admin/counselors');
@@ -211,50 +211,50 @@ class AdminCounselorController
         return $counselor;
     }
 
-    private const PROFESI_OPTIONS = ['Psikolog', 'Konselor', 'Psikiater'];
+    private const PROFESSION_OPTIONS = ['Psychologist', 'Counselor', 'Psychiatrist'];
     private const METODE_OPTIONS = ['Online', 'Offline', 'Hybrid'];
 
-    // Returns [fields, errors]. $editingUserId/$editingKonselorId are null when
+    // Returns [fields, errors]. $editingUserId/$editingCounselorId are null when
     // creating, so the uniqueness checks don't collide with the record itself.
-    private function validate(Request $request, ?int $editingUserId, ?int $editingKonselorId): array
+    private function validate(Request $request, ?int $editingUserId, ?int $editingCounselorId): array
     {
-        $nama = trim($request->post('nama', ''));
+        $name = trim($request->post('name', ''));
         $username = trim($request->post('username', ''));
         $email = trim($request->post('email', ''));
         $password = $request->post('password', '');
-        $nomorRegistrasi = trim($request->post('nomor_registrasi', ''));
-        $profesi = trim($request->post('profesi', ''));
-        $spesialisasi = trim($request->post('spesialisasi', '')) ?: null;
-        $pendidikan = trim($request->post('pendidikan', '')) ?: null;
-        $pengalamanTahun = (int) $request->post('pengalaman_tahun', 0);
-        $bahasa = trim($request->post('bahasa', '')) ?: null;
-        $biayaKonsultasi = (float) $request->post('biaya_konsultasi', 0);
-        $durasiSesi = (int) $request->post('durasi_sesi', 60);
-        $metodeKonsultasi = trim($request->post('metode_konsultasi', 'Online'));
-        $biografi = trim($request->post('biografi', '')) ?: null;
-        $statusAktif = $request->post('status_aktif') !== null;
+        $registrationNumber = trim($request->post('registration_number', ''));
+        $profession = trim($request->post('profession', ''));
+        $specialization = trim($request->post('specialization', '')) ?: null;
+        $education = trim($request->post('education', '')) ?: null;
+        $experienceYears = (int) $request->post('experience_years', 0);
+        $languages = trim($request->post('languages', '')) ?: null;
+        $consultationFee = (float) $request->post('consultation_fee', 0);
+        $durationSession = (int) $request->post('session_duration', 60);
+        $consultationMethod = trim($request->post('consultation_method', 'Online'));
+        $biography = trim($request->post('biography', '')) ?: null;
+        $isActive = $request->post('is_active') !== null;
 
         $fields = [
-            'nama' => $nama,
+            'name' => $name,
             'username' => $username,
             'email' => $email,
             'password' => $password,
-            'nomor_registrasi' => $nomorRegistrasi,
-            'profesi' => $profesi,
-            'spesialisasi' => $spesialisasi,
-            'pendidikan' => $pendidikan,
-            'pengalaman_tahun' => $pengalamanTahun,
-            'bahasa' => $bahasa,
-            'biaya_konsultasi' => $biayaKonsultasi,
-            'durasi_sesi' => $durasiSesi,
-            'metode_konsultasi' => $metodeKonsultasi,
-            'biografi' => $biografi,
-            'status_aktif' => $statusAktif,
+            'registration_number' => $registrationNumber,
+            'profession' => $profession,
+            'specialization' => $specialization,
+            'education' => $education,
+            'experience_years' => $experienceYears,
+            'languages' => $languages,
+            'consultation_fee' => $consultationFee,
+            'session_duration' => $durationSession,
+            'consultation_method' => $consultationMethod,
+            'biography' => $biography,
+            'is_active' => $isActive,
         ];
 
         $errors = [];
 
-        if ($nama === '') {
+        if ($name === '') {
             $errors[] = 'Nama wajib diisi.';
         }
         if ($username === '') {
@@ -263,22 +263,22 @@ class AdminCounselorController
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Email tidak valid.';
         }
-        if ($nomorRegistrasi === '') {
+        if ($registrationNumber === '') {
             $errors[] = 'Nomor registrasi wajib diisi.';
         }
-        if (!in_array($profesi, self::PROFESI_OPTIONS, true)) {
+        if (!in_array($profession, self::PROFESSION_OPTIONS, true)) {
             $errors[] = 'Profesi wajib dipilih.';
         }
-        if (!in_array($metodeKonsultasi, self::METODE_OPTIONS, true)) {
+        if (!in_array($consultationMethod, self::METODE_OPTIONS, true)) {
             $errors[] = 'Metode konsultasi tidak valid.';
         }
-        if ($pengalamanTahun < 0) {
+        if ($experienceYears < 0) {
             $errors[] = 'Pengalaman tahun tidak boleh negatif.';
         }
-        if ($biayaKonsultasi < 0) {
+        if ($consultationFee < 0) {
             $errors[] = 'Biaya konsultasi tidak boleh negatif.';
         }
-        if ($durasiSesi <= 0) {
+        if ($durationSession <= 0) {
             $errors[] = 'Durasi sesi wajib diisi.';
         }
         if ($editingUserId === null && strlen($password) < 8) {
@@ -298,7 +298,7 @@ class AdminCounselorController
             $errors[] = 'Email sudah digunakan.';
         }
 
-        if ($nomorRegistrasi !== '' && $this->counselors->nomorRegistrasiExists($nomorRegistrasi, $editingKonselorId)) {
+        if ($registrationNumber !== '' && $this->counselors->registrationNumberExists($registrationNumber, $editingCounselorId)) {
             $errors[] = 'Nomor registrasi sudah digunakan konselor lain.';
         }
 

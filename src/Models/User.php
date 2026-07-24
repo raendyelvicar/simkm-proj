@@ -5,14 +5,15 @@ namespace App\Models;
 class User
 {
     public int $id;
-    public string $nama;
+    public string $name;
+    public string $fullName;
     public string $username;
     public string $password;
-    public string $npm;
-    public string $jenisKelamin;
-    public string $fakultas;
-    public string $jurusan;
-    public string $noHp;
+    public string $student_number;
+    public string $gender;
+    public string $faculty;
+    public string $major;
+    public string $phoneNumber;
     public string $email;
     public string $role;
     public string $profile;
@@ -24,14 +25,15 @@ class User
     public function __construct(array $data)
     {
         $this->id           = (int) ($data['id'] ?? 0);
-        $this->nama         = $data['nama'] ?? '';
+        $this->name         = $data['name'] ?? '';
+        $this->fullName     = $data['full_name'] ?? '';
         $this->username     = $data['username'] ?? '';
         $this->password     = $data['password'] ?? '';
-        $this->npm          = $data['npm'] ?? '';
-        $this->jenisKelamin = $data['jenis_kelamin'] ?? '';
-        $this->fakultas     = $data['fakultas'] ?? '';
-        $this->jurusan      = $data['jurusan'] ?? '';
-        $this->noHp         = $data['no_hp'] ?? '';
+        $this->student_number          = $data['student_number'] ?? '';
+        $this->gender = $data['gender'] ?? '';
+        $this->faculty     = $data['faculty'] ?? '';
+        $this->major      = $data['major'] ?? '';
+        $this->phoneNumber         = $data['phone_number'] ?? '';
         $this->email        = $data['email'] ?? '';
         $this->role         = $data['role'] ?? '';
         $this->profile      = $data['profile_image'] ?? '';
@@ -48,13 +50,14 @@ class User
     {
         return [
             'id'            => $this->id,
-            'nama'          => $this->nama,
+            'name'          => $this->name,
+            'full_name'     => $this->fullName,
             'username'      => $this->username,
-            'npm'           => $this->npm,
-            'jenis_kelamin' => $this->jenisKelamin,
-            'fakultas'      => $this->fakultas,
-            'jurusan'       => $this->jurusan,
-            'no_hp'         => $this->noHp,
+            'student_number'           => $this->student_number,
+            'gender' => $this->gender,
+            'faculty'      => $this->faculty,
+            'major'       => $this->major,
+            'phone_number'         => $this->phoneNumber,
             'email'         => $this->email,
             'role'          => $this->role,
             'profile'       => $this->profile,

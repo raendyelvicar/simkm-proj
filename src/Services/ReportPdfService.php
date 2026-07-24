@@ -8,9 +8,9 @@ use Dompdf\Options;
 /**
  * Shared dompdf boilerplate for every Laporan PDF export, extracted from the pattern
  * first used in AssessmentController::exportPdf(). Also builds the "pengesahan
- * konselor" footer block the spec's Catatan Implementasi #3 requires on every report PDF.
+ * counselor" footer block the spec's Catatan Implementasi #3 requires on every report PDF.
  */
-class LaporanPdfService
+class ReportPdfService
 {
     private const STYLE = '
         body{ font-family: DejaVu Sans, sans-serif; font-size:11px; color:#111; }
@@ -53,14 +53,14 @@ class LaporanPdfService
     }
 
     /**
-     * Nama Konselor / Tanggal / Tanda Tangan block. Populated with the logged-in
-     * konselor's name when available, otherwise left as a blank placeholder line —
+     * Name Counselor / Date / Tanda Tangan block. Populated with the logged-in
+     * counselor's name when available, otherwise left as a blank placeholder line —
      * matching the spec's "atau placeholder jika masih manual" note.
      */
-    public function pengesahanBlock(?string $konselorNama): string
+    public function pengesahanBlock(?string $counselorName): string
     {
-        $nama = $konselorNama ? htmlspecialchars($konselorNama) : '________________________';
-        $tanggal = htmlspecialchars(date('d F Y'));
+        $name = $counselorName ? htmlspecialchars($counselorName) : '________________________';
+        $date = htmlspecialchars(date('d F Y'));
 
         return '
         <table class="pengesahan"><tr>
@@ -68,9 +68,9 @@ class LaporanPdfService
             <td class="sign-block">
                 Mengetahui,<br>
                 <div class="sign-line">
-                    <strong>' . $nama . '</strong><br>
-                    Konselor<br>
-                    ' . $tanggal . '
+                    <strong>' . $name . '</strong><br>
+                    Counselor<br>
+                    ' . $date . '
                 </div>
             </td>
         </tr></table>

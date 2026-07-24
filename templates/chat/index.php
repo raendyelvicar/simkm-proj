@@ -6,17 +6,18 @@
     <div class="chat-head">
         <div class="chat-head-info">
             <div class="counselor-avatar counselor-avatar-sm">
-                <?php if (!empty($counselor['profile'])): ?>
-                    <img src="<?= htmlspecialchars($counselor['profile']) ?>"
-                        alt="<?= htmlspecialchars($counselor['nama']) ?>"
+                <?php $photo = profile_photo_url($counselor['profile_photo'] ?: $counselor['profile_image']); ?>
+                <?php if ($photo): ?>
+                    <img src="<?= htmlspecialchars($photo) ?>"
+                        alt="<?= htmlspecialchars($counselor['name']) ?>"
                         onerror="this.remove()">
                 <?php endif; ?>
-                <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($counselor['nama'] !== '' ? $counselor['nama'] : '?', 0, 1))) ?></span>
+                <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($counselor['name'] !== '' ? $counselor['name'] : '?', 0, 1))) ?></span>
             </div>
             <div>
-                <h1><?= htmlspecialchars($counselor['nama'] !== '' ? $counselor['nama'] : 'Konselor') ?></h1>
-                <?php if (!empty($counselor['spesialisasi'])): ?>
-                    <span class="chat-subtitle"><?= htmlspecialchars($counselor['spesialisasi']) ?></span>
+                <h1><?= htmlspecialchars($counselor['name'] !== '' ? $counselor['name'] : 'Konselor') ?></h1>
+                <?php if (!empty($counselor['specialization'])): ?>
+                    <span class="chat-subtitle"><?= htmlspecialchars($counselor['specialization']) ?></span>
                 <?php endif; ?>
             </div>
         </div>

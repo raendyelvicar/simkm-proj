@@ -54,18 +54,18 @@ ob_start();
                                 <?= htmlspecialchars($entry['entry_date'] ? date('d M Y', strtotime($entry['entry_date'])) : '-') ?>
                             </td>
                             <td>
-                                <span class="diary-badge <?= diary_intensity_badge_class((int) ($entry['intensitas_emosi'] ?? 0)) ?>">
-                                    <?= (int) ($entry['intensitas_emosi'] ?? 0) ?> / 5
+                                <span class="diary-badge <?= diary_intensity_badge_class((int) ($entry['emotion_intensity'] ?? 0)) ?>">
+                                    <?= (int) ($entry['emotion_intensity'] ?? 0) ?> / 5
                                 </span>
                             </td>
                             <td>
-                                <?= htmlspecialchars(implode(', ', $entry['emosi_list'] ?? []) ?: '-') ?>
+                                <?= htmlspecialchars(implode(', ', $entry['emotions_list'] ?? []) ?: '-') ?>
                             </td>
                             <td class="diary-snippet">
-                                <?= htmlspecialchars(mb_substr($entry['situasi'] ?? '', 0, 80)) ?><?= mb_strlen($entry['situasi'] ?? '') > 80 ? '…' : '' ?>
+                                <?= htmlspecialchars(mb_substr($entry['situation'] ?? '', 0, 80)) ?><?= mb_strlen($entry['situation'] ?? '') > 80 ? '…' : '' ?>
                             </td>
                             <td>
-                                <?= !empty($entry['is_private']) ? 'Private' : 'Dibagikan' ?>
+                                <?= !empty($entry['is_private']) ? 'Privat' : 'Dibagikan' ?>
                             </td>
                             <td>
                                 <div class="diary-actions">

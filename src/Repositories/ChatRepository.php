@@ -92,7 +92,7 @@ class ChatRepository
 
     private function threadSummary(int $counselorId, int $studentId): array
     {
-        $stmt = $this->db->prepare('SELECT nama, profile_image AS profile FROM users WHERE id = ? LIMIT 1');
+        $stmt = $this->db->prepare('SELECT name, profile_image AS profile FROM users WHERE id = ? LIMIT 1');
         $stmt->bind_param('i', $studentId);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc() ?: [];
@@ -115,7 +115,7 @@ class ChatRepository
 
         return [
             'student_id'      => $studentId,
-            'nama'            => $user['nama'] ?? '',
+            'name'            => $user['name'] ?? '',
             'profile'         => $user['profile'] ?? '',
             'last_message'    => $last['message'] ?? '',
             'last_message_at' => $last['created_at'] ?? '',

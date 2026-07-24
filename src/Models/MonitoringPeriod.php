@@ -7,7 +7,7 @@ class MonitoringPeriod
     public int $monitoringId;
     public int $bookingId;
     public int $userId;
-    public int $konselorId;
+    public int $counselorId;
 
     public string $startDate;
     public string $endDate;
@@ -19,7 +19,7 @@ class MonitoringPeriod
         $this->monitoringId = (int)($data['monitoring_id'] ?? 0);
         $this->bookingId = (int)($data['booking_id'] ?? 0);
         $this->userId = (int)($data['user_id'] ?? 0);
-        $this->konselorId = (int)($data['konselor_id'] ?? 0);
+        $this->counselorId = (int)($data['counselor_id'] ?? 0);
 
         $this->startDate = $data['start_date'] ?? '';
         $this->endDate = $data['end_date'] ?? '';
@@ -33,7 +33,7 @@ class MonitoringPeriod
             'monitoring_id' => $this->monitoringId,
             'booking_id' => $this->bookingId,
             'user_id' => $this->userId,
-            'konselor_id' => $this->konselorId,
+            'counselor_id' => $this->counselorId,
             'start_date' => $this->startDate,
             'end_date' => $this->endDate,
             'created_at' => $this->createdAt,

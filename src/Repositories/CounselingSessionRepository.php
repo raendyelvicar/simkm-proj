@@ -3,10 +3,10 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Models\SesiKonseling;
+use App\Models\CounselingSession;
 use mysqli;
 
-class SesiKonselingRepository
+class CounselingSessionRepository
 {
     private mysqli $db;
 
@@ -15,17 +15,17 @@ class SesiKonselingRepository
         $this->db = Database::connection();
     }
 
-    public function findByBookingId(int $bookingId): ?SesiKonseling
+    public function findByBookingId(int $bookingId): ?CounselingSession
     {
-        $stmt = $this->db->prepare('SELECT * FROM sesi_konseling WHERE booking_id = ? LIMIT 1');
+        $stmt = $this->db->prepare('SELECT * FROM counseling_sessions WHERE booking_id = ? LIMIT 1');
         $stmt->bind_param('i', $bookingId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
 
-        return $row ? new SesiKonseling($row) : null;
+        return $row ? new CounselingSession($row) : null;
     }
 
-    /** @return array<int, SesiKonseling> keyed by booking_id, for batch-joining onto a list of bookings. */
+    /** @return array<int, CounselingSession> keyed by booking_id, for batch-joining onto a list of bookings. */
     public function findByBookingIds(array $bookingIds): array
     {
         if (!$bookingIds) {
@@ -34,38 +34,38 @@ class SesiKonselingRepository
 
         $placeholders = implode(',', array_fill(0, count($bookingIds), '?'));
         $types = str_repeat('i', count($bookingIds));
-        $stmt = $this->db->prepare("SELECT * FROM sesi_konseling WHERE booking_id IN ({$placeholders})");
+        $stmt = $this->db->prepare("SELECT * FROM counseling_sessions WHERE booking_id IN ({$placeholders})");
         $stmt->bind_param($types, ...$bookingIds);
         $stmt->execute();
         $result = $stmt->get_result();
 
-        $sesi = [];
+        $session = [];
         while ($row = $result->fetch_assoc()) {
-            $sesi[(int) $row['booking_id']] = new SesiKonseling($row);
+            $session[(int) $row['booking_id']] = new CounselingSession($row);
         }
 
-        return $sesi;
+        return $session;
     }
 
-    // Written once, when a konselor marks a Confirmed booking Completed. Upsert so a
+    // Written once, when a counselor marks a Confirmed booking Completed. Upsert so a
     // re-submit (e.g. editing notes shortly after) doesn't create a duplicate row —
     // booking_id is UNIQUE on this table.
     public function upsertForBooking(
         int $bookingId,
-        ?string $catatanKonselor,
-        ?string $rekomendasi,
-        ?string $tindakLanjut
+        ?string $counselorNotes,
+        ?string $recommendation,
+        ?string $followUp
     ): void {
         $stmt = $this->db->prepare(
-            'INSERT INTO sesi_konseling (booking_id, catatan_konselor, rekomendasi, tindak_lanjut, selesai_pada)
+            'INSERT INTO counseling_sessions (booking_id, counselor_notes, recommendation, follow_up, completed_at)
              VALUES (?, ?, ?, ?, NOW())
              ON DUPLICATE KEY UPDATE
-                catatan_konselor = VALUES(catatan_konselor),
-                rekomendasi = VALUES(rekomendasi),
-                tindak_lanjut = VALUES(tindak_lanjut),
-                selesai_pada = VALUES(selesai_pada)'
+                counselor_notes = VALUES(counselor_notes),
+                recommendation = VALUES(recommendation),
+                follow_up = VALUES(follow_up),
+                completed_at = VALUES(completed_at)'
         );
-        $stmt->bind_param('isss', $bookingId, $catatanKonselor, $rekomendasi, $tindakLanjut);
+        $stmt->bind_param('isss', $bookingId, $counselorNotes, $recommendation, $followUp);
         $stmt->execute();
     }
 }

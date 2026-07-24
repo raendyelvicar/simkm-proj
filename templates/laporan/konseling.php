@@ -5,6 +5,7 @@ $statusBadge = [
     'Completed' => 'lap-badge-green',
     'Cancelled' => 'lap-badge-red',
     'No Show'   => 'lap-badge-red',
+    'Cancellation Requested' => 'lap-badge-orange',
 ];
 $role = $_SESSION['role'] ?? '';
 
@@ -14,12 +15,13 @@ $extraFields = [
         'label'   => 'Status Booking',
         'type'    => 'select',
         'value'   => $filters['status'] ?? '',
-        'options' => ['Pending' => 'Pending', 'Confirmed' => 'Confirmed', 'Completed' => 'Completed', 'Cancelled' => 'Cancelled', 'No Show' => 'No Show'],
+        'options' => ['Pending' => 'Menunggu', 'Confirmed' => 'Terkonfirmasi', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan', 'No Show' => 'Tidak Hadir', 'Cancellation Requested' => 'Menunggu Persetujuan Pembatalan'],
     ],
 ];
 if ($role === 'admin') {
-    $extraFields[] = ['name' => 'konselor', 'label' => 'Nama Konselor', 'value' => $_GET['konselor'] ?? ''];
+    $extraFields[] = ['name' => 'counselor', 'label' => 'Nama Konselor', 'value' => $_GET['counselor'] ?? ''];
 }
+$bookingStatusLabels = ['Pending' => 'Menunggu', 'Confirmed' => 'Terkonfirmasi', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan', 'No Show' => 'Tidak Hadir', 'Cancellation Requested' => 'Menunggu Persetujuan Pembatalan'];
 
 ob_start();
 ?>
@@ -44,9 +46,9 @@ ob_start();
                 <table class="lap-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $currentQuery) ?></th>
-                            <th><?= sort_link('student_nama', 'Mahasiswa', $sort, $dir, $currentQuery) ?></th>
-                            <th><?= sort_link('konselor_nama', 'Konselor', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('date', 'Tanggal', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('student_name', 'Mahasiswa', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('counselor_name', 'Konselor', $sort, $dir, $currentQuery) ?></th>
                             <th>Jam</th>
                             <th><?= sort_link('status', 'Status', $sort, $dir, $currentQuery) ?></th>
                             <th>Catatan Konselor</th>
@@ -57,14 +59,14 @@ ob_start();
                     <tbody>
                         <?php foreach ($rows as $r): ?>
                             <tr>
-                                <td><?= $r['tanggal'] ? htmlspecialchars(date('d M Y', strtotime($r['tanggal']))) : '-' ?></td>
-                                <td><?= htmlspecialchars($r['student_nama']) ?></td>
-                                <td><?= htmlspecialchars($r['konselor_nama']) ?></td>
-                                <td><?= htmlspecialchars(substr($r['jam_mulai'], 0, 5) . '–' . substr($r['jam_selesai'], 0, 5)) ?></td>
-                                <td><span class="lap-badge <?= $statusBadge[$r['status']] ?? 'lap-badge-gray' ?>"><?= htmlspecialchars($r['status']) ?></span></td>
-                                <td><?= htmlspecialchars($r['catatan_konselor'] ?? '-') ?></td>
-                                <td><?= htmlspecialchars($r['rekomendasi'] ?? '-') ?></td>
-                                <td><?= htmlspecialchars($r['tindak_lanjut'] ?? '-') ?></td>
+                                <td><?= $r['date'] ? htmlspecialchars(date('d M Y', strtotime($r['date']))) : '-' ?></td>
+                                <td><?= htmlspecialchars($r['student_name']) ?></td>
+                                <td><?= htmlspecialchars($r['counselor_name']) ?></td>
+                                <td><?= htmlspecialchars(substr($r['start_time'], 0, 5) . '–' . substr($r['end_time'], 0, 5)) ?></td>
+                                <td><span class="lap-badge <?= $statusBadge[$r['status']] ?? 'lap-badge-gray' ?>"><?= htmlspecialchars($bookingStatusLabels[$r['status']] ?? $r['status']) ?></span></td>
+                                <td><?= htmlspecialchars($r['counselor_notes'] ?? '-') ?></td>
+                                <td><?= htmlspecialchars($r['recommendation'] ?? '-') ?></td>
+                                <td><?= htmlspecialchars($r['follow_up'] ?? '-') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

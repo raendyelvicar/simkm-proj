@@ -8,27 +8,27 @@ class DiaryEntry
     public ?int $userId;
     public ?string $entryDate;
 
-    // 1. Situasi
-    public string $situasi;
+    // 1. Situation
+    public string $situation;
     // 2. Pikiran Pertama (Automatic Thought)
-    public string $pikiranAwal;
+    public string $initialThoughts;
     // 3. Emosi yang Dirasakan
-    public array $emosiList;
-    public ?string $emosiLainnya;
-    public int $intensitasEmosi;
+    public array $emotionsList;
+    public ?string $otherEmotions;
+    public int $emotionIntensity;
     // 4. Reaksi Fisik
-    public array $reaksiFisikList;
-    public ?string $reaksiFisikLainnya;
-    // 5. Perilaku
-    public string $perilaku;
+    public array $physicalReactionsList;
+    public ?string $otherPhysicalReactions;
+    // 5. Behavior
+    public string $behavior;
 
     // Optional reflective sections
     public ?string $selfReflection;
     public array $gratitudeList;
-    public ?string $rencanaBesok;
+    public ?string $tomorrowPlan;
 
     public bool $isPrivate;
-    public ?int $sharedKonselorId;
+    public ?int $sharedCounselorId;
 
     public ?string $createdAt;
 
@@ -38,21 +38,21 @@ class DiaryEntry
         $this->userId              = isset($data['user_id']) ? (int) $data['user_id'] : null;
         $this->entryDate           = $data['entry_date'] ?? null;
 
-        $this->situasi              = $data['situasi'] ?? '';
-        $this->pikiranAwal          = $data['pikiran_awal'] ?? '';
-        $this->emosiList            = !empty($data['emosi_list']) ? (json_decode($data['emosi_list'], true) ?: []) : [];
-        $this->emosiLainnya         = $data['emosi_lainnya'] ?? null;
-        $this->intensitasEmosi      = (int) ($data['intensitas_emosi'] ?? 0);
-        $this->reaksiFisikList      = !empty($data['reaksi_fisik_list']) ? (json_decode($data['reaksi_fisik_list'], true) ?: []) : [];
-        $this->reaksiFisikLainnya   = $data['reaksi_fisik_lainnya'] ?? null;
-        $this->perilaku             = $data['perilaku'] ?? '';
+        $this->situation              = $data['situation'] ?? '';
+        $this->initialThoughts          = $data['initial_thoughts'] ?? '';
+        $this->emotionsList            = !empty($data['emotions_list']) ? (json_decode($data['emotions_list'], true) ?: []) : [];
+        $this->otherEmotions         = $data['other_emotions'] ?? null;
+        $this->emotionIntensity      = (int) ($data['emotion_intensity'] ?? 0);
+        $this->physicalReactionsList      = !empty($data['physical_reactions_list']) ? (json_decode($data['physical_reactions_list'], true) ?: []) : [];
+        $this->otherPhysicalReactions   = $data['other_physical_reactions'] ?? null;
+        $this->behavior             = $data['behavior'] ?? '';
 
         $this->selfReflection       = $data['self_reflection'] ?? null;
         $this->gratitudeList        = !empty($data['gratitude_list']) ? (json_decode($data['gratitude_list'], true) ?: []) : [];
-        $this->rencanaBesok         = $data['rencana_besok'] ?? null;
+        $this->tomorrowPlan         = $data['tomorrow_plan'] ?? null;
 
         $this->isPrivate            = (bool) ($data['is_private'] ?? true);
-        $this->sharedKonselorId     = isset($data['shared_konselor_id']) ? (int) $data['shared_konselor_id'] : null;
+        $this->sharedCounselorId     = isset($data['shared_counselor_id']) ? (int) $data['shared_counselor_id'] : null;
 
         $this->createdAt            = $data['created_at'] ?? null;
     }
@@ -63,19 +63,19 @@ class DiaryEntry
             'id'                    => $this->id,
             'user_id'               => $this->userId,
             'entry_date'            => $this->entryDate,
-            'situasi'               => $this->situasi,
-            'pikiran_awal'          => $this->pikiranAwal,
-            'emosi_list'            => $this->emosiList,
-            'emosi_lainnya'         => $this->emosiLainnya,
-            'intensitas_emosi'      => $this->intensitasEmosi,
-            'reaksi_fisik_list'     => $this->reaksiFisikList,
-            'reaksi_fisik_lainnya'  => $this->reaksiFisikLainnya,
-            'perilaku'              => $this->perilaku,
+            'situation'               => $this->situation,
+            'initial_thoughts'          => $this->initialThoughts,
+            'emotions_list'            => $this->emotionsList,
+            'other_emotions'         => $this->otherEmotions,
+            'emotion_intensity'      => $this->emotionIntensity,
+            'physical_reactions_list'     => $this->physicalReactionsList,
+            'other_physical_reactions'  => $this->otherPhysicalReactions,
+            'behavior'              => $this->behavior,
             'self_reflection'       => $this->selfReflection,
             'gratitude_list'        => $this->gratitudeList,
-            'rencana_besok'         => $this->rencanaBesok,
+            'tomorrow_plan'         => $this->tomorrowPlan,
             'is_private'            => $this->isPrivate,
-            'shared_konselor_id'    => $this->sharedKonselorId,
+            'shared_counselor_id'    => $this->sharedCounselorId,
             'created_at'            => $this->createdAt,
         ];
     }

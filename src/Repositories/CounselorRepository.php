@@ -3,7 +3,7 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Models\Konselor;
+use App\Models\Counselor;
 use mysqli;
 
 class CounselorRepository
@@ -18,23 +18,23 @@ class CounselorRepository
     private const SELECT = "
         SELECT
             u.id,
-            u.nama,
+            u.name,
             u.username,
             u.email,
             u.profile_image,
             k.*
         FROM users u
-        LEFT JOIN konselor k ON k.user_id = u.id
-        WHERE u.role='konselor'
+        LEFT JOIN counselors k ON k.user_id = u.id
+        WHERE u.role='counselor'
     ";
 
     public function all(bool $onlyActive = true): array
     {
         $sql = self::SELECT;
         if ($onlyActive) {
-            $sql .= " AND (k.status_aktif = 1 OR k.konselor_id IS NULL)";
+            $sql .= " AND (k.is_active = 1 OR k.counselor_id IS NULL)";
         }
-        $sql .= " ORDER BY u.nama";
+        $sql .= " ORDER BY u.name";
         $result = $this->db->query($sql);
 
         $items = [];
@@ -45,36 +45,36 @@ class CounselorRepository
     }
 
     private const PUBLIC_SORTABLE = [
-        'nama'             => 'u.nama',
-        'pengalaman_tahun' => 'k.pengalaman_tahun',
-        'biaya_konsultasi' => 'k.biaya_konsultasi',
+        'name'             => 'u.name',
+        'experience_years' => 'k.experience_years',
+        'consultation_fee' => 'k.consultation_fee',
     ];
 
     /**
-     * Search/filter/sort/paginate the public, active-only konselor directory — backs /counselor.
-     * @param array $filters ['search'=>?, 'profesi'=>?, 'metode_konsultasi'=>?]
+     * Search/filter/sort/paginate the public, active-only counselor directory — backs /counselor.
+     * @param array $filters ['search'=>?, 'profession'=>?, 'consultation_method'=>?]
      * @return array{items: array, total: int}
      */
     public function paginatedActive(array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $where = ' AND (k.status_aktif = 1 OR k.konselor_id IS NULL)';
+        $where = ' AND (k.is_active = 1 OR k.counselor_id IS NULL)';
         $params = [];
         $types = '';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (u.nama LIKE ? OR k.spesialisasi LIKE ?)';
+            $where .= ' AND (u.name LIKE ? OR k.specialization LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like]);
             $types .= 'ss';
         }
-        if (!empty($filters['profesi'])) {
-            $where .= ' AND k.profesi = ?';
-            $params[] = $filters['profesi'];
+        if (!empty($filters['profession'])) {
+            $where .= ' AND k.profession = ?';
+            $params[] = $filters['profession'];
             $types .= 's';
         }
-        if (!empty($filters['metode_konsultasi'])) {
-            $where .= ' AND k.metode_konsultasi = ?';
-            $params[] = $filters['metode_konsultasi'];
+        if (!empty($filters['consultation_method'])) {
+            $where .= ' AND k.consultation_method = ?';
+            $params[] = $filters['consultation_method'];
             $types .= 's';
         }
 
@@ -85,7 +85,7 @@ class CounselorRepository
         $countStmt->execute();
         $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
 
-        $orderCol = self::PUBLIC_SORTABLE[$sort] ?? 'u.nama';
+        $orderCol = self::PUBLIC_SORTABLE[$sort] ?? 'u.name';
         $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
         $offset = ($page - 1) * $perPage;
 
@@ -112,28 +112,28 @@ class CounselorRepository
         return $row ? $this->hydrate($row) : null;
     }
 
-    // Unlike find(), which looks up by users.id, this looks up by konselor.konselor_id
-    // — the id other tables (rating_konselor, konselor_jadwal, diary_entries.shared_konselor_id) reference.
-    public function findByKonselorId(int $konselorId): ?array
+    // Unlike find(), which looks up by users.id, this looks up by counselor.counselor_id
+    // — the id other tables (counselor_ratings, counselor_schedules, diary_entries.shared_counselor_id) reference.
+    public function findByCounselorId(int $counselorId): ?array
     {
-        $stmt = $this->db->prepare(self::SELECT . " AND k.konselor_id=? LIMIT 1");
-        $stmt->bind_param("i", $konselorId);
+        $stmt = $this->db->prepare(self::SELECT . " AND k.counselor_id=? LIMIT 1");
+        $stmt->bind_param("i", $counselorId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         return $row ? $this->hydrate($row) : null;
     }
 
     private const ADMIN_SORTABLE = [
-        'nama'             => 'u.nama',
-        'profesi'          => 'k.profesi',
-        'pengalaman_tahun' => 'k.pengalaman_tahun',
+        'name'             => 'u.name',
+        'profession'          => 'k.profession',
+        'experience_years' => 'k.experience_years',
         'created_at'       => 'k.created_at',
     ];
 
     /**
-     * Admin management: search/filter/sort/paginate over every konselor account
+     * Admin management: search/filter/sort/paginate over every counselor account
      * (active or not, profile-complete or not) — backs /admin/counselors.
-     * @param array $filters ['search'=>?, 'profesi'=>?, 'status_aktif'=>'1'|'0'|null]
+     * @param array $filters ['search'=>?, 'profession'=>?, 'is_active'=>'1'|'0'|null]
      * @return array{items: array, total: int}
      */
     public function paginatedForAdmin(array $filters, string $sort, string $dir, int $page, int $perPage): array
@@ -143,19 +143,19 @@ class CounselorRepository
         $types = '';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (u.nama LIKE ? OR k.nomor_registrasi LIKE ?)';
+            $where .= ' AND (u.name LIKE ? OR k.registration_number LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like]);
             $types .= 'ss';
         }
-        if (!empty($filters['profesi'])) {
-            $where .= ' AND k.profesi = ?';
-            $params[] = $filters['profesi'];
+        if (!empty($filters['profession'])) {
+            $where .= ' AND k.profession = ?';
+            $params[] = $filters['profession'];
             $types .= 's';
         }
-        if (($filters['status_aktif'] ?? '') !== '') {
-            $where .= ' AND k.status_aktif = ?';
-            $params[] = (int) $filters['status_aktif'];
+        if (($filters['is_active'] ?? '') !== '') {
+            $where .= ' AND k.is_active = ?';
+            $params[] = (int) $filters['is_active'];
             $types .= 'i';
         }
 
@@ -166,7 +166,7 @@ class CounselorRepository
         $countStmt->execute();
         $total = (int) ($countStmt->get_result()->fetch_assoc()['c'] ?? 0);
 
-        $orderCol = self::ADMIN_SORTABLE[$sort] ?? 'u.nama';
+        $orderCol = self::ADMIN_SORTABLE[$sort] ?? 'u.name';
         $orderDir = $dir === 'desc' ? 'DESC' : 'ASC';
         $offset = ($page - 1) * $perPage;
 
@@ -196,59 +196,59 @@ class CounselorRepository
     private function hydrateAdmin(array $row): array
     {
         return array_merge($this->hydrate($row), [
-            'has_profile' => $row['konselor_id'] !== null,
+            'has_profile' => $row['counselor_id'] !== null,
         ]);
     }
 
-    // Creates the login account (role=konselor) and its extended profile together.
-    // Rolled back as one unit so a duplicate nomor_registrasi can't leave a bare,
+    // Creates the login account (role=counselor) and its extended profile together.
+    // Rolled back as one unit so a duplicate registration_number can't leave a bare,
     // profile-less user account behind.
     public function createCounselor(
-        string $nama,
+        string $name,
         string $username,
         string $email,
         string $hashedPassword,
-        string $nomorRegistrasi,
-        string $profesi,
-        ?string $spesialisasi,
-        ?string $pendidikan,
-        int $pengalamanTahun,
-        ?string $bahasa,
-        float $biayaKonsultasi,
-        int $durasiSesi,
-        string $metodeKonsultasi,
-        ?string $biografi,
-        bool $statusAktif,
-        ?string $fotoProfil = null
+        string $registrationNumber,
+        string $profession,
+        ?string $specialization,
+        ?string $education,
+        int $experienceYears,
+        ?string $languages,
+        float $consultationFee,
+        int $durationSession,
+        string $consultationMethod,
+        ?string $biography,
+        bool $isActive,
+        ?string $profilePhoto = null
     ): int {
         $this->db->begin_transaction();
 
         try {
             $stmt = $this->db->prepare(
-                "INSERT INTO users (nama, username, email, password, role, status, created_at)
-                 VALUES (?, ?, ?, ?, 'konselor', 'active', NOW())"
+                "INSERT INTO users (name, username, email, password, role, status, created_at)
+                 VALUES (?, ?, ?, ?, 'counselor', 'active', NOW())"
             );
-            $stmt->bind_param('ssss', $nama, $username, $email, $hashedPassword);
+            $stmt->bind_param('ssss', $name, $username, $email, $hashedPassword);
             $stmt->execute();
             $userId = (int) $this->db->insert_id;
 
-            $konselor = new Konselor([
+            $counselor = new Counselor([
                 'user_id' => $userId,
-                'nomor_registrasi' => $nomorRegistrasi,
-                'profesi' => $profesi,
-                'spesialisasi' => $spesialisasi,
-                'pendidikan' => $pendidikan,
-                'pengalaman_tahun' => $pengalamanTahun,
-                'bahasa' => $bahasa,
-                'biaya_konsultasi' => $biayaKonsultasi,
-                'durasi_sesi' => $durasiSesi,
-                'metode_konsultasi' => $metodeKonsultasi,
-                'foto_profil' => $fotoProfil,
-                'biografi' => $biografi,
-                'status_verifikasi' => true,
-                'status_aktif' => $statusAktif,
+                'registration_number' => $registrationNumber,
+                'profession' => $profession,
+                'specialization' => $specialization,
+                'education' => $education,
+                'experience_years' => $experienceYears,
+                'languages' => $languages,
+                'consultation_fee' => $consultationFee,
+                'session_duration' => $durationSession,
+                'consultation_method' => $consultationMethod,
+                'profile_photo' => $profilePhoto,
+                'biography' => $biography,
+                'verification_status' => true,
+                'is_active' => $isActive,
             ]);
-            $this->create($konselor);
+            $this->create($counselor);
 
             $this->db->commit();
 
@@ -259,10 +259,10 @@ class CounselorRepository
         }
     }
 
-    public function updateUserBasic(int $userId, string $nama, string $username, string $email): void
+    public function updateUserBasic(int $userId, string $name, string $username, string $email): void
     {
-        $stmt = $this->db->prepare('UPDATE users SET nama = ?, username = ?, email = ? WHERE id = ?');
-        $stmt->bind_param('sssi', $nama, $username, $email, $userId);
+        $stmt = $this->db->prepare('UPDATE users SET name = ?, username = ?, email = ? WHERE id = ?');
+        $stmt->bind_param('sssi', $name, $username, $email, $userId);
         $stmt->execute();
     }
 
@@ -280,97 +280,97 @@ class CounselorRepository
         $stmt->execute();
     }
 
-    // Creates the konselor row if this user doesn't have one yet, otherwise updates it.
+    // Creates the counselor row if this user doesn't have one yet, otherwise updates it.
     public function upsertProfile(
         int $userId,
-        string $nomorRegistrasi,
-        string $profesi,
-        ?string $spesialisasi,
-        ?string $pendidikan,
-        int $pengalamanTahun,
-        ?string $bahasa,
-        float $biayaKonsultasi,
-        int $durasiSesi,
-        string $metodeKonsultasi,
-        ?string $biografi,
-        bool $statusAktif,
-        ?string $fotoProfil = null
+        string $registrationNumber,
+        string $profession,
+        ?string $specialization,
+        ?string $education,
+        int $experienceYears,
+        ?string $languages,
+        float $consultationFee,
+        int $durationSession,
+        string $consultationMethod,
+        ?string $biography,
+        bool $isActive,
+        ?string $profilePhoto = null
     ): void {
-        $stmt = $this->db->prepare('SELECT konselor_id, foto_profil FROM konselor WHERE user_id = ? LIMIT 1');
+        $stmt = $this->db->prepare('SELECT counselor_id, profile_photo FROM counselors WHERE user_id = ? LIMIT 1');
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $existing = $stmt->get_result()->fetch_assoc();
 
-        $konselor = new Konselor([
-            'konselor_id' => $existing['konselor_id'] ?? 0,
+        $counselor = new Counselor([
+            'counselor_id' => $existing['counselor_id'] ?? 0,
             'user_id' => $userId,
-            'nomor_registrasi' => $nomorRegistrasi,
-            'profesi' => $profesi,
-            'spesialisasi' => $spesialisasi,
-            'pendidikan' => $pendidikan,
-            'pengalaman_tahun' => $pengalamanTahun,
-            'bahasa' => $bahasa,
-            'biaya_konsultasi' => $biayaKonsultasi,
-            'durasi_sesi' => $durasiSesi,
-            'metode_konsultasi' => $metodeKonsultasi,
-            'foto_profil' => $fotoProfil ?? ($existing['foto_profil'] ?? null),
-            'biografi' => $biografi,
-            'status_verifikasi' => true,
-            'status_aktif' => $statusAktif,
+            'registration_number' => $registrationNumber,
+            'profession' => $profession,
+            'specialization' => $specialization,
+            'education' => $education,
+            'experience_years' => $experienceYears,
+            'languages' => $languages,
+            'consultation_fee' => $consultationFee,
+            'session_duration' => $durationSession,
+            'consultation_method' => $consultationMethod,
+            'profile_photo' => $profilePhoto ?? ($existing['profile_photo'] ?? null),
+            'biography' => $biography,
+            'verification_status' => true,
+            'is_active' => $isActive,
         ]);
 
         if ($existing) {
-            $this->update($konselor);
+            $this->update($counselor);
         } else {
-            $this->create($konselor);
+            $this->create($counselor);
         }
     }
 
-    // Soft delete / reactivate — only meaningful once a konselor row exists.
-    public function setActive(int $konselorId, bool $active): void
+    // Soft delete / reactivate — only meaningful once a counselor row exists.
+    public function setActive(int $counselorId, bool $active): void
     {
         $status = $active ? 1 : 0;
-        $stmt = $this->db->prepare('UPDATE konselor SET status_aktif = ? WHERE konselor_id = ?');
-        $stmt->bind_param('ii', $status, $konselorId);
+        $stmt = $this->db->prepare('UPDATE counselors SET is_active = ? WHERE counselor_id = ?');
+        $stmt->bind_param('ii', $status, $counselorId);
         $stmt->execute();
     }
 
-    public function nomorRegistrasiExists(string $nomor, ?int $excludeId = null): bool
+    public function registrationNumberExists(string $nomor, ?int $excludeId = null): bool
     {
         if ($excludeId) {
-            $stmt = $this->db->prepare("SELECT 1 FROM konselor WHERE nomor_registrasi=? AND konselor_id<>? LIMIT 1");
+            $stmt = $this->db->prepare("SELECT 1 FROM counselors WHERE registration_number=? AND counselor_id<>? LIMIT 1");
             $stmt->bind_param("si", $nomor, $excludeId);
         } else {
-            $stmt = $this->db->prepare("SELECT 1 FROM konselor WHERE nomor_registrasi=? LIMIT 1");
+            $stmt = $this->db->prepare("SELECT 1 FROM counselors WHERE registration_number=? LIMIT 1");
             $stmt->bind_param("s", $nomor);
         }
         $stmt->execute();
         return (bool)$stmt->get_result()->fetch_row();
     }
 
-    public function create(Konselor $k): int
+    public function create(Counselor $k): int
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO konselor
-            (user_id,nomor_registrasi,profesi,spesialisasi,pendidikan,pengalaman_tahun,bahasa,biaya_konsultasi,durasi_sesi,metode_konsultasi,foto_profil,biografi,status_verifikasi,status_aktif)
+            "INSERT INTO counselors
+            (user_id,registration_number,profession,specialization,education,experience_years,languages,consultation_fee,session_duration,consultation_method,profile_photo,biography,verification_status,is_active)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
         );
-        $ver = $k->statusVerifikasi ? 1 : 0;
-        $aktif = $k->statusAktif ? 1 : 0;
+        $ver = $k->verificationStatus ? 1 : 0;
+        $aktif = $k->isActive ? 1 : 0;
         $stmt->bind_param(
             "issssisdisssii",
             $k->userId,
-            $k->nomorRegistrasi,
-            $k->profesi,
-            $k->spesialisasi,
-            $k->pendidikan,
-            $k->pengalamanTahun,
-            $k->bahasa,
-            $k->biayaKonsultasi,
-            $k->durasiSesi,
-            $k->metodeKonsultasi,
-            $k->fotoProfil,
-            $k->biografi,
+            $k->registrationNumber,
+            $k->profession,
+            $k->specialization,
+            $k->education,
+            $k->experienceYears,
+            $k->languages,
+            $k->consultationFee,
+            $k->durationSession,
+            $k->consultationMethod,
+            $k->profilePhoto,
+            $k->biography,
             $ver,
             $aktif
         );
@@ -378,49 +378,49 @@ class CounselorRepository
         return (int)$this->db->insert_id;
     }
 
-    public function update(Konselor $k): void
+    public function update(Counselor $k): void
     {
         $stmt = $this->db->prepare(
-            "UPDATE konselor SET
-            nomor_registrasi=?, profesi=?, spesialisasi=?, pendidikan=?,
-            pengalaman_tahun=?, bahasa=?, biaya_konsultasi=?, durasi_sesi=?,
-            metode_konsultasi=?, foto_profil=?, biografi=?,
-            status_verifikasi=?, status_aktif=?
-            WHERE konselor_id=?"
+            "UPDATE counselors SET
+            registration_number=?, profession=?, specialization=?, education=?,
+            experience_years=?, languages=?, consultation_fee=?, session_duration=?,
+            consultation_method=?, profile_photo=?, biography=?,
+            verification_status=?, is_active=?
+            WHERE counselor_id=?"
         );
-        $ver = $k->statusVerifikasi ? 1 : 0;
-        $aktif = $k->statusAktif ? 1 : 0;
+        $ver = $k->verificationStatus ? 1 : 0;
+        $aktif = $k->isActive ? 1 : 0;
         $stmt->bind_param(
             "ssssisdisssiii",
-            $k->nomorRegistrasi,
-            $k->profesi,
-            $k->spesialisasi,
-            $k->pendidikan,
-            $k->pengalamanTahun,
-            $k->bahasa,
-            $k->biayaKonsultasi,
-            $k->durasiSesi,
-            $k->metodeKonsultasi,
-            $k->fotoProfil,
-            $k->biografi,
+            $k->registrationNumber,
+            $k->profession,
+            $k->specialization,
+            $k->education,
+            $k->experienceYears,
+            $k->languages,
+            $k->consultationFee,
+            $k->durationSession,
+            $k->consultationMethod,
+            $k->profilePhoto,
+            $k->biography,
             $ver,
             $aktif,
-            $k->konselorId
+            $k->counselorId
         );
         $stmt->execute();
     }
 
-    public function delete(int $konselorId): void
+    public function delete(int $counselorId): void
     {
-        $stmt = $this->db->prepare("DELETE FROM konselor WHERE konselor_id=?");
-        $stmt->bind_param("i", $konselorId);
+        $stmt = $this->db->prepare("DELETE FROM counselors WHERE counselor_id=?");
+        $stmt->bind_param("i", $counselorId);
         $stmt->execute();
     }
 
     private function hydrate(array $row): array
     {
-        return array_merge((new Konselor($row))->toArray(), [
-            'nama' => $row['nama'],
+        return array_merge((new Counselor($row))->toArray(), [
+            'name' => $row['name'],
             'username' => $row['username'],
             'email' => $row['email'],
             'profile_image' => $row['profile_image']

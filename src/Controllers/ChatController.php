@@ -40,7 +40,7 @@ class ChatController
         $messages = $this->chats->conversation((int) $_SESSION['user_id'], $counselor['user_id']);
 
         Response::view('chat/index', [
-            'title' => 'Chat dengan ' . ($counselor['nama'] ?: 'Konselor'),
+            'title' => 'Chat dengan ' . ($counselor['name'] ?: 'Counselor'),
             'counselor' => $counselor,
             'messages' => array_map(fn($message) => $message->toArray(), $messages),
         ]);
@@ -98,10 +98,10 @@ class ChatController
     // True while this counselor has an active monitoring period with the logged-in student.
     private function hasAccess(array $counselor): bool
     {
-        if ((int) $counselor['konselor_id'] === 0) {
+        if ((int) $counselor['counselor_id'] === 0) {
             return false;
         }
 
-        return $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['konselor_id']);
+        return $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['counselor_id']);
     }
 }

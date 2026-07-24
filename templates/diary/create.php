@@ -29,15 +29,15 @@
                 </div>
 
                 <div class="field">
-                    <label for="situasi">1. Situasi</label>
+                    <label for="situation">1. Situasi</label>
                     <p class="field-hint">Apa yang terjadi hari ini yang membuatmu merasa tidak nyaman atau terganggu? Contoh: "Presentasi skripsi ditunda sehingga saya merasa kecewa."</p>
-                    <textarea id="situasi" name="situasi" placeholder="Jawaban kamu..." required><?= htmlspecialchars($old['situasi'] ?? '') ?></textarea>
+                    <textarea id="situation" name="situation" placeholder="Jawaban kamu..." required><?= htmlspecialchars($old['situation'] ?? '') ?></textarea>
                 </div>
 
                 <div class="field">
-                    <label for="pikiran_awal">2. Pikiran Pertama (Automatic Thought)</label>
+                    <label for="initial_thoughts">2. Pikiran Pertama (Pikiran Otomatis)</label>
                     <p class="field-hint">Saat kejadian itu terjadi, apa pikiran pertama yang muncul? Contoh: "Saya pasti gagal."</p>
-                    <textarea id="pikiran_awal" name="pikiran_awal" placeholder="Jawaban kamu..." required><?= htmlspecialchars($old['pikiran_awal'] ?? '') ?></textarea>
+                    <textarea id="initial_thoughts" name="initial_thoughts" placeholder="Jawaban kamu..." required><?= htmlspecialchars($old['initial_thoughts'] ?? '') ?></textarea>
                 </div>
 
                 <div class="field">
@@ -53,19 +53,19 @@
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <input type="text" name="emosi_lainnya" class="diary-lainnya-input"
+                    <input type="text" name="other_emotions" class="diary-lainnya-input"
                            placeholder="Sebutkan emosi lainnya (jika memilih 'Lainnya')"
-                           value="<?= htmlspecialchars($old['emosi_lainnya'] ?? '') ?>">
+                           value="<?= htmlspecialchars($old['other_emotions'] ?? '') ?>">
                 </div>
 
                 <div class="field">
                     <label>Intensitas Emosi</label>
                     <p class="field-hint">1 = Sangat Ringan, 5 = Sangat Berat</p>
                     <div class="diary-intensity-scale">
-                        <?php $oldIntensity = (int) ($old['intensitas_emosi'] ?? 0); ?>
+                        <?php $oldIntensity = (int) ($old['emotion_intensity'] ?? 0); ?>
                         <?php for ($i = 1; $i <= 5; $i++): ?>
                             <label class="diary-intensity-option">
-                                <input type="radio" name="intensitas_emosi" value="<?= $i ?>"
+                                <input type="radio" name="emotion_intensity" value="<?= $i ?>"
                                        <?= $oldIntensity === $i ? 'checked' : '' ?> required>
                                 <span><?= $i ?></span>
                             </label>
@@ -77,34 +77,34 @@
                     <label>4. Reaksi Fisik</label>
                     <p class="field-hint">Apa yang tubuhmu rasakan saat itu?</p>
                     <div class="diary-checkbox-group">
-                        <?php $oldReaksi = $old['reaksi_fisik'] ?? []; ?>
+                        <?php $oldReaksi = $old['physical_reactions'] ?? []; ?>
                         <?php foreach ($physicalOptions as $option): ?>
                             <label class="diary-checkbox-pill">
-                                <input type="checkbox" name="reaksi_fisik[]" value="<?= htmlspecialchars($option) ?>"
+                                <input type="checkbox" name="physical_reactions[]" value="<?= htmlspecialchars($option) ?>"
                                        <?= in_array($option, $oldReaksi, true) ? 'checked' : '' ?>>
                                 <span><?= htmlspecialchars($option) ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <input type="text" name="reaksi_fisik_lainnya" class="diary-lainnya-input"
+                    <input type="text" name="other_physical_reactions" class="diary-lainnya-input"
                            placeholder="Sebutkan reaksi fisik lainnya (jika memilih 'Lainnya')"
-                           value="<?= htmlspecialchars($old['reaksi_fisik_lainnya'] ?? '') ?>">
+                           value="<?= htmlspecialchars($old['other_physical_reactions'] ?? '') ?>">
                 </div>
 
                 <div class="field">
-                    <label for="perilaku">5. Perilaku</label>
+                    <label for="behavior">5. Perilaku</label>
                     <p class="field-hint">Apa yang kamu lakukan setelah kejadian tersebut? Contoh: menghindari orang lain, tidur, menangis, tetap bekerja, berbicara dengan teman.</p>
-                    <textarea id="perilaku" name="perilaku" placeholder="Jawaban kamu..." required><?= htmlspecialchars($old['perilaku'] ?? '') ?></textarea>
+                    <textarea id="behavior" name="behavior" placeholder="Jawaban kamu..." required><?= htmlspecialchars($old['behavior'] ?? '') ?></textarea>
                 </div>
 
                 <div class="field">
-                    <label for="self_reflection">🖊 Self Reflection</label>
+                    <label for="self_reflection">🖊 Refleksi Diri</label>
                     <p class="field-hint">Kalau melihat kejadian tadi dengan lebih tenang, apakah ada cara lain yang mungkin lebih membantu untuk menghadapinya?</p>
                     <textarea id="self_reflection" name="self_reflection" placeholder="Jawaban kamu... (opsional)"><?= htmlspecialchars($old['self_reflection'] ?? '') ?></textarea>
                 </div>
 
                 <div class="field">
-                    <label>🙏 Gratitude Journal</label>
+                    <label>🙏 Jurnal Syukur</label>
                     <p class="field-hint">Sebutkan 3 hal yang kamu syukuri hari ini.</p>
                     <div class="diary-gratitude-list">
                         <?php $oldGratitude = $old['gratitude'] ?? []; ?>
@@ -116,9 +116,9 @@
                 </div>
 
                 <div class="field">
-                    <label for="rencana_besok">🎯 Rencana Besok</label>
+                    <label for="tomorrow_plan">🎯 Rencana Besok</label>
                     <p class="field-hint">Satu hal kecil apa yang ingin kamu lakukan besok agar merasa lebih baik? Contoh: jalan pagi 15 menit, tidur sebelum jam 11, menghubungi teman.</p>
-                    <textarea id="rencana_besok" name="rencana_besok" placeholder="Jawaban kamu... (opsional)"><?= htmlspecialchars($old['rencana_besok'] ?? '') ?></textarea>
+                    <textarea id="tomorrow_plan" name="tomorrow_plan" placeholder="Jawaban kamu... (opsional)"><?= htmlspecialchars($old['tomorrow_plan'] ?? '') ?></textarea>
                 </div>
 
                 <div class="field">
@@ -128,19 +128,19 @@
                         <label class="diary-check">
                             <input type="radio" name="visibility" value="private" data-visibility-toggle
                                    <?= $oldPrivate ? 'checked' : '' ?>>
-                            <span>Private &mdash; hanya saya yang bisa lihat</span>
+                            <span>Privat &mdash; hanya saya yang bisa lihat</span>
                         </label>
                         <label class="diary-check">
-                            <input type="radio" name="visibility" value="konselor" data-visibility-toggle
+                            <input type="radio" name="visibility" value="counselor" data-visibility-toggle
                                    <?= !$oldPrivate ? 'checked' : '' ?>>
-                            <span>Publish to Konselor</span>
+                            <span>Bagikan ke Konselor</span>
                         </label>
-                        <select name="shared_konselor_id" id="shared_konselor_id" <?= $oldPrivate ? 'disabled' : '' ?>>
+                        <select name="shared_counselor_id" id="shared_counselor_id" <?= $oldPrivate ? 'disabled' : '' ?>>
                             <option value="">Pilih konselor...</option>
-                            <?php foreach ($konselors as $k): ?>
-                                <option value="<?= (int) $k['konselor_id'] ?>"
-                                    <?= (int) ($old['shared_konselor_id'] ?? 0) === (int) $k['konselor_id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($k['nama'] ?: $k['username']) ?>
+                            <?php foreach ($counselors as $k): ?>
+                                <option value="<?= (int) $k['counselor_id'] ?>"
+                                    <?= (int) ($old['shared_counselor_id'] ?? 0) === (int) $k['counselor_id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($k['name'] ?: $k['username']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -160,10 +160,10 @@
 <script>
 (function () {
     var radios = document.querySelectorAll('[data-visibility-toggle]');
-    var select = document.getElementById('shared_konselor_id');
+    var select = document.getElementById('shared_counselor_id');
     radios.forEach(function (radio) {
         radio.addEventListener('change', function () {
-            select.disabled = document.querySelector('[data-visibility-toggle]:checked').value !== 'konselor';
+            select.disabled = document.querySelector('[data-visibility-toggle]:checked').value !== 'counselor';
         });
     });
 })();

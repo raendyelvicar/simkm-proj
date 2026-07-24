@@ -23,23 +23,23 @@ class CounselorController
     // GET /counselor — public
     public function index(Request $request): void
     {
-        $activeMonitoringKonselorIds = ($_SESSION['role'] ?? '') === 'mahasiswa'
-            ? $this->monitoring->activeKonselorIdsForStudent((int) $_SESSION['user_id'])
+        $activeMonitoringCounselorIds = ($_SESSION['role'] ?? '') === 'student'
+            ? $this->monitoring->activeCounselorIdsForStudent((int) $_SESSION['user_id'])
             : [];
 
         $filters = [
             'search'            => trim((string) $request->get('q', '')),
-            'profesi'           => $request->get('profesi') ?: null,
-            'metode_konsultasi' => $request->get('metode_konsultasi') ?: null,
+            'profession'           => $request->get('profession') ?: null,
+            'consultation_method' => $request->get('consultation_method') ?: null,
         ];
-        [$sort, $dir] = $this->parseSort((string) $request->get('sort', 'nama:asc'));
+        [$sort, $dir] = $this->parseSort((string) $request->get('sort', 'name:asc'));
         $page = max(1, (int) $request->get('page', 1));
 
         $result = $this->counselors->paginatedActive($filters, $sort, $dir, $page, self::PER_PAGE);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('counselor/index', [
-            'title'                       => 'Konselor',
+            'title'                       => 'Counselor',
             'counselors'                  => $result['items'],
             'total'                       => $result['total'],
             'page'                        => $page,
@@ -47,7 +47,7 @@ class CounselorController
             'sort'                        => $sort,
             'dir'                         => $dir,
             'filters'                     => $filters,
-            'activeMonitoringKonselorIds' => $activeMonitoringKonselorIds,
+            'activeMonitoringCounselorIds' => $activeMonitoringCounselorIds,
         ]);
     }
 
@@ -69,11 +69,11 @@ class CounselorController
             return;
         }
 
-        $hasActiveMonitoring = ($_SESSION['role'] ?? '') === 'mahasiswa'
-            && $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['konselor_id']);
+        $hasActiveMonitoring = ($_SESSION['role'] ?? '') === 'student'
+            && $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['counselor_id']);
 
         Response::view('counselor/show', [
-            'title' => $counselor['nama'] ?: 'Detail Konselor',
+            'title' => $counselor['name'] ?: 'Detail Counselor',
             'counselor' => $counselor,
             'hasActiveMonitoring' => $hasActiveMonitoring,
         ]);

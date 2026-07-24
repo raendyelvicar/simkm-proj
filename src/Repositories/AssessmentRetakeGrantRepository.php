@@ -6,9 +6,9 @@ use App\Core\Database;
 use mysqli;
 
 /**
- * Gate on retaking the combined self-assessment: a mahasiswa's very first session is
+ * Gate on retaking the combined self-assessment: a student's very first session is
  * always allowed; every session after that requires an unconsumed "retake grant" —
- * created only when a konselor explicitly recommends it while completing a booking
+ * created only when a counselor explicitly recommends it while completing a booking
  * (see BookingQueueController::complete()). One grant = exactly one retake.
  */
 class AssessmentRetakeGrantRepository
@@ -20,12 +20,12 @@ class AssessmentRetakeGrantRepository
         $this->db = Database::connection();
     }
 
-    public function grant(int $userId, int $bookingId, int $konselorId): void
+    public function grant(int $userId, int $bookingId, int $counselorId): void
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO assessment_retake_grants (user_id, booking_id, konselor_id) VALUES (?, ?, ?)'
+            'INSERT INTO assessment_retake_grants (user_id, booking_id, counselor_id) VALUES (?, ?, ?)'
         );
-        $stmt->bind_param('iii', $userId, $bookingId, $konselorId);
+        $stmt->bind_param('iii', $userId, $bookingId, $counselorId);
         $stmt->execute();
     }
 
@@ -40,13 +40,13 @@ class AssessmentRetakeGrantRepository
         return (bool) $stmt->get_result()->fetch_row();
     }
 
-    /** The oldest unconsumed grant, with the recommending konselor's name — for the "start" screen message. */
+    /** The oldest unconsumed grant, with the recommending counselor's name — for the "start" screen message. */
     public function latestUnconsumed(int $userId): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT g.*, u.nama AS konselor_nama
+            'SELECT g.*, u.name AS counselor_name
              FROM assessment_retake_grants g
-             JOIN konselor k ON k.konselor_id = g.konselor_id
+             JOIN counselors k ON k.counselor_id = g.counselor_id
              JOIN users u ON u.id = k.user_id
              WHERE g.user_id = ? AND g.consumed_at IS NULL
              ORDER BY g.granted_at ASC LIMIT 1'
@@ -76,7 +76,7 @@ class AssessmentRetakeGrantRepository
         $stmt->execute();
     }
 
-    // True until the mahasiswa has ever finished (completed or timed out) one combined
+    // True until the student has ever finished (completed or timed out) one combined
     // session — i.e. their very first attempt is always unlocked, no grant needed.
     public function isFirstAttempt(int $userId): bool
     {

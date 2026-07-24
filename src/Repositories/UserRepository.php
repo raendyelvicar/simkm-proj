@@ -75,46 +75,46 @@ class UserRepository
         return $users;
     }
 
-    public function findByNpm(string $npm): ?User
+    public function findByStudentNumber(string $student_number): ?User
     {
-        $stmt = $this->db->prepare('SELECT * FROM users WHERE npm = ? LIMIT 1');
-        $stmt->bind_param('s', $npm);
+        $stmt = $this->db->prepare('SELECT * FROM users WHERE student_number = ? LIMIT 1');
+        $stmt->bind_param('s', $student_number);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
 
         return $row ? new User($row) : null;
     }
 
-    // Self-registration entry point: always role=mahasiswa, status=pending —
+    // Self-registration entry point: always role=student, status=pending —
     // the account only becomes usable once an admin approves it.
-    public function createPendingMahasiswa(
-        string $nama,
-        string $namaLengkap,
+    public function createPendingStudent(
+        string $name,
+        string $nameLengkap,
         string $username,
         string $email,
         string $hashedPassword,
-        string $npm,
-        string $jenisKelamin,
-        string $fakultas,
-        string $jurusan,
-        string $noHp
+        string $student_number,
+        string $gender,
+        string $faculty,
+        string $major,
+        string $phoneNumber
     ): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO users (nama, nama_lengkap, username, email, password, npm, jenis_kelamin, fakultas, jurusan, no_hp, role, status, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mahasiswa', 'pending', NOW())"
+            "INSERT INTO users (name, full_name, username, email, password, student_number, gender, faculty, major, phone_number, role, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'student', 'pending', NOW())"
         );
         $stmt->bind_param(
             'ssssssssss',
-            $nama,
-            $namaLengkap,
+            $name,
+            $nameLengkap,
             $username,
             $email,
             $hashedPassword,
-            $npm,
-            $jenisKelamin,
-            $fakultas,
-            $jurusan,
-            $noHp
+            $student_number,
+            $gender,
+            $faculty,
+            $major,
+            $phoneNumber
         );
         $stmt->execute();
 
@@ -144,48 +144,48 @@ class UserRepository
         return $stmt->affected_rows > 0;
     }
 
-    /** @return array<string, int> fakultas name => mahasiswa count, for the staff dashboard distribution chart. */
-    public function countByFakultas(): array
+    /** @return array<string, int> faculty name => student count, for the staff dashboard distribution chart. */
+    public function countByFaculty(): array
     {
         $result = $this->db->query(
-            "SELECT fakultas, COUNT(*) AS total FROM users
-             WHERE role = 'mahasiswa' AND fakultas IS NOT NULL AND fakultas != ''
-             GROUP BY fakultas ORDER BY total DESC"
+            "SELECT faculty, COUNT(*) AS total FROM users
+             WHERE role = 'student' AND faculty IS NOT NULL AND faculty != ''
+             GROUP BY faculty ORDER BY total DESC"
         );
 
         $counts = [];
         while ($row = $result->fetch_assoc()) {
-            $counts[$row['fakultas']] = (int) $row['total'];
+            $counts[$row['faculty']] = (int) $row['total'];
         }
 
         return $counts;
     }
 
-    /** Distinct jurusan values actually in use, optionally scoped to one fakultas — for filter dropdowns. */
-    public function distinctJurusan(?string $fakultas = null): array
+    /** Distinct major values actually in use, optionally scoped to one faculty — for filter dropdowns. */
+    public function distinctMajor(?string $faculty = null): array
     {
-        if ($fakultas) {
+        if ($faculty) {
             $stmt = $this->db->prepare(
-                "SELECT DISTINCT jurusan FROM users
-                 WHERE role = 'mahasiswa' AND fakultas = ? AND jurusan IS NOT NULL AND jurusan != ''
-                 ORDER BY jurusan"
+                "SELECT DISTINCT major FROM users
+                 WHERE role = 'student' AND faculty = ? AND major IS NOT NULL AND major != ''
+                 ORDER BY major"
             );
-            $stmt->bind_param('s', $fakultas);
+            $stmt->bind_param('s', $faculty);
         } else {
             $stmt = $this->db->prepare(
-                "SELECT DISTINCT jurusan FROM users
-                 WHERE role = 'mahasiswa' AND jurusan IS NOT NULL AND jurusan != ''
-                 ORDER BY jurusan"
+                "SELECT DISTINCT major FROM users
+                 WHERE role = 'student' AND major IS NOT NULL AND major != ''
+                 ORDER BY major"
             );
         }
         $stmt->execute();
 
-        return array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'jurusan');
+        return array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'major');
     }
 
-    public function countActiveMahasiswa(): int
+    public function countActiveStudent(): int
     {
-        $result = $this->db->query("SELECT COUNT(*) AS c FROM users WHERE role = 'mahasiswa' AND status = 'active'");
+        $result = $this->db->query("SELECT COUNT(*) AS c FROM users WHERE role = 'student' AND status = 'active'");
 
         return (int) ($result->fetch_assoc()['c'] ?? 0);
     }
@@ -198,30 +198,30 @@ class UserRepository
     }
 
     private const PENDING_SORTABLE = [
-        'nama'       => 'nama',
+        'name'       => 'name',
         'created_at' => 'created_at',
     ];
 
     /**
-     * Search/filter/sort/paginate over pending mahasiswa registrations — backs /admin/approvals.
-     * @param array $filters ['search'=>?, 'fakultas'=>?]
+     * Search/filter/sort/paginate over pending student registrations — backs /admin/approvals.
+     * @param array $filters ['search'=>?, 'faculty'=>?]
      * @return array{items: array, total: int}
      */
-    public function paginatedPendingMahasiswa(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    public function paginatedPendingStudent(array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $where = " WHERE role = 'mahasiswa' AND status = 'pending'";
+        $where = " WHERE role = 'student' AND status = 'pending'";
         $params = [];
         $types = '';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (nama LIKE ? OR npm LIKE ?)';
+            $where .= ' AND (name LIKE ? OR student_number LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like]);
             $types .= 'ss';
         }
-        if (!empty($filters['fakultas'])) {
-            $where .= ' AND fakultas = ?';
-            $params[] = $filters['fakultas'];
+        if (!empty($filters['faculty'])) {
+            $where .= ' AND faculty = ?';
+            $params[] = $filters['faculty'];
             $types .= 's';
         }
 
@@ -251,38 +251,38 @@ class UserRepository
     }
 
     private const MAHASISWA_SORTABLE = [
-        'nama'       => 'nama',
-        'npm'        => 'npm',
-        'fakultas'   => 'fakultas',
+        'name'       => 'name',
+        'student_number'        => 'student_number',
+        'faculty'   => 'faculty',
         'status'     => 'status',
         'created_at' => 'created_at',
     ];
 
     /**
-     * Search/filter/sort/paginate over the mahasiswa roster — backs /students.
-     * @param array $filters ['search'=>?, 'fakultas'=>?, 'jurusan'=>?, 'status'=>?]
+     * Search/filter/sort/paginate over the student roster — backs /students.
+     * @param array $filters ['search'=>?, 'faculty'=>?, 'major'=>?, 'status'=>?]
      * @return array{items: array, total: int}
      */
-    public function paginatedMahasiswa(array $filters, string $sort, string $dir, int $page, int $perPage): array
+    public function paginatedStudent(array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $where = " WHERE role = 'mahasiswa'";
+        $where = " WHERE role = 'student'";
         $params = [];
         $types = '';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (nama LIKE ? OR npm LIKE ? OR email LIKE ?)';
+            $where .= ' AND (name LIKE ? OR student_number LIKE ? OR email LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like, $like]);
             $types .= 'sss';
         }
-        if (!empty($filters['fakultas'])) {
-            $where .= ' AND fakultas = ?';
-            $params[] = $filters['fakultas'];
+        if (!empty($filters['faculty'])) {
+            $where .= ' AND faculty = ?';
+            $params[] = $filters['faculty'];
             $types .= 's';
         }
-        if (!empty($filters['jurusan'])) {
-            $where .= ' AND jurusan = ?';
-            $params[] = $filters['jurusan'];
+        if (!empty($filters['major'])) {
+            $where .= ' AND major = ?';
+            $params[] = $filters['major'];
             $types .= 's';
         }
         if (!empty($filters['status'])) {
@@ -321,25 +321,34 @@ class UserRepository
     // $profileImage left null keeps the existing photo untouched.
     public function updateProfile(
         int $id,
-        string $nama,
+        string $name,
         string $email,
-        string $noHp,
-        string $jenisKelamin,
-        string $fakultas,
-        string $jurusan,
+        string $phoneNumber,
+        string $gender,
+        string $faculty,
+        string $major,
         ?string $profileImage
     ): bool {
         if ($profileImage !== null) {
             $stmt = $this->db->prepare(
-                'UPDATE users SET nama = ?, email = ?, no_hp = ?, jenis_kelamin = ?, fakultas = ?, jurusan = ?, profile_image = ? WHERE id = ?'
+                'UPDATE users SET name = ?, email = ?, phone_number = ?, gender = ?, faculty = ?, major = ?, profile_image = ? WHERE id = ?'
             );
-            $stmt->bind_param('sssssssi', $nama, $email, $noHp, $jenisKelamin, $fakultas, $jurusan, $profileImage, $id);
+            $stmt->bind_param('sssssssi', $name, $email, $phoneNumber, $gender, $faculty, $major, $profileImage, $id);
         } else {
             $stmt = $this->db->prepare(
-                'UPDATE users SET nama = ?, email = ?, no_hp = ?, jenis_kelamin = ?, fakultas = ?, jurusan = ? WHERE id = ?'
+                'UPDATE users SET name = ?, email = ?, phone_number = ?, gender = ?, faculty = ?, major = ? WHERE id = ?'
             );
-            $stmt->bind_param('ssssssi', $nama, $email, $noHp, $jenisKelamin, $fakultas, $jurusan, $id);
+            $stmt->bind_param('ssssssi', $name, $email, $phoneNumber, $gender, $faculty, $major, $id);
         }
+
+        return $stmt->execute();
+    }
+
+    // Used by the forgot-password flow once a reset token has been verified.
+    public function updatePassword(int $id, string $hashedPassword): bool
+    {
+        $stmt = $this->db->prepare('UPDATE users SET password = ? WHERE id = ?');
+        $stmt->bind_param('si', $hashedPassword, $id);
 
         return $stmt->execute();
     }

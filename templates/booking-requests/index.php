@@ -1,8 +1,8 @@
 <?php
 $statusLabel = [
-    'Pending' => 'Pending',
-    'Confirmed' => 'On Progress',
-    'Completed' => 'Completed',
+    'Pending' => 'Menunggu',
+    'Confirmed' => 'Berlangsung',
+    'Completed' => 'Selesai',
 ];
 $statusPill = [
     'Pending' => 'status-pill-pending',
@@ -42,8 +42,8 @@ ob_start();
                 <table class="booking-queue-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('student_nama', 'Mahasiswa', $sort, $dir, $queryParams) ?></th>
-                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('student_name', 'Mahasiswa', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('date', 'Tanggal', $sort, $dir, $queryParams) ?></th>
                             <th>Jam</th>
                             <th>Keluhan</th>
                             <th><?= sort_link('status', 'Status', $sort, $dir, $queryParams) ?></th>
@@ -54,12 +54,12 @@ ob_start();
                         <?php foreach ($bookings as $booking): ?>
                             <tr>
                                 <td>
-                                    <div><?= htmlspecialchars($booking['student_nama'] ?: '-') ?></div>
-                                    <div class="booking-queue-sub"><?= htmlspecialchars($booking['student_npm'] ?: '-') ?></div>
+                                    <div><?= htmlspecialchars($booking['student_name'] ?: '-') ?></div>
+                                    <div class="booking-queue-sub"><?= htmlspecialchars($booking['student_number'] ?: '-') ?></div>
                                 </td>
-                                <td><?= htmlspecialchars($booking['tanggal'] ? date('d M Y', strtotime($booking['tanggal'])) : '-') ?></td>
-                                <td><?= htmlspecialchars(substr($booking['jam_mulai'], 0, 5)) ?> - <?= htmlspecialchars(substr($booking['jam_selesai'], 0, 5)) ?></td>
-                                <td style="max-width:280px; white-space:normal;"><?= htmlspecialchars($booking['keluhan'] ?: '-') ?></td>
+                                <td><?= htmlspecialchars($booking['date'] ? date('d M Y', strtotime($booking['date'])) : '-') ?></td>
+                                <td><?= htmlspecialchars(substr($booking['start_time'], 0, 5)) ?> - <?= htmlspecialchars(substr($booking['end_time'], 0, 5)) ?></td>
+                                <td style="max-width:280px; white-space:normal;"><?= htmlspecialchars($booking['complaint'] ?: '-') ?></td>
                                 <td>
                                     <span class="status-pill <?= $statusPill[$booking['status']] ?? 'status-pill-completed' ?>"><?= htmlspecialchars($statusLabel[$booking['status']] ?? $booking['status']) ?></span>
                                     <?php if ($booking['status'] === 'Confirmed' && !empty($booking['monitoring_end'])): ?>
@@ -120,22 +120,22 @@ ob_start();
                 <div class="modal-dialog">
                     <form method="post" action="/booking-requests/<?= (int) $booking['booking_id'] ?>/complete" class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Tandai Selesai — <?= htmlspecialchars($booking['student_nama'] ?: '-') ?></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title">Tandai Selesai — <?= htmlspecialchars($booking['student_name'] ?: '-') ?></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                         </div>
                         <div class="modal-body">
                             <p class="text-muted small">Akses chat dan berbagi diary mahasiswa untuk booking ini akan ditutup. Catatan berikut akan tampil pada Laporan Konseling.</p>
                             <div class="mb-3">
                                 <label class="form-label">Catatan Konselor</label>
-                                <textarea name="catatan_konselor" class="form-control" rows="3" placeholder="Ringkasan sesi konseling"></textarea>
+                                <textarea name="counselor_notes" class="form-control" rows="3" placeholder="Ringkasan sesi konseling"></textarea>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Rekomendasi</label>
-                                <textarea name="rekomendasi" class="form-control" rows="2" placeholder="Rekomendasi untuk mahasiswa"></textarea>
+                                <textarea name="recommendation" class="form-control" rows="2" placeholder="Rekomendasi untuk mahasiswa"></textarea>
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Tindak Lanjut</label>
-                                <textarea name="tindak_lanjut" class="form-control" rows="2" placeholder="Rencana tindak lanjut (opsional)"></textarea>
+                                <textarea name="follow_up" class="form-control" rows="2" placeholder="Rencana tindak lanjut (opsional)"></textarea>
                             </div>
                             <div class="form-check mt-3">
                                 <input type="checkbox" class="form-check-input" id="reassess<?= (int) $booking['booking_id'] ?>" name="recommend_reassessment" value="1">

@@ -2,34 +2,34 @@
 
 namespace App\Models;
 
-class Konselor
+class Counselor
 {
-    public int $konselorId;
+    public int $counselorId;
     public int $userId;
 
-    public string $nomorRegistrasi;
-    public string $profesi;
+    public string $registrationNumber;
+    public string $profession;
 
-    public ?string $spesialisasi;
-    public ?string $pendidikan;
+    public ?string $specialization;
+    public ?string $education;
 
-    public int $pengalamanTahun;
+    public int $experienceYears;
 
-    public ?string $bahasa;
+    public ?string $languages;
 
-    public float $biayaKonsultasi;
+    public float $consultationFee;
 
-    public int $durasiSesi;
+    public int $durationSession;
 
-    public string $metodeKonsultasi;
+    public string $consultationMethod;
 
-    public ?string $fotoProfil;
+    public ?string $profilePhoto;
 
-    public ?string $biografi;
+    public ?string $biography;
 
-    public bool $statusVerifikasi;
+    public bool $verificationStatus;
 
-    public bool $statusAktif;
+    public bool $isActive;
 
     public ?string $createdAt;
 
@@ -37,32 +37,32 @@ class Konselor
 
     public function __construct(array $data)
     {
-        $this->konselorId = (int)($data['konselor_id'] ?? 0);
+        $this->counselorId = (int)($data['counselor_id'] ?? 0);
         $this->userId = (int)($data['user_id'] ?? 0);
 
-        $this->nomorRegistrasi = $data['nomor_registrasi'] ?? '';
-        $this->profesi = $data['profesi'] ?? '';
+        $this->registrationNumber = $data['registration_number'] ?? '';
+        $this->profession = $data['profession'] ?? '';
 
-        $this->spesialisasi = $data['spesialisasi'] ?? null;
-        $this->pendidikan = $data['pendidikan'] ?? null;
+        $this->specialization = $data['specialization'] ?? null;
+        $this->education = $data['education'] ?? null;
 
-        $this->pengalamanTahun = (int)($data['pengalaman_tahun'] ?? 0);
+        $this->experienceYears = (int)($data['experience_years'] ?? 0);
 
-        $this->bahasa = $data['bahasa'] ?? null;
+        $this->languages = $data['languages'] ?? null;
 
-        $this->biayaKonsultasi = (float)($data['biaya_konsultasi'] ?? 0);
+        $this->consultationFee = (float)($data['consultation_fee'] ?? 0);
 
-        $this->durasiSesi = (int)($data['durasi_sesi'] ?? 60);
+        $this->durationSession = (int)($data['session_duration'] ?? 60);
 
-        $this->metodeKonsultasi = $data['metode_konsultasi'] ?? 'Online';
+        $this->consultationMethod = $data['consultation_method'] ?? 'Online';
 
-        $this->fotoProfil = $data['foto_profil'] ?? null;
+        $this->profilePhoto = $data['profile_photo'] ?? null;
 
-        $this->biografi = $data['biografi'] ?? null;
+        $this->biography = $data['biography'] ?? null;
 
-        $this->statusVerifikasi = (bool)($data['status_verifikasi'] ?? false);
+        $this->verificationStatus = (bool)($data['verification_status'] ?? false);
 
-        $this->statusAktif = (bool)($data['status_aktif'] ?? true);
+        $this->isActive = (bool)($data['is_active'] ?? true);
 
         $this->createdAt = $data['created_at'] ?? null;
 
@@ -72,21 +72,21 @@ class Konselor
     public function toArray(): array
     {
         return [
-            'konselor_id' => $this->konselorId,
+            'counselor_id' => $this->counselorId,
             'user_id' => $this->userId,
-            'nomor_registrasi' => $this->nomorRegistrasi,
-            'profesi' => $this->profesi,
-            'spesialisasi' => $this->spesialisasi,
-            'pendidikan' => $this->pendidikan,
-            'pengalaman_tahun' => $this->pengalamanTahun,
-            'bahasa' => $this->bahasa,
-            'biaya_konsultasi' => $this->biayaKonsultasi,
-            'durasi_sesi' => $this->durasiSesi,
-            'metode_konsultasi' => $this->metodeKonsultasi,
-            'foto_profil' => $this->fotoProfil,
-            'biografi' => $this->biografi,
-            'status_verifikasi' => $this->statusVerifikasi,
-            'status_aktif' => $this->statusAktif,
+            'registration_number' => $this->registrationNumber,
+            'profession' => $this->profession,
+            'specialization' => $this->specialization,
+            'education' => $this->education,
+            'experience_years' => $this->experienceYears,
+            'languages' => $this->languages,
+            'consultation_fee' => $this->consultationFee,
+            'session_duration' => $this->durationSession,
+            'consultation_method' => $this->consultationMethod,
+            'profile_photo' => $this->profilePhoto,
+            'biography' => $this->biography,
+            'verification_status' => $this->verificationStatus,
+            'is_active' => $this->isActive,
             'created_at' => $this->createdAt,
             'updated_at' => $this->updatedAt,
         ];

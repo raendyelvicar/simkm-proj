@@ -23,19 +23,19 @@ ob_start();
                 </div>
                 <div class="col-auto">
                     <label class="form-label small text-muted mb-1">Fakultas</label>
-                    <select name="fakultas" class="form-select form-select-sm">
+                    <select name="faculty" class="form-select form-select-sm">
                         <option value="">Semua Fakultas</option>
-                        <?php foreach ($fakultasOptions as $f): ?>
-                            <option value="<?= htmlspecialchars($f) ?>" <?= ($filters['fakultas'] ?? '') === $f ? 'selected' : '' ?>><?= htmlspecialchars($f) ?></option>
+                        <?php foreach ($facultyOptions as $f): ?>
+                            <option value="<?= htmlspecialchars($f) ?>" <?= ($filters['faculty'] ?? '') === $f ? 'selected' : '' ?>><?= htmlspecialchars($f) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-auto">
                     <label class="form-label small text-muted mb-1">Jurusan</label>
-                    <select name="jurusan" class="form-select form-select-sm">
+                    <select name="major" class="form-select form-select-sm">
                         <option value="">Semua Jurusan</option>
-                        <?php foreach ($jurusanOptions as $j): ?>
-                            <option value="<?= htmlspecialchars($j) ?>" <?= ($filters['jurusan'] ?? '') === $j ? 'selected' : '' ?>><?= htmlspecialchars($j) ?></option>
+                        <?php foreach ($majorOptions as $j): ?>
+                            <option value="<?= htmlspecialchars($j) ?>" <?= ($filters['major'] ?? '') === $j ? 'selected' : '' ?>><?= htmlspecialchars($j) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -72,11 +72,11 @@ ob_start();
                     <table class="table assess-table align-middle">
                         <thead>
                             <tr>
-                                <th><?= sort_link('nama', 'Mahasiswa', $sort, $dir, $queryParams) ?></th>
-                                <th><?= sort_link('fakultas', 'Fakultas / Jurusan', $sort, $dir, $queryParams) ?></th>
+                                <th><?= sort_link('name', 'Mahasiswa', $sort, $dir, $queryParams) ?></th>
+                                <th><?= sort_link('faculty', 'Fakultas / Jurusan', $sort, $dir, $queryParams) ?></th>
                                 <th>BDI-II Terakhir</th>
                                 <th>PWB Terakhir</th>
-                                <th><?= sort_link('total_submissions', 'Total Submission', $sort, $dir, $queryParams) ?></th>
+                                <th><?= sort_link('total_submissions', 'Total Pengiriman', $sort, $dir, $queryParams) ?></th>
                                 <th><?= sort_link('last_submitted_at', 'Terakhir Mengisi', $sort, $dir, $queryParams) ?></th>
                                 <th></th>
                             </tr>
@@ -85,12 +85,12 @@ ob_start();
                             <?php foreach ($students as $s): ?>
                                 <tr>
                                     <td>
-                                        <div><?= htmlspecialchars($s['nama'] ?: '-') ?></div>
-                                        <div class="text-muted small"><?= htmlspecialchars($s['npm'] ?: '-') ?></div>
+                                        <div><?= htmlspecialchars($s['name'] ?: '-') ?></div>
+                                        <div class="text-muted small"><?= htmlspecialchars($s['student_number'] ?: '-') ?></div>
                                     </td>
                                     <td>
-                                        <?= htmlspecialchars($s['fakultas'] ?: '-') ?>
-                                        <div class="text-muted small"><?= htmlspecialchars($s['jurusan'] ?: '-') ?></div>
+                                        <?= htmlspecialchars($s['faculty'] ?: '-') ?>
+                                        <div class="text-muted small"><?= htmlspecialchars($s['major'] ?: '-') ?></div>
                                     </td>
                                     <td>
                                         <?php if ($s['latest_bdi2_category']): ?>
@@ -177,7 +177,7 @@ ob_start();
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
-                    <span class="text-muted small"><?= (int) $total ?> submission ditemukan</span>
+                    <span class="text-muted small"><?= (int) $total ?> pengiriman ditemukan</span>
                     <?= pagination_links($page, $totalPages, $queryParams) ?>
                 </div>
             <?php endif; ?>

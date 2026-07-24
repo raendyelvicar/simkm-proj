@@ -10,7 +10,7 @@ use App\Repositories\AssessmentRepository;
 use App\Repositories\DiaryRepository;
 use App\Services\AssessmentScoringService;
 
-// Self Help hub for mahasiswa: the concrete pages behind the "Self Help" /
+// Self Help hub for student: the concrete pages behind the "Self Help" /
 // "Self Help + PFA" recommendations produced by AssessmentScoringService::combinedLevel().
 class SelfHelpController
 {

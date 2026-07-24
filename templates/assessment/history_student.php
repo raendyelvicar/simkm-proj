@@ -7,10 +7,10 @@ ob_start();
 <div class="assess-page">
     <div class="page-head">
         <div>
-            <h1><?= htmlspecialchars($student['nama'] ?: '-') ?></h1>
+            <h1><?= htmlspecialchars($student['name'] ?: '-') ?></h1>
             <p>
-                NPM <?= htmlspecialchars($student['npm'] ?: '-') ?>
-                &middot; <?= htmlspecialchars($student['fakultas'] ?: '-') ?> / <?= htmlspecialchars($student['jurusan'] ?: '-') ?>
+                NPM <?= htmlspecialchars($student['student_number'] ?: '-') ?>
+                &middot; <?= htmlspecialchars($student['faculty'] ?: '-') ?> / <?= htmlspecialchars($student['major'] ?: '-') ?>
             </p>
         </div>
         <a href="/assessment/history" class="btn btn-outline-secondary btn-sm">&larr; Kembali ke Daftar Mahasiswa</a>

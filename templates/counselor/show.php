@@ -6,49 +6,50 @@
     <div class="counselor-detail">
         <div class="counselor-detail-head">
             <div class="counselor-avatar counselor-avatar-lg">
-                <?php $photo = $counselor['foto_profil'] ?: $counselor['profile_image']; ?>
-                <?php if (!empty($photo)): ?>
+                <?php $photo = profile_photo_url($counselor['profile_photo'] ?: $counselor['profile_image']); ?>
+                <?php if ($photo): ?>
                     <img src="<?= htmlspecialchars($photo) ?>"
-                        alt="<?= htmlspecialchars($counselor['nama']) ?>"
+                        alt="<?= htmlspecialchars($counselor['name']) ?>"
                         onerror="this.remove()">
                 <?php endif; ?>
-                <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($counselor['nama'] !== '' ? $counselor['nama'] : '?', 0, 1))) ?></span>
+                <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($counselor['name'] !== '' ? $counselor['name'] : '?', 0, 1))) ?></span>
             </div>
             <div>
-                <h1><?= htmlspecialchars($counselor['nama'] !== '' ? $counselor['nama'] : 'Konselor') ?></h1>
-                <?php if (!empty($counselor['profesi'])): ?>
-                    <span class="category-pill"><?= htmlspecialchars($counselor['profesi']) ?></span>
+                <h1><?= htmlspecialchars($counselor['name'] !== '' ? $counselor['name'] : 'Konselor') ?></h1>
+                <?php if (!empty($counselor['profession'])): ?>
+                    <?php $professionLabels = ['Psychologist' => 'Psikolog', 'Counselor' => 'Konselor', 'Psychiatrist' => 'Psikiater']; ?>
+                    <span class="category-pill"><?= htmlspecialchars($professionLabels[$counselor['profession']] ?? $counselor['profession']) ?></span>
                 <?php endif; ?>
-                <?php if (!empty($counselor['spesialisasi'])): ?>
-                    <span class="category-pill"><?= htmlspecialchars($counselor['spesialisasi']) ?></span>
+                <?php if (!empty($counselor['specialization'])): ?>
+                    <span class="category-pill"><?= htmlspecialchars($counselor['specialization']) ?></span>
                 <?php endif; ?>
             </div>
         </div>
 
-        <?php if (!empty($counselor['biografi'])): ?>
-            <p class="counselor-detail-bio"><?= nl2br(htmlspecialchars($counselor['biografi'])) ?></p>
+        <?php if (!empty($counselor['biography'])): ?>
+            <p class="counselor-detail-bio"><?= nl2br(htmlspecialchars($counselor['biography'])) ?></p>
         <?php endif; ?>
 
-        <?php if (!empty($counselor['pendidikan'])): ?>
-            <div class="counselor-meta">🎓 <?= htmlspecialchars($counselor['pendidikan']) ?></div>
+        <?php if (!empty($counselor['education'])): ?>
+            <div class="counselor-meta">🎓 <?= htmlspecialchars($counselor['education']) ?></div>
         <?php endif; ?>
-        <?php if (!empty($counselor['pengalaman_tahun'])): ?>
-            <div class="counselor-meta">🧭 <?= (int) $counselor['pengalaman_tahun'] ?> tahun pengalaman</div>
+        <?php if (!empty($counselor['experience_years'])): ?>
+            <div class="counselor-meta">🧭 <?= (int) $counselor['experience_years'] ?> tahun pengalaman</div>
         <?php endif; ?>
-        <?php if (!empty($counselor['bahasa'])): ?>
-            <div class="counselor-meta">🗣️ <?= htmlspecialchars($counselor['bahasa']) ?></div>
+        <?php if (!empty($counselor['languages'])): ?>
+            <div class="counselor-meta">🗣️ <?= htmlspecialchars($counselor['languages']) ?></div>
         <?php endif; ?>
-        <?php if (!empty($counselor['metode_konsultasi'])): ?>
-            <div class="counselor-meta">💻 <?= htmlspecialchars($counselor['metode_konsultasi']) ?> &middot; <?= (int) $counselor['durasi_sesi'] ?> menit</div>
+        <?php if (!empty($counselor['consultation_method'])): ?>
+            <div class="counselor-meta">💻 <?= htmlspecialchars($counselor['consultation_method']) ?> &middot; <?= (int) $counselor['session_duration'] ?> menit</div>
         <?php endif; ?>
-        <!-- <?php if (!empty($counselor['biaya_konsultasi'])): ?>
-            <div class="counselor-meta">💳 Rp<?= number_format((float) $counselor['biaya_konsultasi'], 0, ',', '.') ?></div>
+        <!-- <?php if (!empty($counselor['consultation_fee'])): ?>
+            <div class="counselor-meta">💳 Rp<?= number_format((float) $counselor['consultation_fee'], 0, ',', '.') ?></div>
         <?php endif; ?> -->
 
         <div>
             <?php if (!empty($hasActiveMonitoring)): ?>
                 <a href="/chat/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">💬 Mulai Konsultasi</a>
-            <?php elseif (($_SESSION['role'] ?? '') === 'mahasiswa'): ?>
+            <?php elseif (($_SESSION['role'] ?? '') === 'student'): ?>
                 <a href="/bookings/create/<?= urlencode($counselor['user_id']) ?>" class="btn-counselor btn-counselor-primary">📅 Ajukan Booking Konsultasi</a>
             <?php endif; ?>
         </div>

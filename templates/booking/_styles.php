@@ -1,5 +1,5 @@
 <?php
-// Shared, scoped styles for the mahasiswa "Booking Saya" list. Mirrors the
+// Shared, scoped styles for the student "Booking Saya" list. Mirrors the
 // diary/tips/self-help-activities patterns so this page looks consistent
 // with the rest of the app instead of relying on bare Bootstrap defaults.
 return <<<'CSS'
@@ -79,7 +79,7 @@ return <<<'CSS'
     background: #f9fafb;
 }
 
-.booking-konselor {
+.booking-counselor {
     font-weight: 600;
 }
 
@@ -123,6 +123,7 @@ return <<<'CSS'
 .booking-badge-blue   { background: #dbeafe; color: #1d4ed8; }
 .booking-badge-gray   { background: #f1f5f9; color: #475569; }
 .booking-badge-red    { background: #fee2e2; color: #b91c1c; }
+.booking-badge-orange { background: #ffedd5; color: #c2410c; }
 
 .booking-actions {
     display: flex;

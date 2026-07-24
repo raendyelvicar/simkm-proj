@@ -19,9 +19,9 @@ class StudentController
 
         // This view exposes a roster of students, so it should be limited to
         // counselor/admin roles, not visible to a regular student account.
-        if (($_SESSION['role'] ?? '') !== 'konselor' && ($_SESSION['role'] ?? '') !== 'admin') {
+        if (($_SESSION['role'] ?? '') !== 'counselor' && ($_SESSION['role'] ?? '') !== 'admin') {
             http_response_code(403);
-            exit('Forbidden: konselor/admin only.');
+            exit('Forbidden: counselor/admin only.');
         }
 
         $this->users = new UserRepository();
@@ -32,19 +32,19 @@ class StudentController
     {
         $filters = [
             'search'   => trim((string) $request->get('q', '')),
-            'fakultas' => $request->get('fakultas') ?: null,
-            'jurusan'  => $request->get('jurusan') ?: null,
+            'faculty' => $request->get('faculty') ?: null,
+            'major'  => $request->get('major') ?: null,
             'status'   => $request->get('status') ?: null,
         ];
         $sort = (string) $request->get('sort', 'created_at');
         $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
         $page = max(1, (int) $request->get('page', 1));
 
-        $result = $this->users->paginatedMahasiswa($filters, $sort, $dir, $page, self::PER_PAGE);
+        $result = $this->users->paginatedStudent($filters, $sort, $dir, $page, self::PER_PAGE);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('students/index', [
-            'title'           => 'Data Mahasiswa',
+            'title'           => 'Data Student',
             'students'        => $result['items'],
             'total'           => $result['total'],
             'page'            => $page,
@@ -52,8 +52,8 @@ class StudentController
             'sort'            => $sort,
             'dir'             => $dir,
             'filters'         => $filters,
-            'fakultasOptions' => array_keys($this->users->countByFakultas()),
-            'jurusanOptions'  => $this->users->distinctJurusan(),
+            'facultyOptions' => array_keys($this->users->countByFaculty()),
+            'majorOptions'  => $this->users->distinctMajor(),
         ]);
     }
 }

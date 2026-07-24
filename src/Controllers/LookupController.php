@@ -14,12 +14,12 @@ class LookupController
         $this->lookup = new LookupRepository();
     }
 
-    public function getJurusan(Request $request): void
+    public function getMajor(Request $request): void
     {
-        $fakultasId = (int) $request->get('fakultas_id', 0);
-        $jurusanList = $this->lookup->getJurusanByFakultas($fakultasId);
+        $facultyId = (int) $request->get('faculty_id', 0);
+        $majorList = $this->lookup->getMajorByFaculty($facultyId);
 
         header('Content-Type: application/json');
-        echo json_encode($jurusanList);
+        echo json_encode($majorList);
     }
 }

@@ -37,7 +37,7 @@ class DiaryRepository
     ];
 
     /**
-     * Search/filter/sort/paginate a mahasiswa's own diary entries — backs /diary.
+     * Search/filter/sort/paginate a student's own diary entries — backs /diary.
      * @param array $filters ['search'=>?, 'date_from'=>?, 'date_to'=>?]
      * @return array{items: array, total: int}
      */
@@ -48,7 +48,7 @@ class DiaryRepository
         $types = 'i';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (situasi LIKE ? OR pikiran_awal LIKE ?)';
+            $where .= ' AND (situation LIKE ? OR initial_thoughts LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like]);
             $types .= 'ss';
@@ -101,24 +101,24 @@ class DiaryRepository
 
     private const SHARED_SORTABLE = [
         'entry_date'   => 'd.entry_date',
-        'student_nama' => 'u.nama',
+        'student_name' => 'u.name',
     ];
 
-    // Konselor-side inbox: entries a student explicitly published to this konselor.
-    // is_private=0 is redundant with shared_konselor_id being set (the app only ever
+    // Counselor-side inbox: entries a student explicitly published to this counselor.
+    // is_private=0 is redundant with shared_counselor_id being set (the app only ever
     // writes them together), but kept as a defensive filter.
     /**
-     * Search/sort/paginate a konselor's shared-diary inbox — backs /shared-diaries.
+     * Search/sort/paginate a counselor's shared-diary inbox — backs /shared-diaries.
      * @return array{items: array, total: int}
      */
-    public function paginatedSharedWithKonselor(int $konselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
+    public function paginatedSharedWithCounselor(int $counselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $where = ' WHERE d.shared_konselor_id = ? AND d.is_private = 0';
-        $params = [$konselorId];
+        $where = ' WHERE d.shared_counselor_id = ? AND d.is_private = 0';
+        $params = [$counselorId];
         $types = 'i';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (u.nama LIKE ? OR u.npm LIKE ?)';
+            $where .= ' AND (u.name LIKE ? OR u.student_number LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like]);
             $types .= 'ss';
@@ -136,7 +136,7 @@ class DiaryRepository
         $offset = ($page - 1) * $perPage;
 
         $dataStmt = $this->db->prepare(
-            "SELECT d.*, u.nama AS student_nama, u.npm AS student_npm
+            "SELECT d.*, u.name AS student_name, u.student_number AS student_number
              FROM diary_entries d
              INNER JOIN users u ON u.id = d.user_id
              {$where}
@@ -156,18 +156,18 @@ class DiaryRepository
         return ['items' => $items, 'total' => $total];
     }
 
-    // A single shared entry, scoped to the konselor it was shared with — a konselor
-    // must never be able to load another konselor's shared entry by guessing the id.
-    public function findSharedEntry(int $id, int $konselorId): ?array
+    // A single shared entry, scoped to the counselor it was shared with — a counselor
+    // must never be able to load another counselor's shared entry by guessing the id.
+    public function findSharedEntry(int $id, int $counselorId): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT d.*, u.nama AS student_nama, u.npm AS student_npm
+            'SELECT d.*, u.name AS student_name, u.student_number AS student_number
              FROM diary_entries d
              INNER JOIN users u ON u.id = d.user_id
-             WHERE d.id = ? AND d.shared_konselor_id = ? AND d.is_private = 0
+             WHERE d.id = ? AND d.shared_counselor_id = ? AND d.is_private = 0
              LIMIT 1'
         );
-        $stmt->bind_param('ii', $id, $konselorId);
+        $stmt->bind_param('ii', $id, $counselorId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
 
@@ -177,8 +177,8 @@ class DiaryRepository
     private function hydrateShared(array $row): array
     {
         return array_merge((new DiaryEntry($row))->toArray(), [
-            'student_nama' => $row['student_nama'],
-            'student_npm'  => $row['student_npm'],
+            'student_name' => $row['student_name'],
+            'student_number'  => $row['student_number'],
         ]);
     }
 
@@ -195,30 +195,30 @@ class DiaryRepository
     public function create(
         int $userId,
         string $entryDate,
-        string $situasi,
-        string $pikiranAwal,
-        array $emosiList,
-        ?string $emosiLainnya,
-        int $intensitasEmosi,
-        array $reaksiFisikList,
-        ?string $reaksiFisikLainnya,
-        string $perilaku,
+        string $situation,
+        string $initialThoughts,
+        array $emotionsList,
+        ?string $otherEmotions,
+        int $emotionIntensity,
+        array $physicalReactionsList,
+        ?string $otherPhysicalReactions,
+        string $behavior,
         ?string $selfReflection,
         array $gratitudeList,
-        ?string $rencanaBesok,
+        ?string $tomorrowPlan,
         bool $isPrivate,
-        ?int $sharedKonselorId
+        ?int $sharedCounselorId
     ): int {
         $stmt = $this->db->prepare(
             'INSERT INTO diary_entries
-            (user_id, entry_date, situasi, pikiran_awal, emosi_list, emosi_lainnya, intensitas_emosi,
-             reaksi_fisik_list, reaksi_fisik_lainnya, perilaku, self_reflection, gratitude_list,
-             rencana_besok, is_private, shared_konselor_id, created_at)
+            (user_id, entry_date, situation, initial_thoughts, emotions_list, other_emotions, emotion_intensity,
+             physical_reactions_list, other_physical_reactions, behavior, self_reflection, gratitude_list,
+             tomorrow_plan, is_private, shared_counselor_id, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
         );
 
-        $emosiJson = json_encode($emosiList);
-        $reaksiJson = json_encode($reaksiFisikList);
+        $emosiJson = json_encode($emotionsList);
+        $reaksiJson = json_encode($physicalReactionsList);
         $gratitudeJson = json_encode($gratitudeList);
         $isPrivateInt = $isPrivate ? 1 : 0;
 
@@ -226,19 +226,19 @@ class DiaryRepository
             'isssssissssssii',
             $userId,
             $entryDate,
-            $situasi,
-            $pikiranAwal,
+            $situation,
+            $initialThoughts,
             $emosiJson,
-            $emosiLainnya,
-            $intensitasEmosi,
+            $otherEmotions,
+            $emotionIntensity,
             $reaksiJson,
-            $reaksiFisikLainnya,
-            $perilaku,
+            $otherPhysicalReactions,
+            $behavior,
             $selfReflection,
             $gratitudeJson,
-            $rencanaBesok,
+            $tomorrowPlan,
             $isPrivateInt,
-            $sharedKonselorId
+            $sharedCounselorId
         );
         $stmt->execute();
 
@@ -248,49 +248,49 @@ class DiaryRepository
     public function update(
         int $id,
         string $entryDate,
-        string $situasi,
-        string $pikiranAwal,
-        array $emosiList,
-        ?string $emosiLainnya,
-        int $intensitasEmosi,
-        array $reaksiFisikList,
-        ?string $reaksiFisikLainnya,
-        string $perilaku,
+        string $situation,
+        string $initialThoughts,
+        array $emotionsList,
+        ?string $otherEmotions,
+        int $emotionIntensity,
+        array $physicalReactionsList,
+        ?string $otherPhysicalReactions,
+        string $behavior,
         ?string $selfReflection,
         array $gratitudeList,
-        ?string $rencanaBesok,
+        ?string $tomorrowPlan,
         bool $isPrivate,
-        ?int $sharedKonselorId
+        ?int $sharedCounselorId
     ): bool {
         $stmt = $this->db->prepare(
             'UPDATE diary_entries SET
-                entry_date = ?, situasi = ?, pikiran_awal = ?, emosi_list = ?, emosi_lainnya = ?,
-                intensitas_emosi = ?, reaksi_fisik_list = ?, reaksi_fisik_lainnya = ?, perilaku = ?,
-                self_reflection = ?, gratitude_list = ?, rencana_besok = ?, is_private = ?, shared_konselor_id = ?
+                entry_date = ?, situation = ?, initial_thoughts = ?, emotions_list = ?, other_emotions = ?,
+                emotion_intensity = ?, physical_reactions_list = ?, other_physical_reactions = ?, behavior = ?,
+                self_reflection = ?, gratitude_list = ?, tomorrow_plan = ?, is_private = ?, shared_counselor_id = ?
              WHERE id = ?'
         );
 
-        $emosiJson = json_encode($emosiList);
-        $reaksiJson = json_encode($reaksiFisikList);
+        $emosiJson = json_encode($emotionsList);
+        $reaksiJson = json_encode($physicalReactionsList);
         $gratitudeJson = json_encode($gratitudeList);
         $isPrivateInt = $isPrivate ? 1 : 0;
 
         $stmt->bind_param(
             'sssssissssssiii',
             $entryDate,
-            $situasi,
-            $pikiranAwal,
+            $situation,
+            $initialThoughts,
             $emosiJson,
-            $emosiLainnya,
-            $intensitasEmosi,
+            $otherEmotions,
+            $emotionIntensity,
             $reaksiJson,
-            $reaksiFisikLainnya,
-            $perilaku,
+            $otherPhysicalReactions,
+            $behavior,
             $selfReflection,
             $gratitudeJson,
-            $rencanaBesok,
+            $tomorrowPlan,
             $isPrivateInt,
-            $sharedKonselorId,
+            $sharedCounselorId,
             $id
         );
 

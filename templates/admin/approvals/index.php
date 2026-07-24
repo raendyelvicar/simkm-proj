@@ -32,7 +32,7 @@ ob_start();
                 <table class="approval-admin-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('nama', 'Nama', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('name', 'Nama', $sort, $dir, $queryParams) ?></th>
                             <th>NPM</th>
                             <th>Fakultas / Jurusan</th>
                             <th>Kontak</th>
@@ -46,38 +46,39 @@ ob_start();
                                 <td>
                                     <div class="approval-admin-name">
                                         <div class="approval-admin-avatar">
-                                            <?php if (!empty($user['profile'])): ?>
-                                                <img src="<?= htmlspecialchars($user['profile']) ?>"
-                                                    alt="<?= htmlspecialchars($user['nama'] ?: $user['username']) ?>"
+                                            <?php $photo = profile_photo_url($user['profile']); ?>
+                                            <?php if ($photo): ?>
+                                                <img src="<?= htmlspecialchars($photo) ?>"
+                                                    alt="<?= htmlspecialchars($user['name'] ?: $user['username']) ?>"
                                                     onerror="this.remove()">
                                             <?php endif; ?>
-                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($user['nama'] ?: $user['username'], 0, 1))) ?>
+                                            <?= htmlspecialchars(mb_strtoupper(mb_substr($user['name'] ?: $user['username'], 0, 1))) ?>
                                         </div>
                                         <div>
-                                            <div><?= htmlspecialchars($user['nama'] ?: '-') ?></div>
+                                            <div><?= htmlspecialchars($user['name'] ?: '-') ?></div>
                                             <div class="approval-admin-sub"><?= htmlspecialchars($user['username']) ?></div>
                                         </div>
                                     </div>
                                 </td>
-                                <td><?= htmlspecialchars($user['npm'] ?: '-') ?></td>
+                                <td><?= htmlspecialchars($user['student_number'] ?: '-') ?></td>
                                 <td>
-                                    <?= htmlspecialchars($user['fakultas'] ?: '-') ?>
-                                    <div class="approval-admin-sub"><?= htmlspecialchars($user['jurusan'] ?: '-') ?></div>
+                                    <?= htmlspecialchars($user['faculty'] ?: '-') ?>
+                                    <div class="approval-admin-sub"><?= htmlspecialchars($user['major'] ?: '-') ?></div>
                                 </td>
                                 <td>
                                     <?= htmlspecialchars($user['email'] ?: '-') ?>
-                                    <div class="approval-admin-sub"><?= htmlspecialchars($user['no_hp'] ?: '-') ?></div>
+                                    <div class="approval-admin-sub"><?= htmlspecialchars($user['phone_number'] ?: '-') ?></div>
                                 </td>
                                 <td><?= $user['created_at'] ? htmlspecialchars(date('d M Y', strtotime($user['created_at']))) : '-' ?></td>
                                 <td>
                                     <div class="approval-admin-actions">
                                         <form method="post" action="/admin/approvals/<?= urlencode($user['id']) ?>/approve"
-                                            onsubmit="return confirm('Setujui akun <?= htmlspecialchars(addslashes($user['nama'] ?: $user['username'])) ?>?');"
+                                            onsubmit="return confirm('Setujui akun <?= htmlspecialchars(addslashes($user['name'] ?: $user['username'])) ?>?');"
                                             style="display:inline;">
                                             <button type="submit" class="btn-approval-admin btn-approval-admin-approve">Setujui</button>
                                         </form>
                                         <form method="post" action="/admin/approvals/<?= urlencode($user['id']) ?>/reject"
-                                            onsubmit="return confirm('Tolak akun <?= htmlspecialchars(addslashes($user['nama'] ?: $user['username'])) ?>?');"
+                                            onsubmit="return confirm('Tolak akun <?= htmlspecialchars(addslashes($user['name'] ?: $user['username'])) ?>?');"
                                             style="display:inline;">
                                             <button type="submit" class="btn-approval-admin btn-approval-admin-reject">Tolak</button>
                                         </form>

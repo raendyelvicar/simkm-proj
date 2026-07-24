@@ -30,15 +30,15 @@ class ProfileController
         $userId = (int) $_SESSION['user_id'];
         $user = $this->users->find($userId);
 
-        $nama = trim($request->post('nama', ''));
+        $name = trim($request->post('name', ''));
         $email = trim($request->post('email', ''));
-        $noHp = trim($request->post('no_hp', ''));
-        $jenisKelamin = trim($request->post('jenis_kelamin', ''));
-        $fakultas = trim($request->post('fakultas', ''));
-        $jurusan = trim($request->post('jurusan', ''));
+        $phoneNumber = trim($request->post('phone_number', ''));
+        $gender = trim($request->post('gender', ''));
+        $faculty = trim($request->post('faculty', ''));
+        $major = trim($request->post('major', ''));
 
         $errors = [];
-        if ($nama === '') {
+        if ($name === '') {
             $errors[] = 'Nama wajib diisi.';
         }
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -59,7 +59,7 @@ class ProfileController
             return;
         }
 
-        $this->users->updateProfile($userId, $nama, $email, $noHp, $jenisKelamin, $fakultas, $jurusan, $photo);
+        $this->users->updateProfile($userId, $name, $email, $phoneNumber, $gender, $faculty, $major, $photo);
 
         if ($photo !== null && $user->profile !== '') {
             $oldPath = __DIR__ . '/../../public/uploads/profile/' . $user->profile;

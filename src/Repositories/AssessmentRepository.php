@@ -117,7 +117,7 @@ class AssessmentRepository
     public function findSubmission(int $id): ?AssessmentSubmission
     {
         $stmt = $this->db->prepare(
-            'SELECT s.*, u.nama FROM assessment_submissions s
+            'SELECT s.*, u.name FROM assessment_submissions s
              JOIN users u ON u.id = s.user_id
              WHERE s.id = ? LIMIT 1'
         );
@@ -166,7 +166,7 @@ class AssessmentRepository
         return $counts;
     }
 
-    /** Most recent submissions in the given severity categories, across all students — admin/konselor dashboard. */
+    /** Most recent submissions in the given severity categories, across all students — admin/counselor dashboard. */
     public function recentByCategories(array $categories, int $limit = 5): array
     {
         if (empty($categories)) {
@@ -180,7 +180,7 @@ class AssessmentRepository
         $sql = "
         SELECT
             s.*,
-            u.nama
+            u.name
         FROM assessment_submissions s
         INNER JOIN (
             SELECT
@@ -206,14 +206,14 @@ class AssessmentRepository
     }
 
     private const STAFF_HISTORY_SORTABLE = [
-        'nama'               => 'nama',
-        'fakultas'           => 'fakultas',
+        'name'               => 'name',
+        'faculty'           => 'faculty',
         'last_submitted_at'  => 'last_submitted_at',
         'total_submissions'  => 'total_submissions',
     ];
 
     /**
-     * Mahasiswa grouped by user with their assessment summary — backs the staff
+     * Student grouped by user with their assessment summary — backs the staff
      * "Riwayat Assessment" list (one row per student instead of per submission).
      * @return array{items: array, total: int}
      */
@@ -222,13 +222,13 @@ class AssessmentRepository
         [$where, $params, $types] = $this->buildStudentSummaryWhere($filters);
 
         $base = "SELECT * FROM (
-            SELECT u.id, u.nama, u.npm, u.fakultas, u.jurusan,
+            SELECT u.id, u.name, u.student_number, u.faculty, u.major,
                 (SELECT COUNT(*) FROM assessment_submissions s WHERE s.user_id = u.id) AS total_submissions,
                 (SELECT MAX(submitted_at) FROM assessment_submissions s WHERE s.user_id = u.id) AS last_submitted_at,
                 (SELECT category FROM assessment_submissions s WHERE s.user_id = u.id AND s.type = 'bdi2' ORDER BY submitted_at DESC LIMIT 1) AS latest_bdi2_category,
                 (SELECT category FROM assessment_submissions s WHERE s.user_id = u.id AND s.type = 'pwb' ORDER BY submitted_at DESC LIMIT 1) AS latest_pwb_category
             FROM users u
-            WHERE u.role = 'mahasiswa'
+            WHERE u.role = 'student'
         ) t WHERE total_submissions > 0" . $where;
 
         $countStmt = $this->db->prepare("SELECT COUNT(*) AS c FROM ({$base}) x");
@@ -260,20 +260,20 @@ class AssessmentRepository
         $types = '';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (nama LIKE ? OR npm LIKE ?)';
+            $where .= ' AND (name LIKE ? OR student_number LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params[] = $like;
             $params[] = $like;
             $types .= 'ss';
         }
-        if (!empty($filters['fakultas'])) {
-            $where .= ' AND fakultas = ?';
-            $params[] = $filters['fakultas'];
+        if (!empty($filters['faculty'])) {
+            $where .= ' AND faculty = ?';
+            $params[] = $filters['faculty'];
             $types .= 's';
         }
-        if (!empty($filters['jurusan'])) {
-            $where .= ' AND jurusan = ?';
-            $params[] = $filters['jurusan'];
+        if (!empty($filters['major'])) {
+            $where .= ' AND major = ?';
+            $params[] = $filters['major'];
             $types .= 's';
         }
         if (!empty($filters['bdi2_category'])) {
@@ -299,7 +299,7 @@ class AssessmentRepository
 
     /**
      * One student's submissions, filterable by type/category, sortable, paginated —
-     * backs both the staff-only per-student detail page and the mahasiswa's own
+     * backs both the staff-only per-student detail page and the student's own
      * "Riwayat Assessment" page (userId scoped to $_SESSION['user_id'] in that case).
      * @return array{items: AssessmentSubmission[], total: int}
      */
@@ -389,7 +389,7 @@ class AssessmentRepository
     public function flaggedForSuicidalIdeation(int $limit = 10): array
     {
         $stmt = $this->db->prepare(
-            "SELECT s.id, s.total_score, s.max_score, s.category, s.submitted_at, u.nama, a.score_value AS item_score
+            "SELECT s.id, s.total_score, s.max_score, s.category, s.submitted_at, u.name, a.score_value AS item_score
              FROM assessment_answers a
              JOIN assessment_questions q ON q.id = a.question_id
              JOIN assessment_submissions s ON s.id = a.submission_id

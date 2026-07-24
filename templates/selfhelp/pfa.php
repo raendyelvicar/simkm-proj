@@ -3,7 +3,7 @@
 <div class="selfhelp-page">
     <div class="page-head">
         <div>
-            <h1>🆘 Psychological First Aid (PFA)</h1>
+            <h1>🆘 Pertolongan Psikologis Pertama (PFA)</h1>
             <p>Langkah pertolongan psikologis awal untuk membantumu merasa lebih aman dan tenang saat ini.</p>
         </div>
         <a href="/self-help" class="btn btn-outline-secondary btn-sm">&larr; Kembali</a>
@@ -37,7 +37,7 @@
         <h5 class="mb-3">Langkah PFA untuk Diri Sendiri</h5>
 
         <div class="pfa-step">
-            <strong>1. Amati (Look)</strong>
+            <strong>1. Amati</strong>
             <p class="small text-muted mb-0">Sadari apa yang sedang kamu rasakan saat ini, di tubuh maupun pikiran, tanpa menghakimi diri sendiri.</p>
         </div>
         <div class="pfa-step">
@@ -45,7 +45,7 @@
             <p class="small text-muted mb-0">Tarik napas perlahan (coba <a href="/self-help/breathing">Latihan Pernapasan</a>), cari posisi duduk yang nyaman, dan pastikan kamu berada di tempat yang aman.</p>
         </div>
         <div class="pfa-step">
-            <strong>3. Hubungi seseorang (Listen &amp; Link)</strong>
+            <strong>3. Hubungi seseorang</strong>
             <p class="small text-muted mb-0">Hubungi orang yang kamu percaya &mdash; keluarga, teman, atau konselor kampus. Ceritakan apa yang kamu rasakan, sesederhana apa pun itu.</p>
         </div>
         <div class="pfa-step mb-0">
@@ -61,6 +61,6 @@
 
 <?php
 $content = ob_get_clean();
-$pageTitle = $title ?? 'Psychological First Aid';
+$pageTitle = $title ?? 'Pertolongan Psikologis Pertama';
 $extraStyles = require __DIR__ . '/_styles.php';
 require __DIR__ . '/../layouts/index.php';

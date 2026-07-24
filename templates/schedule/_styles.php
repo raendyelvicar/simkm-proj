@@ -1,5 +1,5 @@
 <?php
-// Shared, scoped styles for the konselor-facing schedule view. Mirrors
+// Shared, scoped styles for the counselor-facing schedule view. Mirrors
 // templates/students/_styles.php's list-table pattern so the look stays
 // consistent app-wide.
 return <<<'CSS'

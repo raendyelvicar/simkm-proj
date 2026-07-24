@@ -5,6 +5,7 @@
 use App\Controllers\HomeController;
 use App\Controllers\UserController;
 use App\Controllers\AuthController;
+use App\Controllers\PasswordResetController;
 use App\Controllers\DashboardController;
 use App\Controllers\ProfileController;
 use App\Controllers\DiaryController;
@@ -20,12 +21,13 @@ use App\Controllers\BookingQueueController;
 use App\Controllers\AdminScheduleController;
 use App\Controllers\AdminCounselorController;
 use App\Controllers\AdminApprovalController;
+use App\Controllers\AdminBookingCancellationController;
 use App\Controllers\ArticleController;
 use App\Controllers\StudentController;
 use App\Controllers\DailyTipController;
 use App\Controllers\SharedDiaryController;
 use App\Controllers\SelfHelpController;
-use App\Controllers\LaporanController;
+use App\Controllers\ReportController;
 
 $router->get('/', [HomeController::class, 'index']);
 
@@ -35,6 +37,11 @@ $router->post('/logout', [AuthController::class, 'logout']);
 
 $router->get('/register', [AuthController::class, 'showRegisterForm']);
 $router->post('/register', [AuthController::class, 'register']);
+
+$router->get('/forgot-password', [PasswordResetController::class, 'showForgotForm']);
+$router->post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
+$router->get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm']);
+$router->post('/reset-password/{token}', [PasswordResetController::class, 'resetPassword']);
 
 $router->get('/users', [UserController::class, 'index']);
 $router->get('/users/{id}', [UserController::class, 'show']);
@@ -85,24 +92,24 @@ $router->get('/chat/{counselorId}', [ChatController::class, 'show']);
 $router->post('/chat/{counselorId}', [ChatController::class, 'send']);
 $router->get('/chat/{counselorId}/messages', [ChatController::class, 'messages']);
 
-// --- Protected: konselor-only inbox for incoming student consultations ---
+// --- Protected: counselor-only inbox for incoming student consultations ---
 $router->get('/consultations', [ConsultationController::class, 'index']);
 $router->get('/consultations/{studentId}', [ConsultationController::class, 'show']);
 $router->post('/consultations/{studentId}', [ConsultationController::class, 'send']);
 $router->get('/consultations/{studentId}/messages', [ConsultationController::class, 'messages']);
 
-// --- Protected: mahasiswa-only booking requests with a counselor ---
+// --- Protected: student-only booking requests with a counselor ---
 $router->get('/bookings', [BookingController::class, 'index']);
 $router->get('/bookings/create/{counselorId}', [BookingController::class, 'create']);
 $router->post('/bookings', [BookingController::class, 'store']);
 $router->post('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
 
-// --- Protected: konselor-only view of their own available time slots (adding new
+// --- Protected: counselor-only view of their own available time slots (adding new
 // slots is admin-only, see /admin/counselors/{id}/schedule below) ---
 $router->get('/schedule', [CounselorScheduleController::class, 'index']);
 $router->post('/schedule/{id}/toggle', [CounselorScheduleController::class, 'toggle']);
 
-// --- Protected: konselor-only queue of pending booking requests ---
+// --- Protected: counselor-only queue of pending booking requests ---
 $router->get('/booking-requests', [BookingQueueController::class, 'index']);
 $router->post('/booking-requests/{id}/confirm', [BookingQueueController::class, 'confirm']);
 $router->post('/booking-requests/{id}/reject', [BookingQueueController::class, 'reject']);
@@ -110,11 +117,11 @@ $router->post('/booking-requests/{id}/extend', [BookingQueueController::class, '
 $router->post('/booking-requests/{id}/complete', [BookingQueueController::class, 'complete']);
 $router->post('/booking-requests/{id}/no-show', [BookingQueueController::class, 'noShow']);
 
-// --- Protected: konselor-only, read-only view of diaries students shared with them ---
+// --- Protected: counselor-only, read-only view of diaries students shared with them ---
 $router->get('/shared-diaries', [SharedDiaryController::class, 'index']);
 $router->get('/shared-diaries/{id}', [SharedDiaryController::class, 'show']);
 
-// --- Protected: konselor-only management of daily tips shown to mahasiswa ---
+// --- Protected: counselor-only management of daily tips shown to student ---
 $router->get('/tips', [DailyTipController::class, 'index']);
 $router->get('/tips/create', [DailyTipController::class, 'create']);
 $router->post('/tips', [DailyTipController::class, 'store']);
@@ -122,7 +129,7 @@ $router->get('/tips/{id}/edit', [DailyTipController::class, 'edit']);
 $router->post('/tips/{id}', [DailyTipController::class, 'update']);
 $router->post('/tips/{id}/delete', [DailyTipController::class, 'destroy']);
 
-// --- Protected: admin-only management of konselor accounts ---
+// --- Protected: admin-only management of counselor accounts ---
 $router->get('/admin/counselors', [AdminCounselorController::class, 'index']);
 $router->get('/admin/counselors/create', [AdminCounselorController::class, 'create']);
 $router->post('/admin/counselors', [AdminCounselorController::class, 'store']);
@@ -133,12 +140,17 @@ $router->post('/admin/counselors/{id}/status', [AdminCounselorController::class,
 // --- Protected: admin-only — add/manage a specific counselor's bookable schedule slots ---
 $router->get('/admin/counselors/{id}/schedule', [AdminScheduleController::class, 'index']);
 $router->post('/admin/counselors/{id}/schedule', [AdminScheduleController::class, 'store']);
-$router->post('/admin/counselors/{id}/schedule/{jadwalId}/toggle', [AdminScheduleController::class, 'toggle']);
+$router->post('/admin/counselors/{id}/schedule/{scheduleId}/toggle', [AdminScheduleController::class, 'toggle']);
 
-// --- Protected: admin-only approval queue for pending mahasiswa registrations ---
+// --- Protected: admin-only approval queue for pending student registrations ---
 $router->get('/admin/approvals', [AdminApprovalController::class, 'index']);
 $router->post('/admin/approvals/{id}/approve', [AdminApprovalController::class, 'approve']);
 $router->post('/admin/approvals/{id}/reject', [AdminApprovalController::class, 'reject']);
+
+// --- Protected: admin-only approval queue for student-initiated booking cancellations ---
+$router->get('/admin/booking-cancellations', [AdminBookingCancellationController::class, 'index']);
+$router->post('/admin/booking-cancellations/{id}/approve', [AdminBookingCancellationController::class, 'approve']);
+$router->post('/admin/booking-cancellations/{id}/reject', [AdminBookingCancellationController::class, 'reject']);
 
 $router->get('/article', [ArticleController::class, 'index']);
 $router->get('/article/create', [ArticleController::class, 'create']);
@@ -148,9 +160,9 @@ $router->get('/article/{id}/edit', [ArticleController::class, 'edit']);
 $router->post('/article/{id}', [ArticleController::class, 'update']);
 $router->post('/article/{id}/delete', [ArticleController::class, 'destroy']);
 
-$router->get('/jurusan', [App\Controllers\LookupController::class, 'getJurusan']);
+$router->get('/major', [App\Controllers\LookupController::class, 'getMajor']);
 
-// --- Protected: mahasiswa self-help features (breathing, gratitude, activities, PFA) ---
+// --- Protected: student self-help features (breathing, gratitude, activities, PFA) ---
 $router->get('/self-help', [SelfHelpController::class, 'index']);
 $router->get('/self-help/breathing', [SelfHelpController::class, 'breathing']);
 $router->get('/self-help/gratitude', [SelfHelpController::class, 'gratitude']);
@@ -163,29 +175,29 @@ $router->post('/self-help/activities/{id}/skip', [SelfHelpController::class, 'sk
 $router->post('/self-help/activities/{id}/delete', [SelfHelpController::class, 'destroyActivity']);
 
 // --- Protected: Laporan hub + the 8 report pages. Each report enforces its own
-// role/scope rule inside LaporanController regardless of what the nav shows. ---
-$router->get('/laporan', [LaporanController::class, 'index']);
+// role/scope rule inside ReportController regardless of what the nav shows. ---
+$router->get('/laporan', [ReportController::class, 'index']);
 
-$router->get('/laporan/self-assessment', [LaporanController::class, 'selfAssessment']);
-$router->get('/laporan/self-assessment/pdf', [LaporanController::class, 'selfAssessmentPdf']);
+$router->get('/laporan/self-assessment', [ReportController::class, 'selfAssessment']);
+$router->get('/laporan/self-assessment/pdf', [ReportController::class, 'selfAssessmentPdf']);
 
-$router->get('/laporan/diary', [LaporanController::class, 'diary']);
-$router->get('/laporan/diary/pdf', [LaporanController::class, 'diaryPdf']);
+$router->get('/laporan/diary', [ReportController::class, 'diary']);
+$router->get('/laporan/diary/pdf', [ReportController::class, 'diaryPdf']);
 
-$router->get('/laporan/self-help', [LaporanController::class, 'selfHelp']);
-$router->get('/laporan/self-help/pdf', [LaporanController::class, 'selfHelpPdf']);
+$router->get('/laporan/self-help', [ReportController::class, 'selfHelp']);
+$router->get('/laporan/self-help/pdf', [ReportController::class, 'selfHelpPdf']);
 
-$router->get('/laporan/konseling', [LaporanController::class, 'konseling']);
-$router->get('/laporan/konseling/pdf', [LaporanController::class, 'konselingPdf']);
+$router->get('/laporan/konseling', [ReportController::class, 'konseling']);
+$router->get('/laporan/konseling/pdf', [ReportController::class, 'konselingPdf']);
 
-$router->get('/laporan/risk-mapping', [LaporanController::class, 'riskMapping']);
-$router->get('/laporan/risk-mapping/pdf', [LaporanController::class, 'riskMappingPdf']);
+$router->get('/laporan/risk-mapping', [ReportController::class, 'riskMapping']);
+$router->get('/laporan/risk-mapping/pdf', [ReportController::class, 'riskMappingPdf']);
 
-$router->get('/laporan/mood-analysis', [LaporanController::class, 'moodAnalysis']);
-$router->get('/laporan/mood-analysis/pdf', [LaporanController::class, 'moodAnalysisPdf']);
+$router->get('/laporan/mood-analysis', [ReportController::class, 'moodAnalysis']);
+$router->get('/laporan/mood-analysis/pdf', [ReportController::class, 'moodAnalysisPdf']);
 
-$router->get('/laporan/engagement', [LaporanController::class, 'engagement']);
-$router->get('/laporan/engagement/pdf', [LaporanController::class, 'engagementPdf']);
+$router->get('/laporan/engagement', [ReportController::class, 'engagement']);
+$router->get('/laporan/engagement/pdf', [ReportController::class, 'engagementPdf']);
 
-$router->get('/laporan/counselor-activity', [LaporanController::class, 'counselorActivity']);
-$router->get('/laporan/counselor-activity/pdf', [LaporanController::class, 'counselorActivityPdf']);
+$router->get('/laporan/counselor-activity', [ReportController::class, 'counselorActivity']);
+$router->get('/laporan/counselor-activity/pdf', [ReportController::class, 'counselorActivityPdf']);

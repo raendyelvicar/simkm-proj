@@ -11,13 +11,13 @@ use mysqli;
  * together — the same shape AssessmentRepository::studentAssessmentSummaries() uses.
  *
  * Every report method expects $filters['date_from']/$filters['date_to'] to already be
- * concrete 'Y-m-d' strings (LaporanController fills in sane defaults before calling in),
+ * concrete 'Y-m-d' strings (ReportController fills in sane defaults before calling in),
  * so every date predicate here is a plain, always-present "BETWEEN ? AND ?" — no
  * conditional param counting needed. Role scoping is expressed via either
- * $filters['user_id'] (exact single student) or $filters['student_ids'] (konselor's
+ * $filters['user_id'] (exact single student) or $filters['student_ids'] (counselor's
  * bimbingan list; omit both for admin's unrestricted view).
  */
-class LaporanRepository
+class ReportRepository
 {
     private mysqli $db;
 
@@ -27,15 +27,15 @@ class LaporanRepository
     }
 
     // The "bimbingan" scope decision: union of students with an active/past monitoring
-    // window and students with any booking history, for this konselor.
-    public function konselorStudentIds(int $konselorId): array
+    // window and students with any booking history, for this counselor.
+    public function counselorStudentIds(int $counselorId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT user_id FROM monitoring_periods WHERE konselor_id = ?
+            'SELECT user_id FROM monitoring_periods WHERE counselor_id = ?
              UNION
-             SELECT user_id FROM booking_konseling WHERE konselor_id = ?'
+             SELECT user_id FROM counseling_bookings WHERE counselor_id = ?'
         );
-        $stmt->bind_param('ii', $konselorId, $konselorId);
+        $stmt->bind_param('ii', $counselorId, $counselorId);
         $stmt->execute();
 
         return array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'user_id'));
@@ -58,12 +58,12 @@ class LaporanRepository
             $this->scopeWhere($filters, 's.user_id')
         );
         [$where, $params, $types] = $this->merge($where, $params, $types, $this->dateWhere($filters, 's.submitted_at'));
-        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'u.nama', 'u.npm'));
+        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'u.name', 'u.student_number'));
 
-        $sql = "SELECT s.*, u.nama, u.npm
+        $sql = "SELECT s.*, u.name, u.student_number
                 FROM assessment_submissions s
                 JOIN users u ON u.id = s.user_id
-                WHERE u.role = 'mahasiswa'{$where}
+                WHERE u.role = 'student'{$where}
                 ORDER BY s.user_id ASC, s.submitted_at ASC";
 
         $stmt = $this->db->prepare($sql);
@@ -92,16 +92,16 @@ class LaporanRepository
                 $anchor = $bdi2[$i] ?? $pwb[$i];
                 $sessions[] = [
                     'user_id'  => $userId,
-                    'nama'     => $anchor['nama'],
-                    'npm'      => $anchor['npm'],
-                    'tanggal'  => $bdi2[$i]['submitted_at'] ?? $pwb[$i]['submitted_at'] ?? null,
+                    'name'     => $anchor['name'],
+                    'student_number'      => $anchor['student_number'],
+                    'date'  => $bdi2[$i]['submitted_at'] ?? $pwb[$i]['submitted_at'] ?? null,
                     'bdi2'     => $bdi2[$i] ?? null,
                     'pwb'      => $pwb[$i] ?? null,
                 ];
             }
         }
 
-        usort($sessions, fn ($a, $b) => strcmp($a['tanggal'] ?? '', $b['tanggal'] ?? ''));
+        usort($sessions, fn ($a, $b) => strcmp($a['date'] ?? '', $b['date'] ?? ''));
 
         return $sessions;
     }
@@ -109,8 +109,8 @@ class LaporanRepository
     // --- Laporan 2: Diary -----------------------------------------------------------
 
     /**
-     * filters: user_id (mahasiswa's own) | shared_konselor_id (konselor's shared inbox,
-     * privacy-preserving per the existing DiaryRepository::findSharedWithKonselor rule)
+     * filters: user_id (student's own) | shared_counselor_id (counselor's shared inbox,
+     * privacy-preserving per the existing DiaryRepository::findSharedWithCounselor rule)
      * | neither (admin, optionally narrowed by user_id for a single-student drill-down).
      */
     public function diaryRows(array $filters): array
@@ -119,17 +119,17 @@ class LaporanRepository
         $params = [];
         $types = '';
 
-        if (!empty($filters['shared_konselor_id'])) {
-            $where .= ' AND d.shared_konselor_id = ? AND d.is_private = 0';
-            $params[] = (int) $filters['shared_konselor_id'];
+        if (!empty($filters['shared_counselor_id'])) {
+            $where .= ' AND d.shared_counselor_id = ? AND d.is_private = 0';
+            $params[] = (int) $filters['shared_counselor_id'];
             $types .= 'i';
         }
 
         [$where, $params, $types] = $this->merge($where, $params, $types, $this->scopeWhere($filters, 'd.user_id'));
         [$where, $params, $types] = $this->merge($where, $params, $types, $this->dateWhere($filters, 'd.entry_date'));
-        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'u.nama', 'u.npm'));
+        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'u.name', 'u.student_number'));
 
-        $sql = "SELECT d.*, u.nama AS student_nama, u.npm AS student_npm
+        $sql = "SELECT d.*, u.name AS student_name, u.student_number AS student_number
                 FROM diary_entries d
                 JOIN users u ON u.id = d.user_id
                 {$where}
@@ -148,9 +148,9 @@ class LaporanRepository
     {
         [$where, $params, $types] = $this->merge('', [], '', $this->scopeWhere($filters, 'a.user_id'));
         [$where, $params, $types] = $this->merge($where, $params, $types, $this->dateWhere($filters, 'a.planned_date'));
-        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'u.nama', 'u.npm'));
+        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'u.name', 'u.student_number'));
 
-        $sql = "SELECT a.*, u.nama AS student_nama, u.npm AS student_npm
+        $sql = "SELECT a.*, u.name AS student_name, u.student_number AS student_number
                 FROM self_help_activities a
                 JOIN users u ON u.id = a.user_id
                 WHERE 1=1{$where}
@@ -167,7 +167,7 @@ class LaporanRepository
 
     // --- Laporan 4: Konseling ---------------------------------------------------------
 
-    /** filters: user_id (mahasiswa) | konselor_id (konselor, exact) | neither (admin). */
+    /** filters: user_id (student) | counselor_id (counselor, exact) | neither (admin). */
     public function konselingRows(array $filters): array
     {
         $where = ' WHERE 1=1';
@@ -179,9 +179,9 @@ class LaporanRepository
             $params[] = (int) $filters['user_id'];
             $types .= 'i';
         }
-        if (!empty($filters['konselor_id'])) {
-            $where .= ' AND b.konselor_id = ?';
-            $params[] = (int) $filters['konselor_id'];
+        if (!empty($filters['counselor_id'])) {
+            $where .= ' AND b.counselor_id = ?';
+            $params[] = (int) $filters['counselor_id'];
             $types .= 'i';
         }
         if (!empty($filters['status'])) {
@@ -190,24 +190,24 @@ class LaporanRepository
             $types .= 's';
         }
         if (!empty($filters['konselor_search'])) {
-            $where .= ' AND ku.nama LIKE ?';
+            $where .= ' AND ku.name LIKE ?';
             $params[] = '%' . $filters['konselor_search'] . '%';
             $types .= 's';
         }
 
-        [$where, $params, $types] = $this->merge($where, $params, $types, $this->dateWhere($filters, 'b.tanggal'));
-        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'su.nama', 'su.npm'));
+        [$where, $params, $types] = $this->merge($where, $params, $types, $this->dateWhere($filters, 'b.date'));
+        [$where, $params, $types] = $this->merge($where, $params, $types, $this->searchWhere($filters, 'su.name', 'su.student_number'));
 
-        $sql = "SELECT b.*, su.nama AS student_nama, su.npm AS student_npm,
-                       ku.nama AS konselor_nama, k.konselor_id,
-                       sk.catatan_konselor, sk.rekomendasi, sk.tindak_lanjut, sk.selesai_pada
-                FROM booking_konseling b
+        $sql = "SELECT b.*, su.name AS student_name, su.student_number AS student_number,
+                       ku.name AS counselor_name, k.counselor_id,
+                       sk.counselor_notes, sk.recommendation, sk.follow_up, sk.completed_at
+                FROM counseling_bookings b
                 JOIN users su ON su.id = b.user_id
-                JOIN konselor k ON k.konselor_id = b.konselor_id
+                JOIN counselors k ON k.counselor_id = b.counselor_id
                 JOIN users ku ON ku.id = k.user_id
-                LEFT JOIN sesi_konseling sk ON sk.booking_id = b.booking_id
+                LEFT JOIN counseling_sessions sk ON sk.booking_id = b.booking_id
                 {$where}
-                ORDER BY b.tanggal DESC, b.booking_id DESC";
+                ORDER BY b.date DESC, b.booking_id DESC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param($types, ...$params);
@@ -219,7 +219,7 @@ class LaporanRepository
     // --- Laporan 5/8 shared: latest risk category per student -----------------------
 
     /**
-     * Each in-scope mahasiswa's latest BDI-II + PWB category as of the given date range
+     * Each in-scope student's latest BDI-II + PWB category as of the given date range
      * (defaults to "ever" when the caller passes a wide range). Rows without both an
      * assessment of each type are dropped — the caller turns the pair into a
      * combinedLevel() risk bucket via AssessmentScoringService.
@@ -236,16 +236,16 @@ class LaporanRepository
             $scopeWhere,
             $scopeParams,
             $scopeTypes,
-            $this->searchWhere($filters, 'u.nama', 'u.npm')
+            $this->searchWhere($filters, 'u.name', 'u.student_number')
         );
 
-        $sql = "SELECT u.id, u.nama, u.npm, u.fakultas,
+        $sql = "SELECT u.id, u.name, u.student_number, u.faculty,
                     (SELECT category FROM assessment_submissions s WHERE s.user_id = u.id AND s.type = 'bdi2'
                         AND DATE(s.submitted_at) BETWEEN ? AND ? ORDER BY s.submitted_at DESC LIMIT 1) AS bdi2_category,
                     (SELECT category FROM assessment_submissions s WHERE s.user_id = u.id AND s.type = 'pwb'
                         AND DATE(s.submitted_at) BETWEEN ? AND ? ORDER BY s.submitted_at DESC LIMIT 1) AS pwb_category
                 FROM users u
-                WHERE u.role = 'mahasiswa'{$scopeWhere}";
+                WHERE u.role = 'student'{$scopeWhere}";
 
         $from = $filters['date_from'];
         $to = $filters['date_to'];
@@ -260,7 +260,7 @@ class LaporanRepository
         return array_values(array_filter($rows, fn ($r) => $r['bdi2_category'] && $r['pwb_category']));
     }
 
-    // --- Laporan 7: Evaluasi Keterlibatan Mahasiswa ----------------------------------
+    // --- Laporan 7: Evaluasi Keterlibatan Student ----------------------------------
 
     public function engagementRows(array $filters): array
     {
@@ -274,19 +274,19 @@ class LaporanRepository
             $scopeWhere,
             $scopeParams,
             $scopeTypes,
-            $this->searchWhere($filters, 'u.nama', 'u.npm')
+            $this->searchWhere($filters, 'u.name', 'u.student_number')
         );
         $from = $filters['date_from'];
         $to = $filters['date_to'];
 
-        $sql = "SELECT u.id, u.nama, u.npm,
+        $sql = "SELECT u.id, u.name, u.student_number,
                     (SELECT COUNT(*) FROM assessment_submissions s WHERE s.user_id = u.id AND DATE(s.submitted_at) BETWEEN ? AND ?) AS assessment_count,
                     (SELECT COUNT(*) FROM diary_entries d WHERE d.user_id = u.id AND DATE(d.entry_date) BETWEEN ? AND ?) AS diary_count,
                     (SELECT COUNT(*) FROM self_help_activities a WHERE a.user_id = u.id AND DATE(a.planned_date) BETWEEN ? AND ?) AS selfhelp_count,
-                    (SELECT COUNT(*) FROM booking_konseling b WHERE b.user_id = u.id AND DATE(b.tanggal) BETWEEN ? AND ?) AS booking_count,
-                    (SELECT COUNT(*) FROM booking_konseling b WHERE b.user_id = u.id AND b.status = 'Completed' AND DATE(b.tanggal) BETWEEN ? AND ?) AS completed_konseling_count
+                    (SELECT COUNT(*) FROM counseling_bookings b WHERE b.user_id = u.id AND DATE(b.date) BETWEEN ? AND ?) AS booking_count,
+                    (SELECT COUNT(*) FROM counseling_bookings b WHERE b.user_id = u.id AND b.status = 'Completed' AND DATE(b.date) BETWEEN ? AND ?) AS completed_counseling_count
                 FROM users u
-                WHERE u.role = 'mahasiswa'{$scopeWhere}";
+                WHERE u.role = 'student'{$scopeWhere}";
 
         $params = array_merge([$from, $to, $from, $to, $from, $to, $from, $to, $from, $to], $scopeParams);
         $types = 'ssssssssss' . $scopeTypes;
@@ -302,30 +302,30 @@ class LaporanRepository
         ));
     }
 
-    // --- Laporan 8: Evaluasi Keterlibatan Konselor (Konselor Activity) --------------
+    // --- Laporan 8: Evaluasi Keterlibatan Counselor (Counselor Activity) --------------
 
     /**
-     * One row per Completed session in range, with the konselor and student's fakultas
-     * attached. The caller aggregates (counts, unique students, top fakultas) per
-     * konselor_id, and separately looks up each involved student's risk bucket via
-     * latestRiskCategories() to find the konselor's most common "case" category.
+     * One row per Completed session in range, with the counselor and student's faculty
+     * attached. The caller aggregates (counts, unique students, top faculty) per
+     * counselor_id, and separately looks up each involved student's risk bucket via
+     * latestRiskCategories() to find the counselor's most common "case" category.
      */
-    public function konselorActivitySessions(array $filters): array
+    public function counselorActivitySessions(array $filters): array
     {
-        $where = " AND b.status = 'Completed' AND DATE(b.tanggal) BETWEEN ? AND ?";
+        $where = " AND b.status = 'Completed' AND DATE(b.date) BETWEEN ? AND ?";
         $params = [$filters['date_from'], $filters['date_to']];
         $types = 'ss';
 
-        if (!empty($filters['konselor_id'])) {
-            $where .= ' AND k.konselor_id = ?';
-            $params[] = (int) $filters['konselor_id'];
+        if (!empty($filters['counselor_id'])) {
+            $where .= ' AND k.counselor_id = ?';
+            $params[] = (int) $filters['counselor_id'];
             $types .= 'i';
         }
 
-        $sql = "SELECT k.konselor_id, ku.nama AS konselor_nama, k.spesialisasi,
-                       b.booking_id, b.user_id, su.fakultas
-                FROM booking_konseling b
-                JOIN konselor k ON k.konselor_id = b.konselor_id
+        $sql = "SELECT k.counselor_id, ku.name AS counselor_name, k.specialization,
+                       b.booking_id, b.user_id, su.faculty
+                FROM counseling_bookings b
+                JOIN counselors k ON k.counselor_id = b.counselor_id
                 JOIN users ku ON ku.id = k.user_id
                 JOIN users su ON su.id = b.user_id
                 WHERE 1=1{$where}";
@@ -363,7 +363,7 @@ class LaporanRepository
     }
 
     /** @return array{0:string,1:array,2:string} leading-" AND ..." fragment, params, mysqli bind types */
-    private function searchWhere(array $filters, string $nameCol, string $npmCol): array
+    private function searchWhere(array $filters, string $nameCol, string $student_numberCol): array
     {
         if (empty($filters['search'])) {
             return ['', [], ''];
@@ -371,7 +371,7 @@ class LaporanRepository
 
         $like = '%' . $filters['search'] . '%';
 
-        return [" AND ({$nameCol} LIKE ? OR {$npmCol} LIKE ?)", [$like, $like], 'ss'];
+        return [" AND ({$nameCol} LIKE ? OR {$student_numberCol} LIKE ?)", [$like, $like], 'ss'];
     }
 
     /** @return array{0:string,1:array,2:string} */

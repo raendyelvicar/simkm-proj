@@ -24,7 +24,7 @@ ob_start();
                 <table class="lap-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('student_nama', 'Nama', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('student_name', 'Nama', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('title', 'Aktivitas', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('planned_date', 'Tanggal', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('status', 'Status', $sort, $dir, $currentQuery) ?></th>
@@ -35,7 +35,7 @@ ob_start();
                     <tbody>
                         <?php foreach ($rows as $r): ?>
                             <tr>
-                                <td><?= htmlspecialchars($r['student_nama']) ?></td>
+                                <td><?= htmlspecialchars($r['student_name']) ?></td>
                                 <td><?= htmlspecialchars($r['title']) ?></td>
                                 <td><?= $r['planned_date'] ? htmlspecialchars(date('d M Y', strtotime($r['planned_date']))) : '-' ?></td>
                                 <td><span class="lap-badge <?= $statusBadge[$r['status']] ?? 'lap-badge-gray' ?>"><?= htmlspecialchars($statusLabel[$r['status']] ?? $r['status']) ?></span></td>

@@ -2,37 +2,37 @@
 
 namespace App\Models;
 
-class Mahasiswa
+class Student
 {
-    public int $idMahasiswa;
+    public int $idStudent;
     public int $userId; // FK to users.id
-    public string $npm;
-    public string $programStudi;
-    public string $fakultas;
-    public string $jenisKelamin; // 'L' or 'P'
-    public ?string $noHp;
+    public string $student_number;
+    public string $studyProgram;
+    public string $faculty;
+    public string $gender; // 'L' or 'P'
+    public ?string $phoneNumber;
 
     public function __construct(array $data)
     {
-        $this->idMahasiswa  = (int) ($data['id_mahasiswa'] ?? 0);
+        $this->idStudent  = (int) ($data['student_id'] ?? 0);
         $this->userId       = (int) ($data['id'] ?? 0); // note: column is `id` in this table, FK to users.id
-        $this->npm          = $data['npm'] ?? '';
-        $this->programStudi = $data['program_studi'] ?? '';
-        $this->fakultas     = $data['fakultas'] ?? '';
-        $this->jenisKelamin = $data['jenis_kelamin'] ?? '';
-        $this->noHp         = $data['no_hp'] ?? null;
+        $this->student_number          = $data['student_number'] ?? '';
+        $this->studyProgram = $data['study_program'] ?? '';
+        $this->faculty     = $data['faculty'] ?? '';
+        $this->gender = $data['gender'] ?? '';
+        $this->phoneNumber         = $data['phone_number'] ?? null;
     }
 
     public function toArray(): array
     {
         return [
-            'id_mahasiswa'  => $this->idMahasiswa,
+            'student_id'  => $this->idStudent,
             'id'            => $this->userId,
-            'npm'           => $this->npm,
-            'program_studi' => $this->programStudi,
-            'fakultas'      => $this->fakultas,
-            'jenis_kelamin' => $this->jenisKelamin,
-            'no_hp'         => $this->noHp,
+            'student_number'           => $this->student_number,
+            'study_program' => $this->studyProgram,
+            'faculty'      => $this->faculty,
+            'gender' => $this->gender,
+            'phone_number'         => $this->phoneNumber,
         ];
     }
 }

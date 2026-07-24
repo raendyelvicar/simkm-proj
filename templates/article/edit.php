@@ -58,7 +58,7 @@
             </div>
 
             <div class="article-form-actions">
-                <button type="submit" class="btn-article btn-article-primary">Update Artikel</button>
+                <button type="submit" class="btn-article btn-article-primary">Perbarui Artikel</button>
                 <a href="/article/<?= urlencode($article['id']) ?>" class="btn-article btn-article-ghost">Batal</a>
             </div>
 

@@ -1,7 +1,7 @@
 <?php
 $showSearch = false;
-$totalSesi = array_sum(array_column($rows, 'total_sesi'));
-$totalMahasiswa = array_sum(array_column($rows, 'total_mahasiswa'));
+$totalSession = array_sum(array_column($rows, 'total_sessions'));
+$totalStudent = array_sum(array_column($rows, 'total_students'));
 ob_start();
 ?>
 
@@ -20,9 +20,18 @@ ob_start();
     ?>
 
     <div class="lap-stat-row">
-        <div class="lap-stat-tile"><div class="value"><?= count($rows) ?></div><div class="label">Konselor Aktif</div></div>
-        <div class="lap-stat-tile"><div class="value"><?= $totalSesi ?></div><div class="label">Total Sesi Selesai</div></div>
-        <div class="lap-stat-tile"><div class="value"><?= $totalMahasiswa ?></div><div class="label">Total Mahasiswa Ditangani</div></div>
+        <div class="lap-stat-tile">
+            <div class="value"><?= count($rows) ?></div>
+            <div class="label">Konselor Aktif</div>
+        </div>
+        <div class="lap-stat-tile">
+            <div class="value"><?= $totalSession ?></div>
+            <div class="label">Total Sesi Selesai</div>
+        </div>
+        <div class="lap-stat-tile">
+            <div class="value"><?= $totalStudent ?></div>
+            <div class="label">Total Mahasiswa Ditangani</div>
+        </div>
     </div>
 
     <div class="lap-card">
@@ -31,10 +40,10 @@ ob_start();
                 <table class="lap-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('nama', 'Konselor', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('name', 'Konselor', $sort, $dir, $currentQuery) ?></th>
                             <th>Spesialisasi</th>
-                            <th><?= sort_link('total_sesi', 'Total Sesi', $sort, $dir, $currentQuery) ?></th>
-                            <th><?= sort_link('total_mahasiswa', 'Total Mahasiswa', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('total_sessions', 'Total Sesi', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('total_students', 'Total Mahasiswa', $sort, $dir, $currentQuery) ?></th>
                             <th>Fakultas Terbanyak</th>
                             <th>Kategori Risiko Terbanyak</th>
                         </tr>
@@ -42,11 +51,11 @@ ob_start();
                     <tbody>
                         <?php foreach ($entries as $r): ?>
                             <tr>
-                                <td><?= htmlspecialchars($r['nama']) ?></td>
-                                <td><?= htmlspecialchars($r['spesialisasi'] ?: '-') ?></td>
-                                <td><?= $r['total_sesi'] ?></td>
-                                <td><?= $r['total_mahasiswa'] ?></td>
-                                <td><?= $r['top_fakultas'] ? htmlspecialchars($r['top_fakultas']) . ' (' . $r['top_fakultas_count'] . ')' : '-' ?></td>
+                                <td><?= htmlspecialchars($r['name']) ?></td>
+                                <td><?= htmlspecialchars($r['specialization'] ?: '-') ?></td>
+                                <td><?= $r['total_sessions'] ?></td>
+                                <td><?= $r['total_students'] ?></td>
+                                <td><?= $r['top_faculty'] ? htmlspecialchars($r['top_faculty']) . ' (' . $r['top_faculty_count'] . ')' : '-' ?></td>
                                 <td><?= $r['top_risk'] ? htmlspecialchars($r['top_risk']) . ' (' . $r['top_risk_count'] . ')' : '-' ?></td>
                             </tr>
                         <?php endforeach; ?>

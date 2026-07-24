@@ -24,7 +24,7 @@
             <a href="#cara-kerja">Cara Kerja</a>
             <a href="/article">Artikel</a>
             <div class="nav-auth">
-                <a href="/login" class="btn-nav btn-nav-ghost">Login</a>
+                <a href="/login" class="btn-nav btn-nav-ghost">Masuk</a>
                 <a href="/register" class="btn-nav btn-nav-primary">Daftar</a>
             </div>
         </nav>
@@ -246,7 +246,7 @@
                 </div>
                 <div>
                     <h4>Akun</h4>
-                    <a href="/login">Login</a>
+                    <a href="/login">Masuk</a>
                     <a href="/register">Daftar</a>
                 </div>
             </div>

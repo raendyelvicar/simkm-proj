@@ -30,7 +30,7 @@ class AssessmentSubmission
         $this->dimensionScores      = !empty($data['dimension_scores']) ? (json_decode($data['dimension_scores'], true) ?: []) : [];
         $this->isTimedOut           = (bool) ($data['is_timed_out'] ?? false);
         $this->submittedAt          = $data['submitted_at'] ?? '';
-        $this->userName             = $data['nama'] ?? null;
+        $this->userName             = $data['name'] ?? null;
     }
 
     public function toArray(): array
@@ -46,7 +46,7 @@ class AssessmentSubmission
             'dimension_scores'     => $this->dimensionScores,
             'is_timed_out'         => $this->isTimedOut,
             'submitted_at'         => $this->submittedAt,
-            'nama'                 => $this->userName,
+            'name'                 => $this->userName,
         ];
     }
 }

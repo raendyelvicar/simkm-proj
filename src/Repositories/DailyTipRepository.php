@@ -108,7 +108,7 @@ class DailyTipRepository
         return $stmt->execute();
     }
 
-    // Random active tip for the post-login popup shown to mahasiswa.
+    // Random active tip for the post-login popup shown to student.
     public function randomActive(): ?DailyTip
     {
         $result = $this->db->query(

@@ -23,7 +23,7 @@
                 <label for="title">Nama Aktivitas</label>
                 <p class="field-hint">Contoh: Jalan pagi 15 menit, menelepon teman, menonton film favorit.</p>
                 <input type="text" id="title" name="title" required
-                       value="<?= htmlspecialchars($old['title'] ?? '') ?>">
+                    value="<?= htmlspecialchars($old['title'] ?? '') ?>">
             </div>
 
             <div class="field">
@@ -34,7 +34,7 @@
             <div class="field">
                 <label for="planned_date">Tanggal Rencana</label>
                 <input type="date" id="planned_date" name="planned_date"
-                       value="<?= htmlspecialchars($old['planned_date'] ?? date('Y-m-d')) ?>" required>
+                    value="<?= htmlspecialchars($old['planned_date'] ?? date('Y-m-d')) ?>" required>
             </div>
 
             <div class="field">

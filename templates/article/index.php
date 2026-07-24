@@ -1,7 +1,7 @@
 <?php
 
 $role = $role ?? ($_SESSION['role'] ?? '');
-$isStaff = in_array($role, ['admin', 'konselor'], true);
+$isStaff = in_array($role, ['admin', 'counselor'], true);
 $queryParams = $_GET;
 unset($queryParams['page']);
 ob_start(); ?>

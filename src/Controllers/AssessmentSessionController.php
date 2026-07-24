@@ -42,7 +42,7 @@ class AssessmentSessionController
     // GET /assessment/start
     public function start(Request $request): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
         $userId = (int) $_SESSION['user_id'];
 
         if (!$this->retakeGrants->canStartNewSession($userId)) {
@@ -61,7 +61,7 @@ class AssessmentSessionController
     // POST /assessment/session
     public function create(Request $request): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
         $userId = (int) $_SESSION['user_id'];
 
         $active = $this->sessions->findActiveForUser($userId);
@@ -93,7 +93,7 @@ class AssessmentSessionController
     // GET /assessment/session
     public function show(Request $request): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
         $userId = (int) $_SESSION['user_id'];
 
         $session = $this->sessions->findActiveForUser($userId);
@@ -120,7 +120,7 @@ class AssessmentSessionController
     // GET /assessment/session/state
     public function state(Request $request): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
 
         $session = $this->sessions->findActiveForUser((int) $_SESSION['user_id']);
         if (!$session) {
@@ -144,7 +144,7 @@ class AssessmentSessionController
     // POST /assessment/session/answer
     public function answer(Request $request): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
         $session = $this->requireActiveSessionJson();
 
         $session = $this->finalizeIfExpired($session);
@@ -179,7 +179,7 @@ class AssessmentSessionController
     // POST /assessment/session/finish
     public function finish(Request $request): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
         $session = $this->requireActiveSessionJson();
 
         if ($session['status'] === 'in_progress') {
@@ -197,7 +197,7 @@ class AssessmentSessionController
     // GET /assessment/session/complete/{id}
     public function complete(Request $request, string $id): void
     {
-        $this->requireMahasiswa();
+        $this->requireStudent();
         $session = $this->sessions->find((int) $id);
 
         if (!$session || (int) $session['user_id'] !== (int) $_SESSION['user_id']) {
@@ -312,9 +312,9 @@ class AssessmentSessionController
         return $minutes > 0 ? $minutes : 45;
     }
 
-    private function requireMahasiswa(): void
+    private function requireStudent(): void
     {
-        if (($_SESSION['role'] ?? '') !== 'mahasiswa') {
+        if (($_SESSION['role'] ?? '') !== 'student') {
             http_response_code(403);
             exit('Forbidden: hanya mahasiswa yang dapat mengisi assessment.');
         }

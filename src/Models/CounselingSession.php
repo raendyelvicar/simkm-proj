@@ -2,43 +2,43 @@
 
 namespace App\Models;
 
-class SesiKonseling
+class CounselingSession
 {
-    public int $sesiId;
+    public int $sessionId;
     public int $bookingId;
 
-    public ?string $catatanKonselor;
-    public ?string $rekomendasi;
-    public ?string $tindakLanjut;
-    public ?int $durasi;
+    public ?string $counselorNotes;
+    public ?string $recommendation;
+    public ?string $followUp;
+    public ?int $duration;
 
-    public ?string $selesaiPada;
+    public ?string $completedAt;
     public ?string $createdAt;
 
     public function __construct(array $data)
     {
-        $this->sesiId = (int) ($data['sesi_id'] ?? 0);
+        $this->sessionId = (int) ($data['session_id'] ?? 0);
         $this->bookingId = (int) ($data['booking_id'] ?? 0);
 
-        $this->catatanKonselor = $data['catatan_konselor'] ?? null;
-        $this->rekomendasi = $data['rekomendasi'] ?? null;
-        $this->tindakLanjut = $data['tindak_lanjut'] ?? null;
-        $this->durasi = isset($data['durasi']) ? (int) $data['durasi'] : null;
+        $this->counselorNotes = $data['counselor_notes'] ?? null;
+        $this->recommendation = $data['recommendation'] ?? null;
+        $this->followUp = $data['follow_up'] ?? null;
+        $this->duration = isset($data['duration']) ? (int) $data['duration'] : null;
 
-        $this->selesaiPada = $data['selesai_pada'] ?? null;
+        $this->completedAt = $data['completed_at'] ?? null;
         $this->createdAt = $data['created_at'] ?? null;
     }
 
     public function toArray(): array
     {
         return [
-            'sesi_id' => $this->sesiId,
+            'session_id' => $this->sessionId,
             'booking_id' => $this->bookingId,
-            'catatan_konselor' => $this->catatanKonselor,
-            'rekomendasi' => $this->rekomendasi,
-            'tindak_lanjut' => $this->tindakLanjut,
-            'durasi' => $this->durasi,
-            'selesai_pada' => $this->selesaiPada,
+            'counselor_notes' => $this->counselorNotes,
+            'recommendation' => $this->recommendation,
+            'follow_up' => $this->followUp,
+            'duration' => $this->duration,
+            'completed_at' => $this->completedAt,
             'created_at' => $this->createdAt,
         ];
     }

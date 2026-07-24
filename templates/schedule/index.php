@@ -25,10 +25,10 @@ ob_start();
             </div>
             <div class="col-auto">
                 <label class="form-label small text-muted mb-1">Status</label>
-                <select name="status_aktif" class="form-select form-select-sm">
+                <select name="is_active" class="form-select form-select-sm">
                     <option value="">Semua</option>
-                    <option value="1" <?= ($filters['status_aktif'] ?? '') === '1' ? 'selected' : '' ?>>Aktif</option>
-                    <option value="0" <?= ($filters['status_aktif'] ?? '') === '0' ? 'selected' : '' ?>>Nonaktif</option>
+                    <option value="1" <?= ($filters['is_active'] ?? '') === '1' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= ($filters['is_active'] ?? '') === '0' ? 'selected' : '' ?>>Nonaktif</option>
                 </select>
             </div>
             <div class="col-auto">
@@ -44,30 +44,30 @@ ob_start();
                 <table class="schedule-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $queryParams) ?></th>
-                            <th><?= sort_link('jam_mulai', 'Jam', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('date', 'Tanggal', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('start_time', 'Jam', $sort, $dir, $queryParams) ?></th>
                             <th>Kuota</th>
-                            <th><?= sort_link('status_aktif', 'Status', $sort, $dir, $queryParams) ?></th>
+                            <th><?= sort_link('is_active', 'Status', $sort, $dir, $queryParams) ?></th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($slots as $slot): ?>
                             <tr>
-                                <td><?= htmlspecialchars($slot['tanggal'] ? date('d M Y', strtotime($slot['tanggal'])) : '-') ?></td>
-                                <td><?= htmlspecialchars(substr($slot['jam_mulai'], 0, 5)) ?> - <?= htmlspecialchars(substr($slot['jam_selesai'], 0, 5)) ?></td>
-                                <td><?= (int) $slot['kuota'] ?></td>
+                                <td><?= htmlspecialchars($slot['date'] ? date('d M Y', strtotime($slot['date'])) : '-') ?></td>
+                                <td><?= htmlspecialchars(substr($slot['start_time'], 0, 5)) ?> - <?= htmlspecialchars(substr($slot['end_time'], 0, 5)) ?></td>
+                                <td><?= (int) $slot['quota'] ?></td>
                                 <td>
-                                    <?php if ($slot['status_aktif']): ?>
+                                    <?php if ($slot['is_active']): ?>
                                         <span class="status-pill status-pill-active">Aktif</span>
                                     <?php else: ?>
                                         <span class="status-pill status-pill-inactive">Nonaktif</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <form method="post" action="/schedule/<?= urlencode($slot['jadwal_id']) ?>/toggle" style="display:inline;">
+                                    <form method="post" action="/schedule/<?= urlencode($slot['schedule_id']) ?>/toggle" style="display:inline;">
                                         <button type="submit" class="btn-schedule">
-                                            <?= $slot['status_aktif'] ? 'Nonaktifkan' : 'Aktifkan' ?>
+                                            <?= $slot['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?>
                                         </button>
                                     </form>
                                 </td>

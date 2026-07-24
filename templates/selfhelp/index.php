@@ -30,7 +30,7 @@ $cards = [
     [
         'key' => 'gratitude',
         'icon' => '🙏',
-        'title' => 'Gratitude & Self Reflection',
+        'title' => 'Syukur & Refleksi Diri',
         'desc' => 'Kumpulan rasa syukur dan refleksi diri yang sudah kamu tulis lewat Diary Terstruktur.',
         'href' => '/self-help/gratitude',
     ],
@@ -86,9 +86,9 @@ ob_start();
     <div class="row g-3">
         <?php foreach ($cards as $card): ?>
             <?php
-                $isRecommended = in_array($card['key'], $recommended, true) && !$isUrgent;
-                $isCardUrgent = $card['key'] === 'pfa' && $isUrgent;
-                $cardClass = $isCardUrgent ? 'is-urgent' : ($isRecommended ? 'is-recommended' : '');
+            $isRecommended = in_array($card['key'], $recommended, true) && !$isUrgent;
+            $isCardUrgent = $card['key'] === 'pfa' && $isUrgent;
+            $cardClass = $isCardUrgent ? 'is-urgent' : ($isRecommended ? 'is-recommended' : '');
             ?>
             <div class="col-md-6">
                 <a href="<?= $card['href'] ?>" class="selfhelp-feature-card <?= $cardClass ?>">

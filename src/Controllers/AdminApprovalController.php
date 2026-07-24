@@ -7,7 +7,7 @@ use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\UserRepository;
 
-// Admin review queue for self-registered mahasiswa accounts (status=pending).
+// Admin review queue for self-registered student accounts (status=pending).
 // Approving/rejecting notifies the user by email; a failed email must never
 // block the status change itself, since that's the record of truth.
 class AdminApprovalController
@@ -33,13 +33,13 @@ class AdminApprovalController
     {
         $filters = [
             'search'   => trim((string) $request->get('q', '')),
-            'fakultas' => $request->get('fakultas') ?: null,
+            'faculty' => $request->get('faculty') ?: null,
         ];
         $sort = (string) $request->get('sort', 'created_at');
         $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
         $page = max(1, (int) $request->get('page', 1));
 
-        $result = $this->users->paginatedPendingMahasiswa($filters, $sort, $dir, $page, self::PER_PAGE);
+        $result = $this->users->paginatedPendingStudent($filters, $sort, $dir, $page, self::PER_PAGE);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('admin/approvals/index', [
@@ -68,7 +68,7 @@ class AdminApprovalController
         $this->users->approve((int) $id, (int) $_SESSION['user_id']);
         $this->notifyUser($user, true);
 
-        $_SESSION['success'] = 'Akun ' . $user->nama . ' berhasil disetujui.';
+        $_SESSION['success'] = 'Akun ' . $user->name . ' berhasil disetujui.';
         Response::redirect('/admin/approvals');
     }
 
@@ -86,7 +86,7 @@ class AdminApprovalController
         $this->users->reject((int) $id, (int) $_SESSION['user_id']);
         $this->notifyUser($user, false);
 
-        $_SESSION['success'] = 'Akun ' . $user->nama . ' berhasil ditolak.';
+        $_SESSION['success'] = 'Akun ' . $user->name . ' berhasil ditolak.';
         Response::redirect('/admin/approvals');
     }
 
@@ -102,13 +102,13 @@ class AdminApprovalController
 
         if ($approved) {
             $subject = 'Akun Anda Telah Disetujui';
-            $message = "Halo {$user->nama},\n\n"
+            $message = "Halo {$user->name},\n\n"
                 . "Akun Anda di Sistem Informasi Manajemen Kesehatan Mental (SIMKM) telah disetujui oleh Admin.\n"
                 . "Anda sekarang dapat login menggunakan username: {$user->username}\n\n"
                 . "Login di: {$loginUrl}";
         } else {
             $subject = 'Pendaftaran Anda Ditolak';
-            $message = "Halo {$user->nama},\n\n"
+            $message = "Halo {$user->name},\n\n"
                 . "Mohon maaf, pendaftaran akun Anda di SIMKM (username: {$user->username}) tidak disetujui oleh Admin.\n"
                 . "Silakan hubungi Admin apabila Anda merasa ini keliru.";
         }

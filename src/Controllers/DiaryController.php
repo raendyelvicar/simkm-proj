@@ -63,7 +63,7 @@ class DiaryController
             'emotionOptions' => self::EMOTION_OPTIONS,
             'physicalOptions' => self::PHYSICAL_OPTIONS,
             'gratitudeSlots' => self::GRATITUDE_SLOTS,
-            'konselors' => $this->availableKonselors(),
+            'counselors' => $this->availableCounselors(),
         ]);
     }
 
@@ -78,7 +78,7 @@ class DiaryController
                 'emotionOptions' => self::EMOTION_OPTIONS,
                 'physicalOptions' => self::PHYSICAL_OPTIONS,
                 'gratitudeSlots' => self::GRATITUDE_SLOTS,
-                'konselors' => $this->availableKonselors(),
+                'counselors' => $this->availableCounselors(),
                 'errors' => $errors,
                 'old' => $fields,
             ]);
@@ -88,19 +88,19 @@ class DiaryController
         $this->diaries->create(
             (int) $_SESSION['user_id'],
             $fields['entry_date'],
-            $fields['situasi'],
-            $fields['pikiran_awal'],
+            $fields['situation'],
+            $fields['initial_thoughts'],
             $fields['emosi'],
-            $fields['emosi_lainnya'],
-            $fields['intensitas_emosi'],
-            $fields['reaksi_fisik'],
-            $fields['reaksi_fisik_lainnya'],
-            $fields['perilaku'],
+            $fields['other_emotions'],
+            $fields['emotion_intensity'],
+            $fields['physical_reactions'],
+            $fields['other_physical_reactions'],
+            $fields['behavior'],
             $fields['self_reflection'],
             $fields['gratitude'],
-            $fields['rencana_besok'],
+            $fields['tomorrow_plan'],
             $fields['is_private'],
-            $fields['shared_konselor_id']
+            $fields['shared_counselor_id']
         );
 
         $_SESSION['success'] = 'Diary berhasil ditambahkan.';
@@ -121,7 +121,7 @@ class DiaryController
         Response::view('diary/show', [
             'title' => 'Detail Diary',
             'entry' => $entry->toArray(),
-            'sharedKonselor' => $entry->sharedKonselorId ? $this->counselors->findByKonselorId($entry->sharedKonselorId) : null,
+            'sharedCounselor' => $entry->sharedCounselorId ? $this->counselors->findByCounselorId($entry->sharedCounselorId) : null,
         ]);
     }
 
@@ -142,7 +142,7 @@ class DiaryController
             'emotionOptions' => self::EMOTION_OPTIONS,
             'physicalOptions' => self::PHYSICAL_OPTIONS,
             'gratitudeSlots' => self::GRATITUDE_SLOTS,
-            'konselors' => $this->availableKonselors(),
+            'counselors' => $this->availableCounselors(),
         ]);
     }
 
@@ -166,7 +166,7 @@ class DiaryController
                 'emotionOptions' => self::EMOTION_OPTIONS,
                 'physicalOptions' => self::PHYSICAL_OPTIONS,
                 'gratitudeSlots' => self::GRATITUDE_SLOTS,
-                'konselors' => $this->availableKonselors(),
+                'counselors' => $this->availableCounselors(),
                 'errors' => $errors,
             ]);
             return;
@@ -175,19 +175,19 @@ class DiaryController
         $this->diaries->update(
             (int) $id,
             $fields['entry_date'],
-            $fields['situasi'],
-            $fields['pikiran_awal'],
+            $fields['situation'],
+            $fields['initial_thoughts'],
             $fields['emosi'],
-            $fields['emosi_lainnya'],
-            $fields['intensitas_emosi'],
-            $fields['reaksi_fisik'],
-            $fields['reaksi_fisik_lainnya'],
-            $fields['perilaku'],
+            $fields['other_emotions'],
+            $fields['emotion_intensity'],
+            $fields['physical_reactions'],
+            $fields['other_physical_reactions'],
+            $fields['behavior'],
             $fields['self_reflection'],
             $fields['gratitude'],
-            $fields['rencana_besok'],
+            $fields['tomorrow_plan'],
             $fields['is_private'],
-            $fields['shared_konselor_id']
+            $fields['shared_counselor_id']
         );
 
         $_SESSION['success'] = 'Diary berhasil diperbarui.';
@@ -216,16 +216,16 @@ class DiaryController
         return $entry;
     }
 
-    // Konselor accounts a diary entry can be shared with: must have a completed profile
+    // Counselor accounts a diary entry can be shared with: must have a completed profile
     // AND currently be monitoring this student (an active booking-confirmed window) —
     // sharing is one of the things a monitoring period unlocks.
-    private function availableKonselors(): array
+    private function availableCounselors(): array
     {
-        $activeIds = $this->monitoring->activeKonselorIdsForStudent((int) $_SESSION['user_id']);
+        $activeIds = $this->monitoring->activeCounselorIdsForStudent((int) $_SESSION['user_id']);
 
         return array_values(array_filter(
             $this->counselors->all(),
-            fn ($c) => (int) $c['konselor_id'] > 0 && in_array((int) $c['konselor_id'], $activeIds, true)
+            fn ($c) => (int) $c['counselor_id'] > 0 && in_array((int) $c['counselor_id'], $activeIds, true)
         ));
     }
 
@@ -233,17 +233,17 @@ class DiaryController
     {
         $entryDate = trim($request->post('entry_date', '')) ?: date('Y-m-d');
 
-        $situasi = trim($request->post('situasi', ''));
-        $pikiranAwal = trim($request->post('pikiran_awal', ''));
+        $situation = trim($request->post('situation', ''));
+        $initialThoughts = trim($request->post('initial_thoughts', ''));
 
         $emosi = array_values(array_intersect((array) $request->post('emosi', []), self::EMOTION_OPTIONS));
-        $emosiLainnya = trim($request->post('emosi_lainnya', '')) ?: null;
-        $intensitasEmosi = (int) $request->post('intensitas_emosi', 0);
+        $otherEmotions = trim($request->post('other_emotions', '')) ?: null;
+        $emotionIntensity = (int) $request->post('emotion_intensity', 0);
 
-        $reaksiFisik = array_values(array_intersect((array) $request->post('reaksi_fisik', []), self::PHYSICAL_OPTIONS));
-        $reaksiFisikLainnya = trim($request->post('reaksi_fisik_lainnya', '')) ?: null;
+        $physicalReactions = array_values(array_intersect((array) $request->post('physical_reactions', []), self::PHYSICAL_OPTIONS));
+        $otherPhysicalReactions = trim($request->post('other_physical_reactions', '')) ?: null;
 
-        $perilaku = trim($request->post('perilaku', ''));
+        $behavior = trim($request->post('behavior', ''));
         $selfReflection = trim($request->post('self_reflection', '')) ?: null;
 
         $gratitude = array_values(array_filter(array_map(
@@ -251,59 +251,59 @@ class DiaryController
             array_slice((array) $request->post('gratitude', []), 0, self::GRATITUDE_SLOTS)
         ), fn ($g) => $g !== ''));
 
-        $rencanaBesok = trim($request->post('rencana_besok', '')) ?: null;
+        $tomorrowPlan = trim($request->post('tomorrow_plan', '')) ?: null;
 
         $visibility = $request->post('visibility', 'private');
-        $isPrivate = $visibility !== 'konselor';
-        $sharedKonselorId = null;
+        $isPrivate = $visibility !== 'counselor';
+        $sharedCounselorId = null;
         if (!$isPrivate) {
-            $sharedKonselorId = (int) $request->post('shared_konselor_id', 0) ?: null;
+            $sharedCounselorId = (int) $request->post('shared_counselor_id', 0) ?: null;
         }
 
         $fields = [
             'entry_date' => $entryDate,
-            'situasi' => $situasi,
-            'pikiran_awal' => $pikiranAwal,
+            'situation' => $situation,
+            'initial_thoughts' => $initialThoughts,
             'emosi' => $emosi,
-            'emosi_lainnya' => $emosiLainnya,
-            'intensitas_emosi' => $intensitasEmosi,
-            'reaksi_fisik' => $reaksiFisik,
-            'reaksi_fisik_lainnya' => $reaksiFisikLainnya,
-            'perilaku' => $perilaku,
+            'other_emotions' => $otherEmotions,
+            'emotion_intensity' => $emotionIntensity,
+            'physical_reactions' => $physicalReactions,
+            'other_physical_reactions' => $otherPhysicalReactions,
+            'behavior' => $behavior,
             'self_reflection' => $selfReflection,
             'gratitude' => $gratitude,
-            'rencana_besok' => $rencanaBesok,
+            'tomorrow_plan' => $tomorrowPlan,
             'is_private' => $isPrivate,
-            'shared_konselor_id' => $sharedKonselorId,
+            'shared_counselor_id' => $sharedCounselorId,
         ];
 
         $errors = [];
 
-        if ($situasi === '') {
+        if ($situation === '') {
             $errors[] = 'Situasi wajib diisi.';
         }
-        if ($pikiranAwal === '') {
+        if ($initialThoughts === '') {
             $errors[] = 'Pikiran pertama wajib diisi.';
         }
         if (empty($emosi)) {
             $errors[] = 'Pilih minimal satu emosi yang dirasakan.';
-        } elseif (in_array('Lainnya', $emosi, true) && $emosiLainnya === null) {
+        } elseif (in_array('Lainnya', $emosi, true) && $otherEmotions === null) {
             $errors[] = 'Sebutkan emosi lainnya yang kamu maksud.';
         }
-        if ($intensitasEmosi < 1 || $intensitasEmosi > 5) {
+        if ($emotionIntensity < 1 || $emotionIntensity > 5) {
             $errors[] = 'Intensitas emosi wajib dipilih (1-5).';
         }
-        if (empty($reaksiFisik)) {
+        if (empty($physicalReactions)) {
             $errors[] = 'Pilih minimal satu reaksi fisik.';
-        } elseif (in_array('Lainnya', $reaksiFisik, true) && $reaksiFisikLainnya === null) {
+        } elseif (in_array('Lainnya', $physicalReactions, true) && $otherPhysicalReactions === null) {
             $errors[] = 'Sebutkan reaksi fisik lainnya yang kamu maksud.';
         }
-        if ($perilaku === '') {
+        if ($behavior === '') {
             $errors[] = 'Perilaku wajib diisi.';
         }
         if (!$isPrivate) {
-            $validKonselorIds = array_column($this->availableKonselors(), 'konselor_id');
-            if (!$sharedKonselorId || !in_array($sharedKonselorId, $validKonselorIds, true)) {
+            $validCounselorIds = array_column($this->availableCounselors(), 'counselor_id');
+            if (!$sharedCounselorId || !in_array($sharedCounselorId, $validCounselorIds, true)) {
                 $errors[] = 'Pilih konselor tujuan berbagi yang valid.';
             }
         }

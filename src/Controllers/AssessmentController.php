@@ -50,12 +50,12 @@ class AssessmentController
                     fn($s) => $s->toArray(),
                     $this->assessments->recentByCategories(['Berat', 'Rendah'], 6)
                 ),
-                'fakultasCounts'        => $this->users->countByFakultas(),
+                'facultyCounts'        => $this->users->countByFaculty(),
                 'pwbDimensionAverages'  => $this->assessments->pwbDimensionAverages(),
                 'bdi2ItemAverages'      => $this->assessments->bdi2ItemAverages(),
                 'suicidalIdeationFlags' => $this->assessments->flaggedForSuicidalIdeation(10),
                 'participation'         => $this->assessments->participationStats(),
-                'activeMahasiswaCount'  => $this->users->countActiveMahasiswa(),
+                'activeStudentCount'  => $this->users->countActiveStudent(),
             ]);
             return;
         }
@@ -154,8 +154,8 @@ class AssessmentController
     {
         $filters = [
             'search'        => trim((string) $request->get('q', '')),
-            'fakultas'      => $request->get('fakultas') ?: null,
-            'jurusan'       => $request->get('jurusan') ?: null,
+            'faculty'      => $request->get('faculty') ?: null,
+            'major'       => $request->get('major') ?: null,
             'bdi2_category' => $request->get('bdi2_category') ?: null,
             'pwb_category'  => $request->get('pwb_category') ?: null,
         ];
@@ -177,8 +177,8 @@ class AssessmentController
             'sort'            => $sort,
             'dir'             => $dir,
             'filters'         => $filters,
-            'fakultasOptions' => array_keys($this->users->countByFakultas()),
-            'jurusanOptions'  => $this->users->distinctJurusan(),
+            'facultyOptions' => array_keys($this->users->countByFaculty()),
+            'majorOptions'  => $this->users->distinctMajor(),
         ]);
     }
 
@@ -191,7 +191,7 @@ class AssessmentController
         }
 
         $student = $this->users->find((int) $id);
-        if (!$student || $student->role !== 'mahasiswa') {
+        if (!$student || $student->role !== 'student') {
             http_response_code(404);
             Response::view('errors/404', ['title' => 'Mahasiswa Tidak Ditemukan']);
             return;
@@ -209,7 +209,7 @@ class AssessmentController
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('assessment/history_student', [
-            'title'       => 'Riwayat Assessment — ' . $student->nama,
+            'title'       => 'Riwayat Assessment — ' . $student->name,
             'meta'        => self::META,
             'student'     => $student->toArray(),
             'submissions' => array_map(fn($s) => $s->toArray(), $result['items']),
@@ -266,7 +266,7 @@ class AssessmentController
             : '';
 
         $dimensionSection = $dimensionRows !== ''
-            ? '<h2>Skor per Dimensi</h2><table class="table"><tr><th>Dimensi</th><th>Skor</th><th>Kategori</th></tr>' . $dimensionRows . '</table>'
+            ? '<h2>Skor per Dimensi</h2><table class="table"><tr><th>Dimensi</th><th>Skor</th><th>Category</th></tr>' . $dimensionRows . '</table>'
             : '';
 
         return '
@@ -289,10 +289,10 @@ h2{ color:#2563eb; font-size:14px; margin-top:24px; }
 <h1>Hasil ' . htmlspecialchars($meta['short_title']) . '</h1>
 <p style="text-align:center;color:#555;">' . htmlspecialchars($meta['title']) . '</p>
 <table class="table">
-<tr><td class="label">Nama</td><td>' . htmlspecialchars($submission->userName ?? '-') . '</td></tr>
-<tr><td class="label">Tanggal Assessment</td><td>' . htmlspecialchars(date('d F Y H:i', strtotime($submission->submittedAt))) . '</td></tr>
+<tr><td class="label">Name</td><td>' . htmlspecialchars($submission->userName ?? '-') . '</td></tr>
+<tr><td class="label">Date Assessment</td><td>' . htmlspecialchars(date('d F Y H:i', strtotime($submission->submittedAt))) . '</td></tr>
 <tr><td class="label">Total Skor</td><td>' . $submission->totalScore . ' / ' . $submission->maxScore . '</td></tr>
-<tr><td class="label">Kategori</td><td>' . htmlspecialchars($submission->category) . '</td></tr>
+<tr><td class="label">Category</td><td>' . htmlspecialchars($submission->category) . '</td></tr>
 ' . $percentageRow . '
 </table>
 ' . $dimensionSection . '
@@ -325,6 +325,6 @@ h2{ color:#2563eb; font-size:14px; margin-top:24px; }
 
     private function isStaff(): bool
     {
-        return in_array($_SESSION['role'] ?? '', ['admin', 'konselor'], true);
+        return in_array($_SESSION['role'] ?? '', ['admin', 'counselor'], true);
     }
 }

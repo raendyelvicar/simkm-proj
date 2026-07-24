@@ -1,5 +1,5 @@
 <?php
-// Shared, scoped styles for the konselor's booking queue. Mirrors
+// Shared, scoped styles for the counselor's booking queue. Mirrors
 // templates/admin/approvals/_styles.php's list-table-with-row-actions
 // pattern so the look stays consistent app-wide.
 return <<<'CSS'

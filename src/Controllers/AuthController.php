@@ -33,15 +33,15 @@ class AuthController
     // GET /register
     public function showRegisterForm(Request $request): void
     {
-        $fakultasList = $this->lookup->getFakultas();
-        $jurusanList = $fakultasList
-            ? $this->lookup->getJurusanByFakultas((int) $fakultasList[0]['id'])
+        $facultyList = $this->lookup->getFaculty();
+        $majorList = $facultyList
+            ? $this->lookup->getMajorByFaculty((int) $facultyList[0]['id'])
             : [];
 
         Response::view('auth/register', [
             'title' => 'Daftar Akun',
-            'fakultasList' => $fakultasList,
-            'jurusanList' => $jurusanList,
+            'facultyList' => $facultyList,
+            'majorList' => $majorList,
         ]);
     }
 
@@ -49,62 +49,62 @@ class AuthController
     public function register(Request $request): void
     {
         $old = [
-            'nama' => trim($request->post('nama', '')),
-            'nama_lengkap' => trim($request->post('nama_lengkap', '')),
+            'name' => trim($request->post('name', '')),
+            'full_name' => trim($request->post('full_name', '')),
             'username' => trim($request->post('username', '')),
             'email' => trim($request->post('email', '')),
             'password' => $request->post('password', ''),
-            'npm' => trim($request->post('npm', '')),
-            'jenis_kelamin' => trim($request->post('jenis_kelamin', '')),
-            'fakultas' => trim($request->post('fakultas', '')),
-            'jurusan' => trim($request->post('jurusan', '')),
-            'no_hp' => trim($request->post('no_hp', '')),
+            'student_number' => trim($request->post('student_number', '')),
+            'gender' => trim($request->post('gender', '')),
+            'faculty' => trim($request->post('faculty', '')),
+            'major' => trim($request->post('major', '')),
+            'phone_number' => trim($request->post('phone_number', '')),
         ];
 
-        $fakultasList = $this->lookup->getFakultas();
-        $jurusanList = $old['fakultas'] !== ''
-            ? $this->lookup->getJurusanByFakultas((int) $old['fakultas'])
+        $facultyList = $this->lookup->getFaculty();
+        $majorList = $old['faculty'] !== ''
+            ? $this->lookup->getMajorByFaculty((int) $old['faculty'])
             : [];
 
-        $fakultasName = $old['fakultas'] !== '' ? $this->lookup->findFakultasName((int) $old['fakultas']) : null;
-        $jurusanName = $old['jurusan'] !== '' ? $this->lookup->findJurusanName((int) $old['jurusan']) : null;
+        $facultyName = $old['faculty'] !== '' ? $this->lookup->findFacultyName((int) $old['faculty']) : null;
+        $majorName = $old['major'] !== '' ? $this->lookup->findMajorName((int) $old['major']) : null;
 
-        $error = $this->validateRegistration($old, $fakultasName, $jurusanName);
+        $error = $this->validateRegistration($old, $facultyName, $majorName);
 
         if ($error) {
             Response::view('auth/register', array_merge(array_diff_key($old, ['password' => '']), [
                 'title' => 'Daftar Akun',
                 'error' => $error,
-                'fakultasList' => $fakultasList,
-                'jurusanList' => $jurusanList,
+                'facultyList' => $facultyList,
+                'majorList' => $majorList,
             ]));
             return;
         }
 
         $hashed = password_hash($old['password'], PASSWORD_DEFAULT);
-        $userId = $this->users->createPendingMahasiswa(
-            $old['nama'],
-            $old['nama_lengkap'],
+        $userId = $this->users->createPendingStudent(
+            $old['name'],
+            $old['full_name'],
             $old['username'],
             $old['email'],
             $hashed,
-            $old['npm'],
-            $old['jenis_kelamin'],
-            $fakultasName,
-            $jurusanName,
-            $old['no_hp']
+            $old['student_number'],
+            $old['gender'],
+            $facultyName,
+            $majorName,
+            $old['phone_number']
         );
 
-        $this->notifyAdminsOfPendingRegistration($userId, $old, $fakultasName, $jurusanName);
+        $this->notifyAdminsOfPendingRegistration($userId, $old, $facultyName, $majorName);
 
         $_SESSION['successRegister'] = 'Registrasi berhasil! Akun Anda menunggu persetujuan Admin sebelum bisa digunakan untuk login.';
         Response::redirect('/login');
     }
 
     // Returns an error message, or null if every field is valid.
-    private function validateRegistration(array $old, ?string $fakultasName, ?string $jurusanName): ?string
+    private function validateRegistration(array $old, ?string $facultyName, ?string $majorName): ?string
     {
-        $required = ['nama', 'nama_lengkap', 'username', 'email', 'npm', 'jenis_kelamin', 'no_hp'];
+        $required = ['name', 'full_name', 'username', 'email', 'student_number', 'gender', 'phone_number'];
         foreach ($required as $field) {
             if ($old[$field] === '') {
                 return 'Mohon lengkapi semua kolom dengan benar (password minimal 8 karakter).';
@@ -115,7 +115,7 @@ class AuthController
             return 'Mohon lengkapi semua kolom dengan benar (password minimal 8 karakter).';
         }
 
-        if ($fakultasName === null || $jurusanName === null) {
+        if ($facultyName === null || $majorName === null) {
             return 'Fakultas atau jurusan tidak valid.';
         }
 
@@ -123,7 +123,7 @@ class AuthController
             return 'Username atau email sudah terdaftar.';
         }
 
-        if ($this->users->findByNpm($old['npm'])) {
+        if ($this->users->findByStudentNumber($old['student_number'])) {
             return 'NPM sudah terdaftar.';
         }
 
@@ -132,18 +132,18 @@ class AuthController
 
     // Best-effort: a failed notification email must never block registration
     // itself, since the account row is already committed at this point.
-    private function notifyAdminsOfPendingRegistration(int $userId, array $old, ?string $fakultasName, ?string $jurusanName): void
+    private function notifyAdminsOfPendingRegistration(int $userId, array $old, ?string $facultyName, ?string $majorName): void
     {
         require_once __DIR__ . '/../../config/send_email.php';
 
         $subject = 'Pendaftaran Mahasiswa Baru — Perlu Persetujuan';
         $approvalUrl = rtrim(env('APP_URL', ''), '/') . '/admin/approvals';
         $message = "Ada mahasiswa baru mendaftar dan menunggu persetujuan:\n\n"
-            . "Nama: {$old['nama']}\n"
-            . "NPM: {$old['npm']}\n"
+            . "Name: {$old['name']}\n"
+            . "NPM: {$old['student_number']}\n"
             . "Email: {$old['email']}\n"
-            . "Fakultas: {$fakultasName}\n"
-            . "Jurusan: {$jurusanName}\n"
+            . "Faculty: {$facultyName}\n"
+            . "Major: {$majorName}\n"
             . "Username: {$old['username']}\n\n"
             . "Tinjau dan setujui di: {$approvalUrl}";
 
@@ -198,7 +198,7 @@ class AuthController
         $_SESSION['username'] = $user->username;
         $_SESSION['role']     = $user->role;
 
-        if ($user->role === 'mahasiswa') {
+        if ($user->role === 'student') {
             $_SESSION['show_daily_tip'] = true;
         }
 

@@ -3,7 +3,7 @@
 <div class="selfhelp-page">
     <div class="page-head">
         <div>
-            <h1>🙏 Gratitude & Self Reflection</h1>
+            <h1>🙏 Syukur & Refleksi Diri</h1>
             <p>Kumpulan rasa syukur dan refleksi diri yang sudah kamu tulis lewat Diary Terstruktur.</p>
         </div>
         <div class="d-flex gap-2">
@@ -15,7 +15,7 @@
     <?php if (empty($entries)): ?>
         <div class="assess-card assess-card-body text-center">
             <p class="mb-2">Kamu belum menulis gratitude atau self reflection apa pun.</p>
-            <p class="text-muted small mb-3">Setiap kali menulis Diary Terstruktur, kamu bisa mengisi bagian "🖊 Self Reflection" dan "🙏 Gratitude Journal" &mdash; isiannya akan muncul di sini.</p>
+            <p class="text-muted small mb-3">Setiap kali menulis Diary Terstruktur, kamu bisa mengisi bagian "🖊 Refleksi Diri" dan "🙏 Jurnal Syukur" &mdash; isiannya akan muncul di sini.</p>
             <a href="/diary/create" class="btn btn-primary btn-sm">Tulis Diary Sekarang</a>
         </div>
     <?php else: ?>
@@ -29,7 +29,7 @@
 
                         <?php if (!empty($entry['gratitude_list'])): ?>
                             <div class="mb-2">
-                                <div class="fw-semibold small mb-1">🙏 Gratitude</div>
+                                <div class="fw-semibold small mb-1">🙏 Syukur</div>
                                 <ul class="mb-0 small">
                                     <?php foreach ($entry['gratitude_list'] as $g): ?>
                                         <li><?= htmlspecialchars($g) ?></li>
@@ -40,7 +40,7 @@
 
                         <?php if (!empty($entry['self_reflection'])): ?>
                             <div>
-                                <div class="fw-semibold small mb-1">🖊 Self Reflection</div>
+                                <div class="fw-semibold small mb-1">🖊 Refleksi Diri</div>
                                 <p class="small mb-0"><?= nl2br(htmlspecialchars($entry['self_reflection'])) ?></p>
                             </div>
                         <?php endif; ?>
@@ -55,6 +55,6 @@
 
 <?php
 $content = ob_get_clean();
-$pageTitle = $title ?? 'Gratitude & Self Reflection';
+$pageTitle = $title ?? 'Syukur & Refleksi Diri';
 $extraStyles = require __DIR__ . '/_styles.php';
 require __DIR__ . '/../layouts/index.php';

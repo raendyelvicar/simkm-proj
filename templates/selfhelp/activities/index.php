@@ -87,13 +87,13 @@ ob_start();
                                                     <button type="submit" class="btn-activity btn-activity-ghost btn-activity-sm">Lewati</button>
                                                 </form>
                                                 <form method="post" action="/self-help/activities/<?= (int) $item['id'] ?>/delete"
-                                                      onsubmit="return confirm('Hapus aktivitas ini?');">
+                                                    onsubmit="return confirm('Hapus aktivitas ini?');">
                                                     <button type="submit" class="btn-activity btn-activity-danger btn-activity-sm">Hapus</button>
                                                 </form>
                                             </div>
                                         <?php else: ?>
                                             <form method="post" action="/self-help/activities/<?= (int) $item['id'] ?>/delete"
-                                                  onsubmit="return confirm('Hapus aktivitas ini?');">
+                                                onsubmit="return confirm('Hapus aktivitas ini?');">
                                                 <button type="submit" class="btn-activity btn-activity-danger btn-activity-sm">Hapus</button>
                                             </form>
                                         <?php endif; ?>

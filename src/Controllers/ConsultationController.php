@@ -8,7 +8,7 @@ use App\Middleware\AuthMiddleware;
 use App\Repositories\ChatRepository;
 use App\Repositories\UserRepository;
 
-// Counselor-side inbox: lets a logged-in konselor see students who've
+// Counselor-side inbox: lets a logged-in counselor see students who've
 // messaged them and reply. Mirrors ChatController, which is the
 // student-facing side of the same chat_messages table.
 class ConsultationController
@@ -22,9 +22,9 @@ class ConsultationController
     {
         AuthMiddleware::handle();
 
-        if (($_SESSION['role'] ?? '') !== 'konselor') {
+        if (($_SESSION['role'] ?? '') !== 'counselor') {
             http_response_code(403);
-            exit('Forbidden: konselor only.');
+            exit('Forbidden: counselor only.');
         }
 
         $this->chats = new ChatRepository();
@@ -35,7 +35,7 @@ class ConsultationController
     //
     // threadsForCounselor() is an N+1-per-student query with no natural single-query
     // WHERE/LIMIT to push into (it starts from a DISTINCT over chat_messages, not a
-    // students table) — bounded by "students who've ever messaged this konselor", not
+    // students table) — bounded by "students who've ever messaged this counselor", not
     // unbounded message history, so search/sort/pagination are applied in PHP over the
     // already-materialized result rather than restructuring the query layer.
     public function index(Request $request): void
@@ -49,7 +49,7 @@ class ConsultationController
         if ($search !== '') {
             $threads = array_values(array_filter(
                 $threads,
-                fn ($t) => stripos($t['nama'] ?? '', $search) !== false
+                fn ($t) => stripos($t['name'] ?? '', $search) !== false
             ));
         }
 
@@ -80,7 +80,7 @@ class ConsultationController
     {
         [$sort, $dir] = array_pad(explode(':', $combined, 2), 2, 'desc');
 
-        return [in_array($sort, ['last_message_at', 'nama'], true) ? $sort : 'last_message_at', $dir === 'asc' ? 'asc' : 'desc'];
+        return [in_array($sort, ['last_message_at', 'name'], true) ? $sort : 'last_message_at', $dir === 'asc' ? 'asc' : 'desc'];
     }
 
     // GET /consultations/{studentId}
@@ -97,7 +97,7 @@ class ConsultationController
         $messages = $this->chats->conversation($counselorId, (int) $studentId);
 
         Response::view('counselor/thread', [
-            'title' => 'Konsultasi dengan ' . ($student->nama ?: $student->username),
+            'title' => 'Konsultasi dengan ' . ($student->name ?: $student->username),
             'student' => $student->toArray(),
             'messages' => array_map(fn ($message) => $message->toArray(), $messages),
         ]);

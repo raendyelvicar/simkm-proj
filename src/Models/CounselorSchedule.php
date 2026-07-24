@@ -2,33 +2,33 @@
 
 namespace App\Models;
 
-class KonselorJadwal
+class CounselorSchedule
 {
-    public int $jadwalId;
-    public int $konselorId;
+    public int $scheduleId;
+    public int $counselorId;
 
-    public string $tanggal;
+    public string $date;
     public string $jamMulai;
     public string $jamSelesai;
 
-    public int $kuota;
+    public int $quota;
 
-    public bool $statusAktif;
+    public bool $isActive;
 
     public ?string $createdAt;
 
     public function __construct(array $data)
     {
-        $this->jadwalId = (int)($data['jadwal_id'] ?? 0);
-        $this->konselorId = (int)($data['konselor_id'] ?? 0);
+        $this->scheduleId = (int)($data['schedule_id'] ?? 0);
+        $this->counselorId = (int)($data['counselor_id'] ?? 0);
 
-        $this->tanggal = $data['tanggal'] ?? '';
-        $this->jamMulai = $data['jam_mulai'] ?? '';
-        $this->jamSelesai = $data['jam_selesai'] ?? '';
+        $this->date = $data['date'] ?? '';
+        $this->jamMulai = $data['start_time'] ?? '';
+        $this->jamSelesai = $data['end_time'] ?? '';
 
-        $this->kuota = (int)($data['kuota'] ?? 10);
+        $this->quota = (int)($data['quota'] ?? 10);
 
-        $this->statusAktif = (bool)($data['status_aktif'] ?? true);
+        $this->isActive = (bool)($data['is_active'] ?? true);
 
         $this->createdAt = $data['created_at'] ?? null;
     }
@@ -36,13 +36,13 @@ class KonselorJadwal
     public function toArray(): array
     {
         return [
-            'jadwal_id' => $this->jadwalId,
-            'konselor_id' => $this->konselorId,
-            'tanggal' => $this->tanggal,
-            'jam_mulai' => $this->jamMulai,
-            'jam_selesai' => $this->jamSelesai,
-            'kuota' => $this->kuota,
-            'status_aktif' => $this->statusAktif,
+            'schedule_id' => $this->scheduleId,
+            'counselor_id' => $this->counselorId,
+            'date' => $this->date,
+            'start_time' => $this->jamMulai,
+            'end_time' => $this->jamSelesai,
+            'quota' => $this->quota,
+            'is_active' => $this->isActive,
             'created_at' => $this->createdAt,
         ];
     }

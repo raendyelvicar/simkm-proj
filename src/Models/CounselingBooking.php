@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-class BookingKonseling
+class CounselingBooking
 {
     public int $bookingId;
     public int $userId;
-    public int $konselorId;
-    public ?int $jadwalId;
+    public int $counselorId;
+    public ?int $scheduleId;
 
-    public string $tanggal;
+    public string $date;
     public string $jamMulai;
     public string $jamSelesai;
 
-    public ?string $keluhan;
+    public ?string $complaint;
     public string $status;
 
     public ?string $createdAt;
@@ -22,14 +22,14 @@ class BookingKonseling
     {
         $this->bookingId = (int)($data['booking_id'] ?? 0);
         $this->userId = (int)($data['user_id'] ?? 0);
-        $this->konselorId = (int)($data['konselor_id'] ?? 0);
-        $this->jadwalId = isset($data['jadwal_id']) ? (int) $data['jadwal_id'] : null;
+        $this->counselorId = (int)($data['counselor_id'] ?? 0);
+        $this->scheduleId = isset($data['schedule_id']) ? (int) $data['schedule_id'] : null;
 
-        $this->tanggal = $data['tanggal'] ?? '';
-        $this->jamMulai = $data['jam_mulai'] ?? '';
-        $this->jamSelesai = $data['jam_selesai'] ?? '';
+        $this->date = $data['date'] ?? '';
+        $this->jamMulai = $data['start_time'] ?? '';
+        $this->jamSelesai = $data['end_time'] ?? '';
 
-        $this->keluhan = $data['keluhan'] ?? null;
+        $this->complaint = $data['complaint'] ?? null;
         $this->status = $data['status'] ?? 'Pending';
 
         $this->createdAt = $data['created_at'] ?? null;
@@ -40,12 +40,12 @@ class BookingKonseling
         return [
             'booking_id' => $this->bookingId,
             'user_id' => $this->userId,
-            'konselor_id' => $this->konselorId,
-            'jadwal_id' => $this->jadwalId,
-            'tanggal' => $this->tanggal,
-            'jam_mulai' => $this->jamMulai,
-            'jam_selesai' => $this->jamSelesai,
-            'keluhan' => $this->keluhan,
+            'counselor_id' => $this->counselorId,
+            'schedule_id' => $this->scheduleId,
+            'date' => $this->date,
+            'start_time' => $this->jamMulai,
+            'end_time' => $this->jamSelesai,
+            'complaint' => $this->complaint,
             'status' => $this->status,
             'created_at' => $this->createdAt,
         ];

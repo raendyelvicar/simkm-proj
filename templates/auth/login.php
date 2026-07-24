@@ -9,7 +9,7 @@ $error = $error ?? '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistem Informasi Manajemen Kesehatan Mental</title>
+    <title>Masuk - Sistem Informasi Manajemen Kesehatan Mental</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -95,10 +95,13 @@ $error = $error ?? '';
                 <div class="mb-3">
                     <label class="form-label" for="password">Password</label>
                     <input id="password" name="password" type="password" class="form-control" placeholder="Masukkan password" required>
+                    <div class="text-end mt-1">
+                        <a href="/forgot-password" style="font-size:13px;color:#0ea5a4;text-decoration:none;font-weight:600;">Lupa password?</a>
+                    </div>
                 </div>
 
                 <button type="submit" id="btnLogin" class="btn btn-primary w-100">
-                    <span id="btnText">Login</span>
+                    <span id="btnText">Masuk</span>
                     <span id="btnLoading" class="spinner-border spinner-border-sm ms-2 d-none"></span>
                 </button>
 

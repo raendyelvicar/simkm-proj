@@ -22,8 +22,8 @@ ob_start();
                 <table class="lap-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('nama', 'Nama', $sort, $dir, $currentQuery) ?></th>
-                            <th><?= sort_link('tanggal', 'Tanggal', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('name', 'Nama', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('date', 'Tanggal', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('pwb_score', 'Skor PWB', $sort, $dir, $currentQuery) ?></th>
                             <th>Kategori PWB</th>
                             <th><?= sort_link('bdi2_score', 'Skor BDI-II', $sort, $dir, $currentQuery) ?></th>
@@ -35,8 +35,8 @@ ob_start();
                     <tbody>
                         <?php foreach ($rows as $r): ?>
                             <tr>
-                                <td><?= htmlspecialchars($r['nama']) ?></td>
-                                <td><?= $r['tanggal'] ? htmlspecialchars(date('d M Y', strtotime($r['tanggal']))) : '-' ?></td>
+                                <td><?= htmlspecialchars($r['name']) ?></td>
+                                <td><?= $r['date'] ? htmlspecialchars(date('d M Y', strtotime($r['date']))) : '-' ?></td>
                                 <td><?= $r['pwb_score'] ?? '-' ?></td>
                                 <td><?= $r['pwb_category'] ? '<span class="lap-badge ' . assessment_badge_class($r['pwb_category']) . '">' . htmlspecialchars($r['pwb_category']) . '</span>' : '-' ?></td>
                                 <td><?= $r['bdi2_score'] ?? '-' ?></td>

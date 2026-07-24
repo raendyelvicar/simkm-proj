@@ -6,17 +6,18 @@
     <div class="chat-head">
         <div class="chat-head-info">
             <div class="counselor-avatar counselor-avatar-sm">
-                <?php if (!empty($student['profile'])): ?>
-                    <img src="<?= htmlspecialchars($student['profile']) ?>"
-                        alt="<?= htmlspecialchars($student['nama']) ?>"
+                <?php $photo = profile_photo_url($student['profile']); ?>
+                <?php if ($photo): ?>
+                    <img src="<?= htmlspecialchars($photo) ?>"
+                        alt="<?= htmlspecialchars($student['name']) ?>"
                         onerror="this.remove()">
                 <?php endif; ?>
-                <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr(($student['nama'] ?? '') !== '' ? $student['nama'] : '?', 0, 1))) ?></span>
+                <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr(($student['name'] ?? '') !== '' ? $student['name'] : '?', 0, 1))) ?></span>
             </div>
             <div>
-                <h1><?= htmlspecialchars(($student['nama'] ?? '') !== '' ? $student['nama'] : ($student['username'] ?? 'Mahasiswa')) ?></h1>
-                <?php if (!empty($student['jurusan'])): ?>
-                    <span class="chat-subtitle"><?= htmlspecialchars($student['jurusan']) ?></span>
+                <h1><?= htmlspecialchars(($student['name'] ?? '') !== '' ? $student['name'] : ($student['username'] ?? 'Mahasiswa')) ?></h1>
+                <?php if (!empty($student['major'])): ?>
+                    <span class="chat-subtitle"><?= htmlspecialchars($student['major']) ?></span>
                 <?php endif; ?>
             </div>
         </div>

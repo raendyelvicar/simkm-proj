@@ -23,7 +23,7 @@ ob_start();
                 <table class="lap-table">
                     <thead>
                         <tr>
-                            <th><?= sort_link('nama', 'Nama', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('name', 'Nama', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('assessment_count', 'Assessment', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('diary_count', 'Diary', $sort, $dir, $currentQuery) ?></th>
                             <th><?= sort_link('selfhelp_count', 'Self Help', $sort, $dir, $currentQuery) ?></th>
@@ -35,12 +35,12 @@ ob_start();
                     <tbody>
                         <?php foreach ($rows as $r): ?>
                             <tr>
-                                <td><?= htmlspecialchars($r['nama']) ?></td>
+                                <td><?= htmlspecialchars($r['name']) ?></td>
                                 <td><?= $r['assessment_count'] ?></td>
                                 <td><?= $r['diary_count'] ?></td>
                                 <td><?= $r['selfhelp_count'] ?></td>
                                 <td><?= $r['booking_count'] ?></td>
-                                <td><?= $r['completed_konseling_count'] ?></td>
+                                <td><?= $r['completed_counseling_count'] ?></td>
                                 <td><span class="lap-badge <?= $statusBadge[$r['status']] ?? 'lap-badge-gray' ?>"><?= htmlspecialchars($r['status']) ?></span></td>
                             </tr>
                         <?php endforeach; ?>

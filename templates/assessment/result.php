@@ -27,8 +27,8 @@
             <?php endif; ?>
             <div class="text-muted small mt-2">
                 <?= htmlspecialchars(date('d F Y, H:i', strtotime($submission['submitted_at']))) ?>
-                <?php if (!empty($isStaff) && !empty($submission['nama'])): ?>
-                    &middot; <?= htmlspecialchars($submission['nama']) ?>
+                <?php if (!empty($isStaff) && !empty($submission['name'])): ?>
+                    &middot; <?= htmlspecialchars($submission['name']) ?>
                 <?php endif; ?>
             </div>
         </div>

@@ -21,7 +21,7 @@ ob_start();
             <div class="col-auto">
                 <label class="form-label small text-muted mb-1">Urutkan</label>
                 <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <?= sort_options(['last_message_at' => 'Pesan Terakhir', 'nama' => 'Nama Mahasiswa'], $sort, $dir) ?>
+                    <?= sort_options(['last_message_at' => 'Pesan Terakhir', 'name' => 'Nama Mahasiswa'], $sort, $dir) ?>
                 </select>
             </div>
             <div class="col-auto">
@@ -36,17 +36,18 @@ ob_start();
             <?php foreach ($threads as $thread): ?>
                 <a href="/consultations/<?= urlencode($thread['student_id']) ?>" class="thread-row">
                     <div class="counselor-avatar counselor-avatar-sm">
-                        <?php if (!empty($thread['profile'])): ?>
-                            <img src="<?= htmlspecialchars($thread['profile']) ?>"
-                                alt="<?= htmlspecialchars($thread['nama']) ?>"
+                        <?php $photo = profile_photo_url($thread['profile']); ?>
+                        <?php if ($photo): ?>
+                            <img src="<?= htmlspecialchars($photo) ?>"
+                                alt="<?= htmlspecialchars($thread['name']) ?>"
                                 onerror="this.remove()">
                         <?php endif; ?>
-                        <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($thread['nama'] !== '' ? $thread['nama'] : '?', 0, 1))) ?></span>
+                        <span class="counselor-avatar-initial"><?= htmlspecialchars(mb_strtoupper(mb_substr($thread['name'] !== '' ? $thread['name'] : '?', 0, 1))) ?></span>
                     </div>
 
                     <div class="thread-row-body">
                         <div class="thread-row-head">
-                            <strong><?= htmlspecialchars($thread['nama'] !== '' ? $thread['nama'] : 'Mahasiswa') ?></strong>
+                            <strong><?= htmlspecialchars($thread['name'] !== '' ? $thread['name'] : 'Mahasiswa') ?></strong>
                             <span class="thread-row-time"><?= htmlspecialchars($thread['last_message_at'] ? date('d M Y H:i', strtotime($thread['last_message_at'])) : '') ?></span>
                         </div>
                         <p class="thread-row-snippet"><?= htmlspecialchars(substr($thread['last_message'], 0, 90)) ?></p>

@@ -14,7 +14,7 @@
         <div class="row g-3 mb-3">
             <div class="col-md-3 col-6">
                 <div class="assess-stat-tile">
-                    <div class="value"><?= (int) ($activeMahasiswaCount ?? 0) ?></div>
+                    <div class="value"><?= (int) ($activeStudentCount ?? 0) ?></div>
                     <div class="label">Mahasiswa Aktif</div>
                 </div>
             </div>
@@ -27,7 +27,7 @@
             <div class="col-md-3 col-6">
                 <div class="assess-stat-tile">
                     <div class="value"><?= (int) ($participation['total_submissions'] ?? 0) ?></div>
-                    <div class="label">Total Submission</div>
+                    <div class="label">Total Pengiriman</div>
                 </div>
             </div>
             <div class="col-md-3 col-6">
@@ -56,7 +56,7 @@
                         <tbody>
                             <?php foreach ($suicidalIdeationFlags as $flag): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($flag['nama'] ?? '-') ?></td>
+                                    <td><?= htmlspecialchars($flag['name'] ?? '-') ?></td>
                                     <td><span class="assess-badge assess-badge-red"><?= (int) $flag['item_score'] ?> / 3</span></td>
                                     <td><?= (int) $flag['total_score'] ?> / <?= (int) $flag['max_score'] ?></td>
                                     <td><?= htmlspecialchars(date('d M Y', strtotime($flag['submitted_at']))) ?></td>
@@ -73,10 +73,10 @@
             <div class="col-md-6">
                 <div class="assess-card assess-card-body">
                     <h5 class="mb-3">🎓 Distribusi Mahasiswa per Fakultas</h5>
-                    <?php if (empty($fakultasCounts)): ?>
+                    <?php if (empty($facultyCounts)): ?>
                         <p class="text-muted mb-0">Belum ada data mahasiswa.</p>
                     <?php else: ?>
-                        <canvas id="chart-fakultas" height="220"></canvas>
+                        <canvas id="chart-faculty" height="220"></canvas>
                     <?php endif; ?>
                 </div>
             </div>
@@ -146,7 +146,7 @@
                         <tbody>
                             <?php foreach ($recentFlagged as $s): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($s['nama'] ?? '-') ?></td>
+                                    <td><?= htmlspecialchars($s['name'] ?? '-') ?></td>
                                     <td><?= htmlspecialchars($meta[$s['type']]['short_title'] ?? $s['type']) ?></td>
                                     <td><?= (int) $s['total_score'] ?> / <?= (int) $s['max_score'] ?></td>
                                     <td><span class="assess-badge <?= assessment_badge_class($s['category']) ?>"><?= htmlspecialchars($s['category']) ?></span></td>
@@ -163,7 +163,7 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             (function() {
-                var fakultasCounts = <?= json_encode($fakultasCounts ?? []) ?>;
+                var facultyCounts = <?= json_encode($facultyCounts ?? []) ?>;
                 var countsBdi2 = <?= json_encode($countsBdi2 ?? []) ?>;
                 var countsPwb = <?= json_encode($countsPwb ?? []) ?>;
                 var pwbDimensionLabels = <?= json_encode(\App\Services\AssessmentScoringService::PWB_DIMENSIONS) ?>;
@@ -179,14 +179,14 @@
                     'Rendah': '#b91c1c'
                 };
 
-                if (Object.keys(fakultasCounts).length) {
-                    new Chart(document.getElementById('chart-fakultas'), {
+                if (Object.keys(facultyCounts).length) {
+                    new Chart(document.getElementById('chart-faculty'), {
                         type: 'bar',
                         data: {
-                            labels: Object.keys(fakultasCounts),
+                            labels: Object.keys(facultyCounts),
                             datasets: [{
                                 label: 'Mahasiswa',
-                                data: Object.values(fakultasCounts),
+                                data: Object.values(facultyCounts),
                                 backgroundColor: '#2563eb'
                             }]
                         },

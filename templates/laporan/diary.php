@@ -1,6 +1,6 @@
 <?php
-// --- Aggregate stats + chart data (emosi_list/reaksi_fisik_list are already decoded
-// arrays here, hydrated via DiaryEntry — see LaporanController::diaryData()). The
+// --- Aggregate stats + chart data (emotions_list/physical_reactions_list are already decoded
+// arrays here, hydrated via DiaryEntry — see ReportController::diaryData()). The
 // literal 'Lainnya' checkbox option is folded into its free-text companion field
 // instead of being tallied as its own category. ---
 function lap_tally_with_lainnya(array $rows, string $listKey, string $lainnyaKey): array
@@ -30,13 +30,13 @@ function lap_tally_with_lainnya(array $rows, string $listKey, string $lainnyaKey
 }
 
 $totalEntries = count($rows);
-$emotionCounts = lap_tally_with_lainnya($rows, 'emosi_list', 'emosi_lainnya');
-$reaksiCounts = lap_tally_with_lainnya($rows, 'reaksi_fisik_list', 'reaksi_fisik_lainnya');
+$emotionCounts = lap_tally_with_lainnya($rows, 'emotions_list', 'other_emotions');
+$reaksiCounts = lap_tally_with_lainnya($rows, 'physical_reactions_list', 'other_physical_reactions');
 
 $dateCounts = [];
 $intensitySum = 0;
 foreach ($rows as $r) {
-    $intensitySum += (int) $r['intensitas_emosi'];
+    $intensitySum += (int) $r['emotion_intensity'];
     if ($r['entry_date']) {
         $dateCounts[$r['entry_date']] = ($dateCounts[$r['entry_date']] ?? 0) + 1;
     }
@@ -105,7 +105,7 @@ ob_start();
                     <thead>
                         <tr>
                             <th><?= sort_link('entry_date', 'Tanggal', $sort, $dir, $currentQuery) ?></th>
-                            <th><?= sort_link('student_nama', 'Mahasiswa', $sort, $dir, $currentQuery) ?></th>
+                            <th><?= sort_link('student_name', 'Mahasiswa', $sort, $dir, $currentQuery) ?></th>
                             <th>Emosi</th>
                             <th>Intensitas</th>
                             <th>Ringkasan Situasi</th>
@@ -115,16 +115,16 @@ ob_start();
                     <tbody>
                         <?php foreach ($entries as $i => $e): ?>
                             <?php
-                            $emosiText = implode(', ', $e['emosi_list']) . ($e['emosi_lainnya'] ? ', ' . $e['emosi_lainnya'] : '');
-                            $situasiPreview = mb_strlen($e['situasi']) > 70 ? mb_substr($e['situasi'], 0, 70) . '…' : $e['situasi'];
+                            $emosiText = implode(', ', $e['emotions_list']) . ($e['other_emotions'] ? ', ' . $e['other_emotions'] : '');
+                            $situationPreview = mb_strlen($e['situation']) > 70 ? mb_substr($e['situation'], 0, 70) . '…' : $e['situation'];
                             $modalId = 'diaryDetail' . $page . '_' . $i;
                             ?>
                             <tr>
                                 <td><?= $e['entry_date'] ? htmlspecialchars(date('d M Y', strtotime($e['entry_date']))) : '-' ?></td>
-                                <td><?= htmlspecialchars($e['student_nama']) ?></td>
+                                <td><?= htmlspecialchars($e['student_name']) ?></td>
                                 <td><?= htmlspecialchars($emosiText ?: '-') ?></td>
-                                <td><span class="lap-badge <?= $intensityBadge[(int) $e['intensitas_emosi']] ?? 'lap-badge-gray' ?>"><?= (int) $e['intensitas_emosi'] ?>/5</span></td>
-                                <td><?= htmlspecialchars($situasiPreview) ?></td>
+                                <td><span class="lap-badge <?= $intensityBadge[(int) $e['emotion_intensity']] ?? 'lap-badge-gray' ?>"><?= (int) $e['emotion_intensity'] ?>/5</span></td>
+                                <td><?= htmlspecialchars($situationPreview) ?></td>
                                 <td>
                                     <button type="button" class="lap-btn lap-btn-ghost" style="padding:4px 10px;font-size:0.78rem;" data-bs-toggle="modal" data-bs-target="#<?= $modalId ?>">Lihat Detail</button>
                                 </td>
@@ -149,20 +149,20 @@ ob_start();
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title"><?= htmlspecialchars($e['student_nama']) ?> — <?= $e['entry_date'] ? htmlspecialchars(date('d M Y', strtotime($e['entry_date']))) : '-' ?></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title"><?= htmlspecialchars($e['student_name']) ?> — <?= $e['entry_date'] ? htmlspecialchars(date('d M Y', strtotime($e['entry_date']))) : '-' ?></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                         </div>
                         <div class="modal-body">
                             <div class="lap-diary-entry" style="border:0;padding:0;margin:0;">
                                 <dl>
-                                    <dt>Situasi</dt><dd><?= nl2br(htmlspecialchars($e['situasi'])) ?></dd>
-                                    <dt>Pikiran</dt><dd><?= nl2br(htmlspecialchars($e['pikiran_awal'])) ?></dd>
-                                    <dt>Emosi</dt><dd><?= htmlspecialchars(implode(', ', $e['emosi_list']) . ($e['emosi_lainnya'] ? ', ' . $e['emosi_lainnya'] : '')) ?> (Intensitas: <?= (int) $e['intensitas_emosi'] ?>/5)</dd>
-                                    <dt>Reaksi Fisik</dt><dd><?= htmlspecialchars(implode(', ', $e['reaksi_fisik_list']) . ($e['reaksi_fisik_lainnya'] ? ', ' . $e['reaksi_fisik_lainnya'] : '')) ?></dd>
-                                    <dt>Perilaku</dt><dd><?= nl2br(htmlspecialchars($e['perilaku'])) ?></dd>
-                                    <dt>Self Reflection</dt><dd><?= $e['self_reflection'] ? nl2br(htmlspecialchars($e['self_reflection'])) : '-' ?></dd>
-                                    <dt>Gratitude Journal</dt><dd><?= $e['gratitude_list'] ? htmlspecialchars(implode('; ', $e['gratitude_list'])) : '-' ?></dd>
-                                    <dt>Rencana Besok</dt><dd><?= $e['rencana_besok'] ? nl2br(htmlspecialchars($e['rencana_besok'])) : '-' ?></dd>
+                                    <dt>Situasi</dt><dd><?= nl2br(htmlspecialchars($e['situation'])) ?></dd>
+                                    <dt>Pikiran</dt><dd><?= nl2br(htmlspecialchars($e['initial_thoughts'])) ?></dd>
+                                    <dt>Emosi</dt><dd><?= htmlspecialchars(implode(', ', $e['emotions_list']) . ($e['other_emotions'] ? ', ' . $e['other_emotions'] : '')) ?> (Intensitas: <?= (int) $e['emotion_intensity'] ?>/5)</dd>
+                                    <dt>Reaksi Fisik</dt><dd><?= htmlspecialchars(implode(', ', $e['physical_reactions_list']) . ($e['other_physical_reactions'] ? ', ' . $e['other_physical_reactions'] : '')) ?></dd>
+                                    <dt>Perilaku</dt><dd><?= nl2br(htmlspecialchars($e['behavior'])) ?></dd>
+                                    <dt>Refleksi Diri</dt><dd><?= $e['self_reflection'] ? nl2br(htmlspecialchars($e['self_reflection'])) : '-' ?></dd>
+                                    <dt>Jurnal Syukur</dt><dd><?= $e['gratitude_list'] ? htmlspecialchars(implode('; ', $e['gratitude_list'])) : '-' ?></dd>
+                                    <dt>Rencana Besok</dt><dd><?= $e['tomorrow_plan'] ? nl2br(htmlspecialchars($e['tomorrow_plan'])) : '-' ?></dd>
                                 </dl>
                             </div>
                         </div>

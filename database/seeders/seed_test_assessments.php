@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Test-data seeder: gives 20 mahasiswa accounts a first self-assessment session
+ * Test-data seeder: gives 20 student accounts a first self-assessment session
  * (one BDI-II + one PWB submission each, submitted together like the real
  * combined session flow) with results spread across all 6 combined risk levels,
  * so the Laporan reports have something varied to show.
  *
- * Only touches mahasiswa accounts that don't already have any assessment_submissions
+ * Only touches student accounts that don't already have any assessment_submissions
  * row — safe to re-run, it will simply pick a different/empty set of candidates.
  *
  * Usage: php database/seeders/seed_test_assessments.php
@@ -70,14 +70,14 @@ $targets = [
 ];
 
 $candidates = $db->query(
-    "SELECT id, nama FROM users
-     WHERE role = 'mahasiswa' AND status = 'active'
+    "SELECT id, name FROM users
+     WHERE role = 'student' AND status = 'active'
        AND id NOT IN (SELECT DISTINCT user_id FROM assessment_submissions)
      ORDER BY id LIMIT " . count($targets)
 )->fetch_all(MYSQLI_ASSOC);
 
 if (count($candidates) < count($targets)) {
-    fwrite(STDERR, "Only " . count($candidates) . " mahasiswa without existing submissions found; need " . count($targets) . ". Aborting.\n");
+    fwrite(STDERR, "Only " . count($candidates) . " student without existing submissions found; need " . count($targets) . ". Aborting.\n");
     exit(1);
 }
 
@@ -149,7 +149,7 @@ foreach ($candidates as $i => $student) {
     echo sprintf(
         "#%-2d %-20s PWB=%s(%d%%) BDI2=%s(%d) -> Level %d (%s)\n",
         $i + 1,
-        $student['nama'],
+        $student['name'],
         $pwbCategory,
         $percentage,
         $bdi2Category,

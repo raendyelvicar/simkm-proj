@@ -6,32 +6,32 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\CounselorRepository;
-use App\Repositories\KonselorJadwalRepository;
+use App\Repositories\CounselorScheduleRepository;
 
-// Konselor-only: view their own schedule and toggle slots active/inactive.
+// Counselor-only: view their own schedule and toggle slots active/inactive.
 // Adding new slots is admin-only (see AdminScheduleController).
 class CounselorScheduleController
 {
     private const PER_PAGE = 10;
 
-    private KonselorJadwalRepository $jadwals;
-    private int $konselorId;
+    private CounselorScheduleRepository $schedules;
+    private int $counselorId;
 
     public function __construct()
     {
         AuthMiddleware::handle();
 
-        if (($_SESSION['role'] ?? '') !== 'konselor') {
+        if (($_SESSION['role'] ?? '') !== 'counselor') {
             http_response_code(403);
-            exit('Forbidden: konselor only.');
+            exit('Forbidden: counselor only.');
         }
 
-        $this->jadwals = new KonselorJadwalRepository();
+        $this->schedules = new CounselorScheduleRepository();
 
         $counselor = (new CounselorRepository())->find((int) $_SESSION['user_id']);
-        $this->konselorId = (int) ($counselor['konselor_id'] ?? 0);
+        $this->counselorId = (int) ($counselor['counselor_id'] ?? 0);
 
-        if ($this->konselorId === 0) {
+        if ($this->counselorId === 0) {
             $_SESSION['error'] = 'Lengkapi profil konselor kamu terlebih dahulu.';
             Response::redirect('/profile');
         }
@@ -43,17 +43,17 @@ class CounselorScheduleController
         $filters = [
             'date_from'    => $request->get('date_from') ?: null,
             'date_to'      => $request->get('date_to') ?: null,
-            'status_aktif' => $request->get('status_aktif', ''),
+            'is_active' => $request->get('is_active', ''),
         ];
-        $sort = (string) $request->get('sort', 'tanggal');
+        $sort = (string) $request->get('sort', 'date');
         $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
         $page = max(1, (int) $request->get('page', 1));
 
-        $result = $this->jadwals->paginatedByKonselorId($this->konselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
+        $result = $this->schedules->paginatedByCounselorId($this->counselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('schedule/index', [
-            'title'      => 'Jadwal Konsultasi',
+            'title'      => 'Schedule Konsultasi',
             'slots'      => $result['items'],
             'total'      => $result['total'],
             'page'       => $page,
@@ -67,10 +67,10 @@ class CounselorScheduleController
     // POST /schedule/{id}/toggle
     public function toggle(Request $request, string $id): void
     {
-        $slot = $this->jadwals->findOwned((int) $id, $this->konselorId);
+        $slot = $this->schedules->findOwned((int) $id, $this->counselorId);
 
         if ($slot) {
-            $this->jadwals->setActive((int) $id, !$slot->statusAktif);
+            $this->schedules->setActive((int) $id, !$slot->isActive);
         }
 
         Response::redirect('/schedule');

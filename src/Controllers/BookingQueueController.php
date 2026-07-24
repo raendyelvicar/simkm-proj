@@ -6,12 +6,12 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\AssessmentRetakeGrantRepository;
-use App\Repositories\BookingKonselingRepository;
+use App\Repositories\CounselingBookingRepository;
 use App\Repositories\CounselorRepository;
 use App\Repositories\MonitoringPeriodRepository;
-use App\Repositories\SesiKonselingRepository;
+use App\Repositories\CounselingSessionRepository;
 
-// Konselor-only: review and respond to pending booking requests from students.
+// Counselor-only: review and respond to pending booking requests from students.
 // Confirming a booking starts a monitoring period (see MonitoringPeriodRepository) —
 // that's what unlocks chat + diary sharing for that student (see ChatController::hasAccess).
 class BookingQueueController
@@ -21,30 +21,30 @@ class BookingQueueController
     private const MAX_DAYS = 365;
     private const PER_PAGE = 10;
 
-    private BookingKonselingRepository $bookings;
+    private CounselingBookingRepository $bookings;
     private MonitoringPeriodRepository $monitoring;
-    private SesiKonselingRepository $sesi;
+    private CounselingSessionRepository $session;
     private AssessmentRetakeGrantRepository $retakeGrants;
-    private int $konselorId;
+    private int $counselorId;
 
     public function __construct()
     {
         AuthMiddleware::handle();
 
-        if (($_SESSION['role'] ?? '') !== 'konselor') {
+        if (($_SESSION['role'] ?? '') !== 'counselor') {
             http_response_code(403);
-            exit('Forbidden: konselor only.');
+            exit('Forbidden: counselor only.');
         }
 
-        $this->bookings = new BookingKonselingRepository();
+        $this->bookings = new CounselingBookingRepository();
         $this->monitoring = new MonitoringPeriodRepository();
-        $this->sesi = new SesiKonselingRepository();
+        $this->session = new CounselingSessionRepository();
         $this->retakeGrants = new AssessmentRetakeGrantRepository();
 
         $counselor = (new CounselorRepository())->find((int) $_SESSION['user_id']);
-        $this->konselorId = (int) ($counselor['konselor_id'] ?? 0);
+        $this->counselorId = (int) ($counselor['counselor_id'] ?? 0);
 
-        if ($this->konselorId === 0) {
+        if ($this->counselorId === 0) {
             $_SESSION['error'] = 'Lengkapi profil konselor kamu terlebih dahulu.';
             Response::redirect('/profile');
         }
@@ -58,7 +58,7 @@ class BookingQueueController
         $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
         $page = max(1, (int) $request->get('page', 1));
 
-        $result = $this->bookings->paginatedQueue($this->konselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
+        $result = $this->bookings->paginatedQueue($this->counselorId, $filters, $sort, $dir, $page, self::PER_PAGE);
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('booking-requests/index', [
@@ -77,7 +77,7 @@ class BookingQueueController
     // counselor-chosen duration, which is the actual chat/diary-share gate.
     public function confirm(Request $request, string $id): void
     {
-        $booking = $this->bookings->findOwnedByKonselor((int) $id, $this->konselorId);
+        $booking = $this->bookings->findOwnedByCounselor((int) $id, $this->counselorId);
 
         if ($booking && $booking->status === 'Pending') {
             $days = $this->clampDays($request->post('durasi_hari', self::DEFAULT_DURATION_DAYS));
@@ -86,7 +86,7 @@ class BookingQueueController
             $this->monitoring->create(
                 (int) $id,
                 $booking->userId,
-                $this->konselorId,
+                $this->counselorId,
                 date('Y-m-d'),
                 date('Y-m-d', strtotime("+{$days} days"))
             );
@@ -100,7 +100,7 @@ class BookingQueueController
     // POST /booking-requests/{id}/reject
     public function reject(Request $request, string $id): void
     {
-        $booking = $this->bookings->findOwnedByKonselor((int) $id, $this->konselorId);
+        $booking = $this->bookings->findOwnedByCounselor((int) $id, $this->counselorId);
 
         if ($booking && $booking->status === 'Pending') {
             $this->bookings->updateStatus((int) $id, 'Cancelled');
@@ -113,11 +113,11 @@ class BookingQueueController
     // POST /booking-requests/{id}/extend — pushes the monitoring window further out.
     public function extend(Request $request, string $id): void
     {
-        $booking = $this->bookings->findOwnedByKonselor((int) $id, $this->konselorId);
+        $booking = $this->bookings->findOwnedByCounselor((int) $id, $this->counselorId);
 
         if ($booking && $booking->status === 'Confirmed') {
             $days = $this->clampDays($request->post('tambah_hari', 7));
-            $this->monitoring->extend((int) $id, $this->konselorId, $days);
+            $this->monitoring->extend((int) $id, $this->counselorId, $days);
             $_SESSION['success'] = "Monitoring diperpanjang {$days} hari.";
         }
 
@@ -126,24 +126,24 @@ class BookingQueueController
 
     // POST /booking-requests/{id}/complete — closes out a confirmed session. This also
     // ends the monitoring period immediately, revoking chat/diary-share access for it.
-    // Also records the session notes (catatan/rekomendasi/tindak lanjut) that feed
-    // Laporan Konseling — see SesiKonselingRepository.
+    // Also records the session notes (catatan/recommendation/tindak lanjut) that feed
+    // Laporan Konseling — see CounselingSessionRepository.
     public function complete(Request $request, string $id): void
     {
-        $booking = $this->bookings->findOwnedByKonselor((int) $id, $this->konselorId);
+        $booking = $this->bookings->findOwnedByCounselor((int) $id, $this->counselorId);
 
         if ($booking && $booking->status === 'Confirmed') {
             $this->bookings->updateStatus((int) $id, 'Completed');
-            $this->monitoring->endNowForBooking((int) $id, $this->konselorId);
-            $this->sesi->upsertForBooking(
+            $this->monitoring->endNowForBooking((int) $id, $this->counselorId);
+            $this->session->upsertForBooking(
                 (int) $id,
-                trim($request->post('catatan_konselor', '')) ?: null,
-                trim($request->post('rekomendasi', '')) ?: null,
-                trim($request->post('tindak_lanjut', '')) ?: null
+                trim($request->post('counselor_notes', '')) ?: null,
+                trim($request->post('recommendation', '')) ?: null,
+                trim($request->post('follow_up', '')) ?: null
             );
 
             if ($request->post('recommend_reassessment')) {
-                $this->retakeGrants->grant($booking->userId, (int) $id, $this->konselorId);
+                $this->retakeGrants->grant($booking->userId, (int) $id, $this->counselorId);
             }
 
             $_SESSION['success'] = 'Booking ditandai selesai.';
@@ -155,11 +155,11 @@ class BookingQueueController
     // POST /booking-requests/{id}/no-show — student never showed up; also ends monitoring.
     public function noShow(Request $request, string $id): void
     {
-        $booking = $this->bookings->findOwnedByKonselor((int) $id, $this->konselorId);
+        $booking = $this->bookings->findOwnedByCounselor((int) $id, $this->counselorId);
 
         if ($booking && $booking->status === 'Confirmed') {
             $this->bookings->updateStatus((int) $id, 'No Show');
-            $this->monitoring->endNowForBooking((int) $id, $this->konselorId);
+            $this->monitoring->endNowForBooking((int) $id, $this->counselorId);
             $_SESSION['success'] = 'Booking ditandai tidak hadir.';
         }
 

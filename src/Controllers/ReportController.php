@@ -6,13 +6,13 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Models\ActivityPlan;
-use App\Models\BookingKonseling;
+use App\Models\CounselingBooking;
 use App\Models\DiaryEntry;
 use App\Repositories\CounselorRepository;
-use App\Repositories\LaporanRepository;
+use App\Repositories\ReportRepository;
 use App\Services\AssessmentScoringService;
 use App\Services\EngagementScoringService;
-use App\Services\LaporanPdfService;
+use App\Services\ReportPdfService;
 
 /**
  * The 8 Laporan report pages. One controller for the whole "Laporan" feature area,
@@ -20,26 +20,26 @@ use App\Services\LaporanPdfService;
  * `xxxData()` method that fetches + shapes the data (reused by both the HTML view and
  * the PDF export), a public `xxx()` view action, and a public `xxxPdf()` export action.
  */
-class LaporanController
+class ReportController
 {
     private const DIARY_PER_PAGE = 10;
     private const REPORT_PER_PAGE = 10;
 
-    private LaporanRepository $laporan;
+    private ReportRepository $laporan;
     private CounselorRepository $counselors;
     private AssessmentScoringService $scoring;
     private EngagementScoringService $engagementScoring;
-    private LaporanPdfService $pdf;
-    private ?array $konselorProfile = null;
+    private ReportPdfService $pdf;
+    private ?array $counselorProfile = null;
 
     public function __construct()
     {
         AuthMiddleware::handle();
-        $this->laporan = new LaporanRepository();
+        $this->laporan = new ReportRepository();
         $this->counselors = new CounselorRepository();
         $this->scoring = new AssessmentScoringService();
         $this->engagementScoring = new EngagementScoringService();
-        $this->pdf = new LaporanPdfService();
+        $this->pdf = new ReportPdfService();
     }
 
     // GET /laporan — hub listing only the report cards this role may open.
@@ -48,14 +48,14 @@ class LaporanController
         $role = $this->role();
 
         $cards = [
-            ['slug' => 'self-assessment', 'icon' => '📝', 'title' => 'Riwayat Self Assessment', 'desc' => 'Skor PWB & BDI-II, tingkat risiko, dan rekomendasi sistem.', 'roles' => ['mahasiswa', 'konselor', 'admin']],
-            ['slug' => 'diary', 'icon' => '📖', 'title' => 'Diary', 'desc' => 'Riwayat diary terstruktur mahasiswa.', 'roles' => ['mahasiswa', 'konselor', 'admin']],
-            ['slug' => 'self-help', 'icon' => '🌱', 'title' => 'Aktivitas Self Help', 'desc' => 'Aktivitas positif yang direncanakan & diselesaikan.', 'roles' => ['mahasiswa', 'konselor', 'admin']],
-            ['slug' => 'konseling', 'icon' => '💬', 'title' => 'Konseling', 'desc' => 'Riwayat booking dan sesi konseling.', 'roles' => ['mahasiswa', 'konselor', 'admin']],
-            ['slug' => 'risk-mapping', 'icon' => '📊', 'title' => 'Pemetaan Risiko Kesehatan Mental', 'desc' => 'Distribusi tingkat risiko mahasiswa.', 'roles' => ['konselor', 'admin']],
-            ['slug' => 'mood-analysis', 'icon' => '📈', 'title' => 'Analisis Mood & Perkembangan Kondisi', 'desc' => 'Perbandingan assessment awal vs. terakhir.', 'roles' => ['mahasiswa', 'konselor', 'admin']],
-            ['slug' => 'engagement', 'icon' => '✅', 'title' => 'Evaluasi Keterlibatan Mahasiswa', 'desc' => 'Tingkat keaktifan mahasiswa menggunakan aplikasi.', 'roles' => ['konselor', 'admin']],
-            ['slug' => 'counselor-activity', 'icon' => '🧑‍⚕️', 'title' => 'Aktivitas Konselor', 'desc' => 'Jumlah sesi, fakultas, dan risiko terbanyak yang ditangani per konselor.', 'roles' => ['konselor', 'admin']],
+            ['slug' => 'self-assessment', 'icon' => '📝', 'title' => 'Riwayat Self Assessment', 'desc' => 'Skor PWB & BDI-II, tingkat risiko, dan rekomendasi sistem.', 'roles' => ['student', 'counselor', 'admin']],
+            ['slug' => 'diary', 'icon' => '📖', 'title' => 'Diary', 'desc' => 'Riwayat diary terstruktur student.', 'roles' => ['student', 'counselor', 'admin']],
+            ['slug' => 'self-help', 'icon' => '🌱', 'title' => 'Aktivitas Self Help', 'desc' => 'Aktivitas positif yang direncanakan & diselesaikan.', 'roles' => ['student', 'counselor', 'admin']],
+            ['slug' => 'konseling', 'icon' => '💬', 'title' => 'Konseling', 'desc' => 'Riwayat booking dan sesi konseling.', 'roles' => ['student', 'counselor', 'admin']],
+            ['slug' => 'risk-mapping', 'icon' => '📊', 'title' => 'Pemetaan Risiko Kesehatan Mental', 'desc' => 'Distribusi tingkat risiko student.', 'roles' => ['counselor', 'admin']],
+            ['slug' => 'mood-analysis', 'icon' => '📈', 'title' => 'Analisis Mood & Perkembangan Kondisi', 'desc' => 'Perbandingan assessment awal vs. terakhir.', 'roles' => ['student', 'counselor', 'admin']],
+            ['slug' => 'engagement', 'icon' => '✅', 'title' => 'Evaluasi Keterlibatan Mahasiswa', 'desc' => 'Tingkat keaktifan mahasiswa menggunakan aplikasi.', 'roles' => ['counselor', 'admin']],
+            ['slug' => 'counselor-activity', 'icon' => '🧑‍⚕️', 'title' => 'Aktivitas Konselor', 'desc' => 'Jumlah sesi, fakultas, dan risiko terbanyak yang ditangani per konselor.', 'roles' => ['counselor', 'admin']],
         ];
 
         Response::view('laporan/index', [
@@ -67,8 +67,8 @@ class LaporanController
     // --- 1. Riwayat Self Assessment --------------------------------------------------
 
     private const SELF_ASSESSMENT_SORTABLE = [
-        'nama'       => 'nama',
-        'tanggal'    => 'tanggal',
+        'name'       => 'name',
+        'date'    => 'date',
         'pwb_score'  => 'pwb_score',
         'bdi2_score' => 'bdi2_score',
         'risk_level' => 'risk_level',
@@ -77,7 +77,7 @@ class LaporanController
     public function selfAssessment(Request $request): void
     {
         $data = $this->selfAssessmentData($request);
-        $sort = (string) $request->get('sort', 'tanggal');
+        $sort = (string) $request->get('sort', 'date');
         $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
         $rows = $this->sortRows($data['rows'], $sort, $dir, self::SELF_ASSESSMENT_SORTABLE);
         $p = $this->paginateRows($rows, max(1, (int) $request->get('page', 1)), self::REPORT_PER_PAGE);
@@ -98,11 +98,11 @@ class LaporanController
         $data = $this->selfAssessmentData($request);
 
         $table = $this->tableHtml(
-            ['Nama', 'Tanggal', 'Skor PWB', 'Kategori PWB', 'Skor BDI-II', 'Kategori BDI-II', 'Tingkat Risiko', 'Rekomendasi'],
+            ['Name', 'Date', 'Skor PWB', 'Category PWB', 'Skor BDI-II', 'Category BDI-II', 'Tingkat Risiko', 'Recommendation'],
             $data['rows'],
             fn ($r) => [
-                htmlspecialchars($r['nama']),
-                $r['tanggal'] ? htmlspecialchars(date('d M Y', strtotime($r['tanggal']))) : '-',
+                htmlspecialchars($r['name']),
+                $r['date'] ? htmlspecialchars(date('d M Y', strtotime($r['date']))) : '-',
                 $r['pwb_score'] ?? '-',
                 htmlspecialchars($r['pwb_category'] ?? '-'),
                 $r['bdi2_score'] ?? '-',
@@ -126,9 +126,9 @@ class LaporanController
             $risk = ($pwbCat && $bdi2Cat) ? $this->scoring->combinedLevel($pwbCat, $bdi2Cat) : null;
 
             return [
-                'nama'           => $s['nama'],
-                'npm'            => $s['npm'],
-                'tanggal'        => $s['tanggal'],
+                'name'           => $s['name'],
+                'student_number'            => $s['student_number'],
+                'date'        => $s['date'],
                 'pwb_score'      => $s['pwb']['total_score'] ?? null,
                 'pwb_category'   => $pwbCat,
                 'bdi2_score'     => $s['bdi2']['total_score'] ?? null,
@@ -146,7 +146,7 @@ class LaporanController
 
     private const DIARY_SORTABLE = [
         'entry_date'   => 'entry_date',
-        'student_nama' => 'student_nama',
+        'student_name' => 'student_name',
     ];
 
     public function diary(Request $request): void
@@ -188,8 +188,8 @@ class LaporanController
 
         $rows = array_map(
             fn ($row) => array_merge((new DiaryEntry($row))->toArray(), [
-                'student_nama' => $row['student_nama'],
-                'student_npm'  => $row['student_npm'],
+                'student_name' => $row['student_name'],
+                'student_number'  => $row['student_number'],
             ]),
             $this->laporan->diaryRows($filters)
         );
@@ -202,25 +202,25 @@ class LaporanController
         $row = fn ($label, $value) => '<tr><td class="label">' . htmlspecialchars($label) . '</td><td>'
             . nl2br(htmlspecialchars((string) $value)) . '</td></tr>';
 
-        return '<h2>' . htmlspecialchars($e['student_nama']) . ' &mdash; '
+        return '<h2>' . htmlspecialchars($e['student_name']) . ' &mdash; '
             . htmlspecialchars($e['entry_date'] ? date('d M Y', strtotime($e['entry_date'])) : '-') . '</h2>'
             . '<table class="table">'
-            . $row('Situasi', $e['situasi'])
-            . $row('Pikiran', $e['pikiran_awal'])
-            . $row('Emosi', implode(', ', $e['emosi_list']) . ($e['emosi_lainnya'] ? ', ' . $e['emosi_lainnya'] : ''))
-            . $row('Intensitas Emosi', $e['intensitas_emosi'] . ' / 5')
-            . $row('Reaksi Fisik', implode(', ', $e['reaksi_fisik_list']) . ($e['reaksi_fisik_lainnya'] ? ', ' . $e['reaksi_fisik_lainnya'] : ''))
-            . $row('Perilaku', $e['perilaku'])
+            . $row('Situation', $e['situation'])
+            . $row('Pikiran', $e['initial_thoughts'])
+            . $row('Emosi', implode(', ', $e['emotions_list']) . ($e['other_emotions'] ? ', ' . $e['other_emotions'] : ''))
+            . $row('Intensitas Emosi', $e['emotion_intensity'] . ' / 5')
+            . $row('Reaksi Fisik', implode(', ', $e['physical_reactions_list']) . ($e['other_physical_reactions'] ? ', ' . $e['other_physical_reactions'] : ''))
+            . $row('Behavior', $e['behavior'])
             . $row('Self Reflection', $e['self_reflection'] ?? '-')
             . $row('Gratitude Journal', $e['gratitude_list'] ? implode('; ', $e['gratitude_list']) : '-')
-            . $row('Rencana Besok', $e['rencana_besok'] ?? '-')
+            . $row('Rencana Besok', $e['tomorrow_plan'] ?? '-')
             . '</table>';
     }
 
     // --- 3. Aktivitas Self Help --------------------------------------------------------
 
     private const SELF_HELP_SORTABLE = [
-        'student_nama' => 'student_nama',
+        'student_name' => 'student_name',
         'title'        => 'title',
         'planned_date' => 'planned_date',
         'status'       => 'status',
@@ -250,10 +250,10 @@ class LaporanController
         $data = $this->selfHelpData($request);
 
         $table = $this->tableHtml(
-            ['Nama', 'Aktivitas', 'Tanggal', 'Status', 'Mood Sebelum', 'Mood Sesudah'],
+            ['Name', 'Aktivitas', 'Date', 'Status', 'Mood Sebelum', 'Mood Sesudah'],
             $data['rows'],
             fn ($r) => [
-                htmlspecialchars($r['student_nama']),
+                htmlspecialchars($r['student_name']),
                 htmlspecialchars($r['title']),
                 $r['planned_date'] ? htmlspecialchars(date('d M Y', strtotime($r['planned_date']))) : '-',
                 htmlspecialchars($this->selfHelpStatusLabel($r['status'])),
@@ -271,8 +271,8 @@ class LaporanController
 
         $rows = array_map(
             fn ($row) => array_merge((new ActivityPlan($row))->toArray(), [
-                'student_nama' => $row['student_nama'],
-                'student_npm'  => $row['student_npm'],
+                'student_name' => $row['student_name'],
+                'student_number'  => $row['student_number'],
             ]),
             $this->laporan->selfHelpRows($filters)
         );
@@ -292,16 +292,16 @@ class LaporanController
     // --- 4. Konseling --------------------------------------------------------------------
 
     private const KONSELING_SORTABLE = [
-        'tanggal'       => 'tanggal',
-        'student_nama'  => 'student_nama',
-        'konselor_nama' => 'konselor_nama',
+        'date'       => 'date',
+        'student_name'  => 'student_name',
+        'counselor_name' => 'counselor_name',
         'status'        => 'status',
     ];
 
     public function konseling(Request $request): void
     {
         $data = $this->konselingData($request);
-        $sort = (string) $request->get('sort', 'tanggal');
+        $sort = (string) $request->get('sort', 'date');
         $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
         $rows = $this->sortRows($data['rows'], $sort, $dir, self::KONSELING_SORTABLE);
         $p = $this->paginateRows($rows, max(1, (int) $request->get('page', 1)), self::REPORT_PER_PAGE);
@@ -325,12 +325,12 @@ class LaporanController
             ['Tanggal', 'Mahasiswa', 'Konselor', 'Jam', 'Status Booking', 'Catatan'],
             $data['rows'],
             fn ($r) => [
-                $r['tanggal'] ? htmlspecialchars(date('d M Y', strtotime($r['tanggal']))) : '-',
-                htmlspecialchars($r['student_nama']),
-                htmlspecialchars($r['konselor_nama']),
-                htmlspecialchars(substr($r['jam_mulai'], 0, 5) . '-' . substr($r['jam_selesai'], 0, 5)),
+                $r['date'] ? htmlspecialchars(date('d M Y', strtotime($r['date']))) : '-',
+                htmlspecialchars($r['student_name']),
+                htmlspecialchars($r['counselor_name']),
+                htmlspecialchars(substr($r['start_time'], 0, 5) . '-' . substr($r['end_time'], 0, 5)),
                 htmlspecialchars($r['status']),
-                htmlspecialchars($r['catatan_konselor'] ?? '-'),
+                htmlspecialchars($r['counselor_notes'] ?? '-'),
             ]
         );
 
@@ -343,23 +343,23 @@ class LaporanController
         $filters['status'] = $request->get('status') ?: null;
         $role = $this->role();
 
-        if ($role === 'mahasiswa') {
+        if ($role === 'student') {
             $filters['user_id'] = (int) $_SESSION['user_id'];
-        } elseif ($role === 'konselor') {
-            $filters['konselor_id'] = $this->currentKonselorId();
+        } elseif ($role === 'counselor') {
+            $filters['counselor_id'] = $this->currentCounselorId();
         } else {
-            $filters['konselor_search'] = trim((string) $request->get('konselor', ''));
+            $filters['konselor_search'] = trim((string) $request->get('counselor', ''));
         }
 
         $rows = array_map(
-            fn ($row) => array_merge((new BookingKonseling($row))->toArray(), [
-                'student_nama'     => $row['student_nama'],
-                'student_npm'      => $row['student_npm'],
-                'konselor_nama'    => $row['konselor_nama'],
-                'catatan_konselor' => $row['catatan_konselor'],
-                'rekomendasi'      => $row['rekomendasi'],
-                'tindak_lanjut'    => $row['tindak_lanjut'],
-                'selesai_pada'     => $row['selesai_pada'],
+            fn ($row) => array_merge((new CounselingBooking($row))->toArray(), [
+                'student_name'     => $row['student_name'],
+                'student_number'      => $row['student_number'],
+                'counselor_name'    => $row['counselor_name'],
+                'counselor_notes' => $row['counselor_notes'],
+                'recommendation'      => $row['recommendation'],
+                'follow_up'    => $row['follow_up'],
+                'completed_at'     => $row['completed_at'],
             ]),
             $this->laporan->konselingRows($filters)
         );
@@ -373,13 +373,13 @@ class LaporanController
 
     public function riskMapping(Request $request): void
     {
-        $this->requireRole(['konselor', 'admin']);
+        $this->requireRole(['counselor', 'admin']);
         Response::view('laporan/risk_mapping', array_merge($this->riskMappingData($request), ['title' => 'Laporan Pemetaan Risiko Kesehatan Mental']));
     }
 
     public function riskMappingPdf(Request $request): void
     {
-        $this->requireRole(['konselor', 'admin']);
+        $this->requireRole(['counselor', 'admin']);
         $data = $this->riskMappingData($request);
 
         $table = $this->tableHtml(
@@ -395,8 +395,8 @@ class LaporanController
     {
         $filters = $this->commonFilters($request);
         unset($filters['search']);
-        if ($this->role() === 'konselor') {
-            $filters['student_ids'] = $this->laporan->konselorStudentIds($this->currentKonselorId());
+        if ($this->role() === 'counselor') {
+            $filters['student_ids'] = $this->laporan->counselorStudentIds($this->currentCounselorId());
         }
 
         $studentRows = $this->laporan->latestRiskCategories($filters);
@@ -424,7 +424,7 @@ class LaporanController
     // --- 6. Analisis Mood & Perkembangan Kondisi ----------------------------------------
 
     private const MOOD_ANALYSIS_SORTABLE = [
-        'nama'   => 'nama',
+        'name'   => 'name',
         'status' => 'status',
     ];
 
@@ -434,7 +434,7 @@ class LaporanController
     public function moodAnalysis(Request $request): void
     {
         $data = $this->moodAnalysisData($request);
-        $sort = (string) $request->get('sort', 'nama');
+        $sort = (string) $request->get('sort', 'name');
         $dir = $request->get('dir') === 'desc' ? 'desc' : 'asc';
         $sorted = $this->sortRows($data['rows'], $sort, $dir, self::MOOD_ANALYSIS_SORTABLE);
         $p = $this->paginateRows($sorted, max(1, (int) $request->get('page', 1)), self::REPORT_PER_PAGE);
@@ -455,12 +455,12 @@ class LaporanController
         $data = $this->moodAnalysisData($request);
 
         $table = $this->tableHtml(
-            ['Nama', 'Assessment Awal', 'Assessment Terakhir', 'Mood Dominan', 'Status'],
+            ['Name', 'Assessment Awal', 'Assessment Terakhir', 'Mood Dominan', 'Status'],
             $data['rows'],
             fn ($r) => [
-                htmlspecialchars($r['nama']),
-                $r['first_tanggal'] ? htmlspecialchars(date('d M Y', strtotime($r['first_tanggal']))) . ' (PWB ' . $r['first_pwb'] . ', BDI-II ' . $r['first_bdi2'] . ')' : '-',
-                $r['last_tanggal'] ? htmlspecialchars(date('d M Y', strtotime($r['last_tanggal']))) . ' (PWB ' . $r['last_pwb'] . ', BDI-II ' . $r['last_bdi2'] . ')' : '-',
+                htmlspecialchars($r['name']),
+                $r['first_date'] ? htmlspecialchars(date('d M Y', strtotime($r['first_date']))) . ' (PWB ' . $r['first_pwb'] . ', BDI-II ' . $r['first_bdi2'] . ')' : '-',
+                $r['last_date'] ? htmlspecialchars(date('d M Y', strtotime($r['last_date']))) . ' (PWB ' . $r['last_pwb'] . ', BDI-II ' . $r['last_bdi2'] . ')' : '-',
                 htmlspecialchars($r['mood_dominan']),
                 htmlspecialchars($r['status']),
             ]
@@ -481,12 +481,12 @@ class LaporanController
 
         $diaryFilters = $filters;
         unset($diaryFilters['student_ids']);
-        if ($this->role() === 'konselor') {
-            $diaryFilters['shared_konselor_id'] = $this->currentKonselorId();
+        if ($this->role() === 'counselor') {
+            $diaryFilters['shared_counselor_id'] = $this->currentCounselorId();
         }
         $emotionByUser = [];
         foreach ($this->laporan->diaryRows($diaryFilters) as $d) {
-            $list = json_decode($d['emosi_list'] ?? '[]', true) ?: [];
+            $list = json_decode($d['emotions_list'] ?? '[]', true) ?: [];
             foreach ($list as $emotion) {
                 $emotionByUser[$d['user_id']][$emotion] = ($emotionByUser[$d['user_id']][$emotion] ?? 0) + 1;
             }
@@ -510,12 +510,12 @@ class LaporanController
 
             $rows[] = [
                 'user_id'       => $userId,
-                'nama'          => $first['nama'],
-                'npm'           => $first['npm'],
-                'first_tanggal' => $first['tanggal'],
+                'name'          => $first['name'],
+                'student_number'           => $first['student_number'],
+                'first_date' => $first['date'],
                 'first_pwb'     => $first['pwb']['total_score'] ?? '-',
                 'first_bdi2'    => $first['bdi2']['total_score'] ?? '-',
-                'last_tanggal'  => $last['tanggal'],
+                'last_date'  => $last['date'],
                 'last_pwb'      => $last['pwb']['total_score'] ?? '-',
                 'last_bdi2'     => $last['bdi2']['total_score'] ?? '-',
                 'mood_dominan'  => $moods ? array_key_first($moods) : '-',
@@ -530,7 +530,7 @@ class LaporanController
     // --- 7. Evaluasi Keterlibatan Mahasiswa ---------------------------------------------
 
     private const ENGAGEMENT_SORTABLE = [
-        'nama'                       => 'nama',
+        'name'                       => 'name',
         'assessment_count'           => 'assessment_count',
         'diary_count'                => 'diary_count',
         'selfhelp_count'             => 'selfhelp_count',
@@ -540,7 +540,7 @@ class LaporanController
 
     public function engagement(Request $request): void
     {
-        $this->requireRole(['konselor', 'admin']);
+        $this->requireRole(['counselor', 'admin']);
         $data = $this->engagementData($request);
         $sort = (string) $request->get('sort', 'total_actions');
         $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
@@ -560,19 +560,19 @@ class LaporanController
 
     public function engagementPdf(Request $request): void
     {
-        $this->requireRole(['konselor', 'admin']);
+        $this->requireRole(['counselor', 'admin']);
         $data = $this->engagementData($request);
 
         $table = $this->tableHtml(
-            ['Nama', 'Assessment', 'Diary', 'Self Help', 'Booking', 'Konseling Selesai', 'Status Keaktifan'],
+            ['Name', 'Assessment', 'Diary', 'Self Help', 'Booking', 'Konseling Selesai', 'Status Keaktifan'],
             $data['rows'],
             fn ($r) => [
-                htmlspecialchars($r['nama']),
+                htmlspecialchars($r['name']),
                 $r['assessment_count'],
                 $r['diary_count'],
                 $r['selfhelp_count'],
                 $r['booking_count'],
-                $r['completed_konseling_count'],
+                $r['completed_counseling_count'],
                 htmlspecialchars($r['status']),
             ]
         );
@@ -598,21 +598,21 @@ class LaporanController
         return ['rows' => $rows, 'filters' => $filters];
     }
 
-    // --- 8. Aktivitas Konselor (Konselor Activity) --------------------------------------
+    // --- 8. Aktivitas Konselor (Counselor Activity) --------------------------------------
 
     private const COUNSELOR_ACTIVITY_SORTABLE = [
-        'nama'            => 'nama',
-        'total_sesi'      => 'total_sesi',
-        'total_mahasiswa' => 'total_mahasiswa',
+        'name'            => 'name',
+        'total_sessions'      => 'total_sessions',
+        'total_students' => 'total_students',
     ];
 
-    // $rows stays the full per-konselor set (the stat tiles above the table sum across
-    // every konselor, not just the current page); $entries is the paginated table slice.
+    // $rows stays the full per-counselor set (the stat tiles above the table sum across
+    // every counselor, not just the current page); $entries is the paginated table slice.
     public function counselorActivity(Request $request): void
     {
-        $this->requireRole(['konselor', 'admin']);
+        $this->requireRole(['counselor', 'admin']);
         $data = $this->counselorActivityData($request);
-        $sort = (string) $request->get('sort', 'total_sesi');
+        $sort = (string) $request->get('sort', 'total_sessions');
         $dir = $request->get('dir') === 'asc' ? 'asc' : 'desc';
         $sorted = $this->sortRows($data['rows'], $sort, $dir, self::COUNSELOR_ACTIVITY_SORTABLE);
         $p = $this->paginateRows($sorted, max(1, (int) $request->get('page', 1)), self::REPORT_PER_PAGE);
@@ -630,17 +630,17 @@ class LaporanController
 
     public function counselorActivityPdf(Request $request): void
     {
-        $this->requireRole(['konselor', 'admin']);
+        $this->requireRole(['counselor', 'admin']);
         $data = $this->counselorActivityData($request);
 
         $table = $this->tableHtml(
             ['Konselor', 'Total Sesi', 'Total Mahasiswa', 'Fakultas Terbanyak', 'Kategori Risiko Terbanyak'],
             $data['rows'],
             fn ($r) => [
-                htmlspecialchars($r['nama']),
-                $r['total_sesi'],
-                $r['total_mahasiswa'],
-                htmlspecialchars(($r['top_fakultas'] ?? '-') . ' (' . $r['top_fakultas_count'] . ')'),
+                htmlspecialchars($r['name']),
+                $r['total_sessions'],
+                $r['total_students'],
+                htmlspecialchars(($r['top_faculty'] ?? '-') . ' (' . $r['top_faculty_count'] . ')'),
                 htmlspecialchars(($r['top_risk'] ?? '-') . ' (' . $r['top_risk_count'] . ')'),
             ]
         );
@@ -652,31 +652,31 @@ class LaporanController
     {
         $filters = $this->commonFilters($request);
         unset($filters['search']);
-        if ($this->role() === 'konselor') {
-            $filters['konselor_id'] = $this->currentKonselorId();
+        if ($this->role() === 'counselor') {
+            $filters['counselor_id'] = $this->currentCounselorId();
         }
 
-        $sessions = $this->laporan->konselorActivitySessions($filters);
+        $sessions = $this->laporan->counselorActivitySessions($filters);
 
-        $byKonselor = [];
+        $byCounselor = [];
         foreach ($sessions as $s) {
-            $id = (int) $s['konselor_id'];
-            $byKonselor[$id]['nama'] ??= $s['konselor_nama'];
-            $byKonselor[$id]['spesialisasi'] ??= $s['spesialisasi'];
-            $byKonselor[$id]['sessions'][] = $s;
-            $byKonselor[$id]['student_ids'][(int) $s['user_id']] = true;
-            $fak = $s['fakultas'] ?: 'Tidak diketahui';
-            $byKonselor[$id]['fakultas_counts'][$fak] = ($byKonselor[$id]['fakultas_counts'][$fak] ?? 0) + 1;
+            $id = (int) $s['counselor_id'];
+            $byCounselor[$id]['name'] ??= $s['counselor_name'];
+            $byCounselor[$id]['specialization'] ??= $s['specialization'];
+            $byCounselor[$id]['sessions'][] = $s;
+            $byCounselor[$id]['student_ids'][(int) $s['user_id']] = true;
+            $fak = $s['faculty'] ?: 'Tidak diketahui';
+            $byCounselor[$id]['faculty_counts'][$fak] = ($byCounselor[$id]['faculty_counts'][$fak] ?? 0) + 1;
         }
 
         $riskLookupFilters = ['date_from' => '2000-01-01', 'date_to' => date('Y-m-d')];
 
         $rows = [];
-        foreach ($byKonselor as $konselorId => $data) {
+        foreach ($byCounselor as $counselorId => $data) {
             $studentIds = array_keys($data['student_ids']);
 
-            arsort($data['fakultas_counts']);
-            $topFakultas = array_key_first($data['fakultas_counts']);
+            arsort($data['faculty_counts']);
+            $topFaculty = array_key_first($data['faculty_counts']);
 
             $riskCounts = [];
             foreach ($this->laporan->latestRiskCategories(array_merge($riskLookupFilters, ['student_ids' => $studentIds])) as $rr) {
@@ -687,19 +687,19 @@ class LaporanController
             $topRisk = array_key_first($riskCounts);
 
             $rows[] = [
-                'konselor_id'        => $konselorId,
-                'nama'               => $data['nama'],
-                'spesialisasi'       => $data['spesialisasi'],
-                'total_sesi'         => count($data['sessions']),
-                'total_mahasiswa'    => count($studentIds),
-                'top_fakultas'       => $topFakultas,
-                'top_fakultas_count' => $topFakultas ? $data['fakultas_counts'][$topFakultas] : 0,
+                'counselor_id'        => $counselorId,
+                'name'               => $data['name'],
+                'specialization'       => $data['specialization'],
+                'total_sessions'         => count($data['sessions']),
+                'total_students'    => count($studentIds),
+                'top_faculty'       => $topFaculty,
+                'top_faculty_count' => $topFaculty ? $data['faculty_counts'][$topFaculty] : 0,
                 'top_risk'           => $topRisk,
                 'top_risk_count'     => $topRisk ? $riskCounts[$topRisk] : 0,
             ];
         }
 
-        usort($rows, fn ($a, $b) => $b['total_sesi'] <=> $a['total_sesi']);
+        usort($rows, fn ($a, $b) => $b['total_sessions'] <=> $a['total_sessions']);
 
         return ['rows' => $rows, 'filters' => $filters];
     }
@@ -733,37 +733,37 @@ class LaporanController
     {
         $role = $this->role();
 
-        if ($role === 'mahasiswa') {
+        if ($role === 'student') {
             $filters['user_id'] = (int) $_SESSION['user_id'];
             return $filters;
         }
 
-        if ($role === 'konselor') {
+        if ($role === 'counselor') {
             if ($reportSlug === 'diary') {
-                $filters['shared_konselor_id'] = $this->currentKonselorId();
+                $filters['shared_counselor_id'] = $this->currentCounselorId();
             } else {
-                $filters['student_ids'] = $this->laporan->konselorStudentIds($this->currentKonselorId());
+                $filters['student_ids'] = $this->laporan->counselorStudentIds($this->currentCounselorId());
             }
         }
 
         return $filters;
     }
 
-    private function currentKonselorProfile(): ?array
+    private function currentCounselorProfile(): ?array
     {
-        if ($this->role() !== 'konselor') {
+        if ($this->role() !== 'counselor') {
             return null;
         }
-        if ($this->konselorProfile === null) {
-            $this->konselorProfile = $this->counselors->find((int) $_SESSION['user_id']) ?: [];
+        if ($this->counselorProfile === null) {
+            $this->counselorProfile = $this->counselors->find((int) $_SESSION['user_id']) ?: [];
         }
 
-        return $this->konselorProfile;
+        return $this->counselorProfile;
     }
 
-    private function currentKonselorId(): int
+    private function currentCounselorId(): int
     {
-        return (int) ($this->currentKonselorProfile()['konselor_id'] ?? 0);
+        return (int) ($this->currentCounselorProfile()['counselor_id'] ?? 0);
     }
 
     // Every report's xxxData() does a full, unpaginated fetch (needed for accurate
@@ -832,7 +832,7 @@ class LaporanController
 
     private function streamPdf(string $title, string $slug, array $filters, string $bodyHtml): void
     {
-        $html = $this->periodMeta($filters) . $bodyHtml . $this->pdf->pengesahanBlock($this->currentKonselorProfile()['nama'] ?? null);
+        $html = $this->periodMeta($filters) . $bodyHtml . $this->pdf->pengesahanBlock($this->currentCounselorProfile()['name'] ?? null);
         $this->pdf->stream($title, $html, 'laporan_' . $slug . '_' . date('Ymd_His') . '.pdf');
     }
 }

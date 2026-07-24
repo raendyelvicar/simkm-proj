@@ -12,7 +12,7 @@
     <div class="assess-card assess-card-body mb-3">
         <?php if (!empty($grant)): ?>
             <div class="alert alert-success mb-4">
-                ✅ Direkomendasikan oleh <strong><?= htmlspecialchars($grant['konselor_nama']) ?></strong> pada <?= htmlspecialchars(date('d M Y', strtotime($grant['granted_at']))) ?>.
+                ✅ Direkomendasikan oleh <strong><?= htmlspecialchars($grant['counselor_name']) ?></strong> pada <?= htmlspecialchars(date('d M Y', strtotime($grant['granted_at']))) ?>.
             </div>
         <?php endif; ?>
         <div class="alert alert-warning mb-4">

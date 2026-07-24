@@ -3,10 +3,10 @@
 namespace App\Repositories;
 
 use App\Core\Database;
-use App\Models\BookingKonseling;
+use App\Models\CounselingBooking;
 use mysqli;
 
-class BookingKonselingRepository
+class CounselingBookingRepository
 {
     private mysqli $db;
 
@@ -17,47 +17,59 @@ class BookingKonselingRepository
 
     public function create(
         int $userId,
-        int $konselorId,
-        int $jadwalId,
-        string $tanggal,
+        int $counselorId,
+        int $scheduleId,
+        string $date,
         string $jamMulai,
         string $jamSelesai,
-        ?string $keluhan
+        ?string $complaint
     ): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO booking_konseling (user_id, konselor_id, jadwal_id, tanggal, jam_mulai, jam_selesai, keluhan, status)
+            "INSERT INTO counseling_bookings (user_id, counselor_id, schedule_id, date, start_time, end_time, complaint, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')"
         );
-        $stmt->bind_param('iiissss', $userId, $konselorId, $jadwalId, $tanggal, $jamMulai, $jamSelesai, $keluhan);
+        $stmt->bind_param('iiissss', $userId, $counselorId, $scheduleId, $date, $jamMulai, $jamSelesai, $complaint);
         $stmt->execute();
 
         return (int) $this->db->insert_id;
     }
 
-    public function findOwnedByStudent(int $bookingId, int $userId): ?BookingKonseling
+    // Unlike findOwnedByStudent/findOwnedByCounselor, this has no ownership check — only
+    // for admin-side flows (e.g. AdminBookingCancellationController) that act on any booking.
+    public function findById(int $bookingId): ?CounselingBooking
     {
-        $stmt = $this->db->prepare('SELECT * FROM booking_konseling WHERE booking_id = ? AND user_id = ? LIMIT 1');
+        $stmt = $this->db->prepare('SELECT * FROM counseling_bookings WHERE booking_id = ? LIMIT 1');
+        $stmt->bind_param('i', $bookingId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+
+        return $row ? new CounselingBooking($row) : null;
+    }
+
+    public function findOwnedByStudent(int $bookingId, int $userId): ?CounselingBooking
+    {
+        $stmt = $this->db->prepare('SELECT * FROM counseling_bookings WHERE booking_id = ? AND user_id = ? LIMIT 1');
         $stmt->bind_param('ii', $bookingId, $userId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
 
-        return $row ? new BookingKonseling($row) : null;
+        return $row ? new CounselingBooking($row) : null;
     }
 
-    public function findOwnedByKonselor(int $bookingId, int $konselorId): ?BookingKonseling
+    public function findOwnedByCounselor(int $bookingId, int $counselorId): ?CounselingBooking
     {
-        $stmt = $this->db->prepare('SELECT * FROM booking_konseling WHERE booking_id = ? AND konselor_id = ? LIMIT 1');
-        $stmt->bind_param('ii', $bookingId, $konselorId);
+        $stmt = $this->db->prepare('SELECT * FROM counseling_bookings WHERE booking_id = ? AND counselor_id = ? LIMIT 1');
+        $stmt->bind_param('ii', $bookingId, $counselorId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
 
-        return $row ? new BookingKonseling($row) : null;
+        return $row ? new CounselingBooking($row) : null;
     }
 
     private const STUDENT_SORTABLE = [
-        'tanggal'       => 'b.tanggal',
+        'date'       => 'b.date',
         'status'        => 'b.status',
-        'konselor_nama' => 'u.nama',
+        'counselor_name' => 'u.name',
     ];
 
     /**
@@ -80,7 +92,7 @@ class BookingKonselingRepository
         }
 
         $countStmt = $this->db->prepare(
-            "SELECT COUNT(*) AS c FROM booking_konseling b JOIN konselor k ON k.konselor_id = b.konselor_id{$where}"
+            "SELECT COUNT(*) AS c FROM counseling_bookings b JOIN counselors k ON k.counselor_id = b.counselor_id{$where}"
         );
         $countStmt->bind_param($types, ...$params);
         $countStmt->execute();
@@ -91,9 +103,9 @@ class BookingKonselingRepository
         $offset = ($page - 1) * $perPage;
 
         $dataStmt = $this->db->prepare(
-            "SELECT b.*, u.nama AS konselor_nama, u.id AS konselor_user_id, mp.end_date AS monitoring_end
-             FROM booking_konseling b
-             JOIN konselor k ON k.konselor_id = b.konselor_id
+            "SELECT b.*, u.name AS counselor_name, u.id AS konselor_user_id, mp.end_date AS monitoring_end
+             FROM counseling_bookings b
+             JOIN counselors k ON k.counselor_id = b.counselor_id
              JOIN users u ON u.id = k.user_id
              LEFT JOIN monitoring_periods mp ON mp.booking_id = b.booking_id
              {$where}
@@ -107,49 +119,49 @@ class BookingKonselingRepository
         return ['items' => $this->hydrateAll($dataStmt->get_result()), 'total' => $total];
     }
 
-    // Bookings for a konselor (konselor.konselor_id), with the student's display name/npm joined in.
-    public function forKonselor(int $konselorId, string $status): array
+    // Bookings for a counselor (counselor.counselor_id), with the student's display name/student_number joined in.
+    public function forCounselor(int $counselorId, string $status): array
     {
         $stmt = $this->db->prepare(
-            'SELECT b.*, u.nama AS student_nama, u.npm AS student_npm
-             FROM booking_konseling b
+            'SELECT b.*, u.name AS student_name, u.student_number AS student_number
+             FROM counseling_bookings b
              JOIN users u ON u.id = b.user_id
-             WHERE b.konselor_id = ? AND b.status = ?
+             WHERE b.counselor_id = ? AND b.status = ?
              ORDER BY b.created_at ASC'
         );
-        $stmt->bind_param('is', $konselorId, $status);
+        $stmt->bind_param('is', $counselorId, $status);
         $stmt->execute();
 
         return $this->hydrateAll($stmt->get_result());
     }
 
     private const QUEUE_SORTABLE = [
-        'tanggal'      => 'b.tanggal',
+        'date'      => 'b.date',
         'status'       => 'b.status',
-        'student_nama' => 'u.nama',
+        'student_name' => 'u.name',
     ];
 
-    // The konselor's booking queue: Pending, Confirmed ("On Progress"), and Completed
+    // The counselor's booking queue: Pending, Confirmed ("On Progress"), and Completed
     // bookings, searchable/sortable/paginated. Cancelled/No Show bookings are left out
     // — they're closed out, nothing left to manage. Default sort ('queue') groups by
     // status priority then oldest-first within each group, same as the original
     // unpaginated ordering this replaces.
     // @return array{items: array, total: int}
-    public function paginatedQueue(int $konselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
+    public function paginatedQueue(int $counselorId, array $filters, string $sort, string $dir, int $page, int $perPage): array
     {
-        $where = " WHERE b.konselor_id = ? AND b.status IN ('Pending', 'Confirmed', 'Completed')";
-        $params = [$konselorId];
+        $where = " WHERE b.counselor_id = ? AND b.status IN ('Pending', 'Confirmed', 'Completed')";
+        $params = [$counselorId];
         $types = 'i';
 
         if (!empty($filters['search'])) {
-            $where .= ' AND (u.nama LIKE ? OR u.npm LIKE ?)';
+            $where .= ' AND (u.name LIKE ? OR u.student_number LIKE ?)';
             $like = '%' . $filters['search'] . '%';
             $params = array_merge($params, [$like, $like]);
             $types .= 'ss';
         }
 
         $countStmt = $this->db->prepare(
-            "SELECT COUNT(*) AS c FROM booking_konseling b JOIN users u ON u.id = b.user_id{$where}"
+            "SELECT COUNT(*) AS c FROM counseling_bookings b JOIN users u ON u.id = b.user_id{$where}"
         );
         $countStmt->bind_param($types, ...$params);
         $countStmt->execute();
@@ -162,8 +174,8 @@ class BookingKonselingRepository
         $offset = ($page - 1) * $perPage;
 
         $dataStmt = $this->db->prepare(
-            "SELECT b.*, u.nama AS student_nama, u.npm AS student_npm, mp.end_date AS monitoring_end
-             FROM booking_konseling b
+            "SELECT b.*, u.name AS student_name, u.student_number AS student_number, mp.end_date AS monitoring_end
+             FROM counseling_bookings b
              JOIN users u ON u.id = b.user_id
              LEFT JOIN monitoring_periods mp ON mp.booking_id = b.booking_id
              {$where}
@@ -179,37 +191,39 @@ class BookingKonselingRepository
 
     public function updateStatus(int $bookingId, string $status): void
     {
-        $stmt = $this->db->prepare('UPDATE booking_konseling SET status = ? WHERE booking_id = ?');
+        $stmt = $this->db->prepare('UPDATE counseling_bookings SET status = ? WHERE booking_id = ?');
         $stmt->bind_param('si', $status, $bookingId);
         $stmt->execute();
     }
 
-    // Dedupe guard: a student can't have more than one open request to the same counselor at once.
-    public function hasOpenBooking(int $userId, int $konselorId): bool
+    // Dedupe guard: a student can't have more than one open request to the same counselor
+    // at once. A booking stuck in 'Cancellation Requested' still counts as open — it isn't
+    // actually cancelled until Admin approves it.
+    public function hasOpenBooking(int $userId, int $counselorId): bool
     {
         $stmt = $this->db->prepare(
-            "SELECT 1 FROM booking_konseling
-             WHERE user_id = ? AND konselor_id = ? AND status IN ('Pending','Confirmed') LIMIT 1"
+            "SELECT 1 FROM counseling_bookings
+             WHERE user_id = ? AND counselor_id = ? AND status IN ('Pending','Confirmed','Cancellation Requested') LIMIT 1"
         );
-        $stmt->bind_param('ii', $userId, $konselorId);
+        $stmt->bind_param('ii', $userId, $counselorId);
         $stmt->execute();
 
         return (bool) $stmt->get_result()->fetch_row();
     }
 
-    // A jadwal_id now maps to exactly one date, so capacity is just "how many
-    // non-cancelled bookings already claim this slot" vs. its kuota.
-    public function hasCapacity(int $jadwalId): bool
+    // A schedule_id now maps to exactly one date, so capacity is just "how many
+    // non-cancelled bookings already claim this slot" vs. its quota.
+    public function hasCapacity(int $scheduleId): bool
     {
         $stmt = $this->db->prepare(
-            "SELECT j.kuota,
-                    (SELECT COUNT(*) FROM booking_konseling
-                     WHERE jadwal_id = j.jadwal_id AND status <> 'Cancelled') AS booked
-             FROM konselor_jadwal j
-             WHERE j.jadwal_id = ?
+            "SELECT j.quota,
+                    (SELECT COUNT(*) FROM counseling_bookings
+                     WHERE schedule_id = j.schedule_id AND status <> 'Cancelled') AS booked
+             FROM counselor_schedules j
+             WHERE j.schedule_id = ?
              LIMIT 1"
         );
-        $stmt->bind_param('i', $jadwalId);
+        $stmt->bind_param('i', $scheduleId);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
 
@@ -217,18 +231,18 @@ class BookingKonselingRepository
             return false;
         }
 
-        return (int) $row['booked'] < (int) $row['kuota'];
+        return (int) $row['booked'] < (int) $row['quota'];
     }
 
     private function hydrateAll(\mysqli_result $result): array
     {
         $bookings = [];
         while ($row = $result->fetch_assoc()) {
-            $bookings[] = array_merge((new BookingKonseling($row))->toArray(), array_filter([
-                'konselor_nama' => $row['konselor_nama'] ?? null,
+            $bookings[] = array_merge((new CounselingBooking($row))->toArray(), array_filter([
+                'counselor_name' => $row['counselor_name'] ?? null,
                 'konselor_user_id' => isset($row['konselor_user_id']) ? (int) $row['konselor_user_id'] : null,
-                'student_nama' => $row['student_nama'] ?? null,
-                'student_npm' => $row['student_npm'] ?? null,
+                'student_name' => $row['student_name'] ?? null,
+                'student_number' => $row['student_number'] ?? null,
                 'monitoring_end' => $row['monitoring_end'] ?? null,
             ], fn ($v) => $v !== null));
         }

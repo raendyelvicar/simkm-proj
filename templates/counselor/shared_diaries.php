@@ -21,7 +21,7 @@ ob_start();
             <div class="col-auto">
                 <label class="form-label small text-muted mb-1">Urutkan</label>
                 <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <?= sort_options(['entry_date' => 'Tanggal Diary', 'student_nama' => 'Nama Mahasiswa'], $sort, $dir) ?>
+                    <?= sort_options(['entry_date' => 'Tanggal Diary', 'student_name' => 'Nama Mahasiswa'], $sort, $dir) ?>
                 </select>
             </div>
             <div class="col-auto">
@@ -37,13 +37,13 @@ ob_start();
                 <a href="/shared-diaries/<?= urlencode($entry['id']) ?>" class="thread-row">
                     <div class="thread-row-body">
                         <div class="thread-row-head">
-                            <strong><?= htmlspecialchars($entry['student_nama'] ?: 'Mahasiswa') ?></strong>
+                            <strong><?= htmlspecialchars($entry['student_name'] ?: 'Mahasiswa') ?></strong>
                             <span class="thread-row-time"><?= htmlspecialchars($entry['entry_date'] ? date('d M Y', strtotime($entry['entry_date'])) : '') ?></span>
                         </div>
-                        <p class="thread-row-snippet"><?= htmlspecialchars(mb_substr($entry['situasi'], 0, 90)) ?></p>
+                        <p class="thread-row-snippet"><?= htmlspecialchars(mb_substr($entry['situation'], 0, 90)) ?></p>
                     </div>
-                    <span class="diary-badge <?= diary_intensity_badge_class((int) $entry['intensitas_emosi']) ?>">
-                        <?= (int) $entry['intensitas_emosi'] ?> / 5
+                    <span class="diary-badge <?= diary_intensity_badge_class((int) $entry['emotion_intensity']) ?>">
+                        <?= (int) $entry['emotion_intensity'] ?> / 5
                     </span>
                 </a>
             <?php endforeach; ?>

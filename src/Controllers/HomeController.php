@@ -13,7 +13,7 @@ class HomeController
         $articles = (new ArticleRepository())->latest(3);
 
         Response::view('home/index', [
-            'title' => 'Sistem Informasi Manajemen Kesehatan Mental Mahasiswa',
+            'title' => 'Sistem Informasi Manajemen Kesehatan Mental Student',
             'message' => '',
             'articles' => array_map(fn ($article) => $article->toArray(), $articles),
         ]);

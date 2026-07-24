@@ -24,7 +24,7 @@ class DashboardController
     public function index(Request $request): void
     {
         $role = $_SESSION['role'] ?? '';
-        $isStaff = in_array($role, ['admin', 'konselor'], true);
+        $isStaff = in_array($role, ['admin', 'counselor'], true);
 
         $data = [
             'title'    => 'Dashboard',

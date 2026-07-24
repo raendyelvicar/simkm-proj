@@ -152,7 +152,7 @@ if (!function_exists('sort_link')) {
 if (!function_exists('sort_options')) {
     /**
      * The dropdown-based equivalent of sort_link() for card-grid/row-list pages
-     * that have no <table> header to attach a clickable link to (Artikel, Konselor
+     * that have no <table> header to attach a clickable link to (Artikel, Counselor
      * directory, Shared Diaries, Consultations inbox). $options is [value => label].
      */
     function sort_options(array $options, ?string $currentSort, string $currentDir): string
@@ -167,6 +167,23 @@ if (!function_exists('sort_options')) {
         }
 
         return $html;
+    }
+}
+
+if (!function_exists('profile_photo_url')) {
+    /**
+     * Normalizes a stored profile photo value into a browsable URL. Handles both
+     * storage conventions used across the app: users.profile_image holds a bare
+     * filename (written by ProfileController), while counselors.profile_photo holds
+     * a full '/uploads/profile/...' path (written by AdminCounselorController).
+     */
+    function profile_photo_url(?string $path): string
+    {
+        if (!$path) {
+            return '';
+        }
+
+        return str_starts_with($path, '/') || str_starts_with($path, 'http') ? $path : '/uploads/profile/' . $path;
     }
 }
 

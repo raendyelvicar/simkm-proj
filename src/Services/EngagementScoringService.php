@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * Pure bucketing logic for Laporan Evaluasi Keterlibatan Mahasiswa's "Status Keaktifan"
+ * Pure bucketing logic for Laporan Evaluasi Keterlibatan Student's "Status Keaktifan"
  * column. No DB access — same shape as AssessmentScoringService.
  */
 class EngagementScoringService

@@ -6,6 +6,17 @@ $statusColors = [
     'rejected' => 'bg-danger',
 ];
 $statusColor = $statusColors[strtolower($user->status)] ?? 'bg-secondary';
+$statusLabels = [
+    'active'   => 'Aktif',
+    'approved' => 'Disetujui',
+    'pending'  => 'Menunggu',
+    'rejected' => 'Ditolak',
+];
+$roleLabels = [
+    'admin'     => 'Admin',
+    'counselor' => 'Konselor',
+    'student'   => 'Mahasiswa',
+];
 
 $hasPhoto = !empty($user->profile)
     && file_exists(__DIR__ . '/../../public/uploads/profile/' . $user->profile);
@@ -15,7 +26,7 @@ ob_start();
 
 <div class="card p-4">
     <nav class="mb-3">
-        <small class="text-muted">Home / Profil</small>
+        <small class="text-muted">Beranda / Profil</small>
     </nav>
 
     <?php if (!empty($errors)): ?>
@@ -39,7 +50,7 @@ ob_start();
                     <div id="photoPreview"
                         class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                         style="width:96px;height:96px;font-size:2.2rem;font-weight:600;">
-                        <?= htmlspecialchars(strtoupper(substr($user->nama ?: $user->username, 0, 1))) ?>
+                        <?= htmlspecialchars(strtoupper(substr($user->name ?: $user->username, 0, 1))) ?>
                     </div>
                 <?php endif; ?>
 
@@ -52,11 +63,11 @@ ob_start();
             </div>
 
             <div>
-                <h4 class="mb-1"><?= htmlspecialchars($user->nama ?: $user->username) ?></h4>
+                <h4 class="mb-1"><?= htmlspecialchars($user->name ?: $user->username) ?></h4>
                 <div class="text-muted mb-2">@<?= htmlspecialchars($user->username) ?></div>
-                <span class="badge bg-primary"><?= htmlspecialchars(ucfirst($user->role)) ?></span>
+                <span class="badge bg-primary"><?= htmlspecialchars($roleLabels[$user->role] ?? ucfirst($user->role)) ?></span>
                 <?php if ($user->status !== ''): ?>
-                    <span class="badge <?= $statusColor ?>"><?= htmlspecialchars(ucfirst($user->status)) ?></span>
+                    <span class="badge <?= $statusColor ?>"><?= htmlspecialchars($statusLabels[strtolower($user->status)] ?? ucfirst($user->status)) ?></span>
                 <?php endif; ?>
             </div>
         </div>
@@ -66,11 +77,11 @@ ob_start();
         <div class="row g-3 mb-3">
             <div class="col-md-6">
                 <label class="form-label">Nama</label>
-                <input type="text" name="nama" class="form-control" value="<?= htmlspecialchars($user->nama) ?>" required>
+                <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($user->name) ?>" required>
             </div>
             <div class="col-md-6">
                 <label class="form-label">NPM</label>
-                <input type="text" class="form-control" value="<?= htmlspecialchars($user->npm) ?>" disabled>
+                <input type="text" class="form-control" value="<?= htmlspecialchars($user->student_number) ?>" disabled>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Email</label>
@@ -78,23 +89,23 @@ ob_start();
             </div>
             <div class="col-md-6">
                 <label class="form-label">No. HP</label>
-                <input type="text" name="no_hp" class="form-control" value="<?= htmlspecialchars($user->noHp) ?>">
+                <input type="text" name="phone_number" class="form-control" value="<?= htmlspecialchars($user->phoneNumber) ?>">
             </div>
             <div class="col-md-6">
                 <label class="form-label">Jenis Kelamin</label>
-                <select name="jenis_kelamin" class="form-select">
-                    <option value="" <?= $user->jenisKelamin === '' ? 'selected' : '' ?>>-</option>
-                    <option value="Laki-laki" <?= $user->jenisKelamin === 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
-                    <option value="Perempuan" <?= $user->jenisKelamin === 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
+                <select name="gender" class="form-select">
+                    <option value="" <?= $user->gender === '' ? 'selected' : '' ?>>-</option>
+                    <option value="Male" <?= $user->gender === 'Male' ? 'selected' : '' ?>>Laki-laki</option>
+                    <option value="Female" <?= $user->gender === 'Female' ? 'selected' : '' ?>>Perempuan</option>
                 </select>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Fakultas</label>
-                <input type="text" name="fakultas" class="form-control" value="<?= htmlspecialchars($user->fakultas) ?>">
+                <input type="text" name="faculty" class="form-control" value="<?= htmlspecialchars($user->faculty) ?>">
             </div>
             <div class="col-md-6">
                 <label class="form-label">Jurusan</label>
-                <input type="text" name="jurusan" class="form-control" value="<?= htmlspecialchars($user->jurusan) ?>">
+                <input type="text" name="major" class="form-control" value="<?= htmlspecialchars($user->major) ?>">
             </div>
             <?php if ($user->createdAt !== ''): ?>
                 <div class="col-md-6">

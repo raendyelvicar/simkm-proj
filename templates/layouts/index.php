@@ -7,7 +7,34 @@ $role = $_SESSION['role'] ?? 'guest';
 $pageTitle = $pageTitle ?? 'Dashboard SIMKM';
 $roleLabel = ucfirst($role);
 $username = $_SESSION['username'] ?? 'Pengguna';
-$avatarInitial = strtoupper(substr($username, 0, 1));
+$displayName = $username;
+$avatarPhoto = '';
+$accountMeta = '';
+if (!empty($_SESSION['user_id'])) {
+    $currentUser = (new \App\Repositories\UserRepository())->find((int) $_SESSION['user_id']);
+    $avatarPhoto = $currentUser ? profile_photo_url($currentUser->profile) : '';
+
+    if ($currentUser) {
+        $displayName = $currentUser->fullName !== '' ? $currentUser->fullName : ($currentUser->name !== '' ? $currentUser->name : $username);
+    }
+
+    if ($currentUser && $role === 'student') {
+        $metaParts = [];
+        if ($currentUser->student_number !== '') {
+            $metaParts[] = 'NPM ' . $currentUser->student_number;
+        }
+        if ($currentUser->faculty !== '') {
+            $metaParts[] = $currentUser->faculty;
+        }
+        $accountMeta = implode(' · ', $metaParts);
+    } elseif ($role === 'counselor') {
+        $counselorProfile = (new \App\Repositories\CounselorRepository())->find((int) $_SESSION['user_id']);
+        if (!empty($counselorProfile['registration_number'])) {
+            $accountMeta = 'NIP/NIK ' . $counselorProfile['registration_number'];
+        }
+    }
+}
+$avatarInitial = strtoupper(substr($displayName, 0, 1));
 
 $currentPath = '/' . trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
 
@@ -84,10 +111,18 @@ function navActive(string $path, string $currentPath): string
             margin-left: 10px;
         }
 
+        .account-toggle-meta {
+            font-size: 0.72rem;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
         .avatar-circle {
+            position: relative;
             width: 32px;
             height: 32px;
             border-radius: 50%;
+            overflow: hidden;
             background: var(--primary);
             color: white;
             font-weight: 600;
@@ -95,6 +130,14 @@ function navActive(string $path, string $currentPath): string
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+        }
+
+        .avatar-circle img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .account-menu {
@@ -281,14 +324,28 @@ function navActive(string $path, string $currentPath): string
         <div class="dropdown">
             <button class="btn btn-light account-toggle dropdown-toggle d-flex align-items-center gap-2" type="button"
                 id="accountMenuToggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="avatar-circle"><?= htmlspecialchars($avatarInitial) ?></span>
+                <span class="avatar-circle">
+                    <?php if ($avatarPhoto): ?>
+                        <img src="<?= htmlspecialchars($avatarPhoto) ?>" alt="" onerror="this.remove()">
+                    <?php endif; ?>
+                    <?= htmlspecialchars($avatarInitial) ?>
+                </span>
                 <span class="d-none d-sm-flex flex-column align-items-start lh-1">
-                    <span class="fw-semibold small"><?= htmlspecialchars($username) ?></span>
+                    <span class="fw-semibold small"><?= htmlspecialchars($displayName) ?></span>
+                    <?php if ($accountMeta): ?>
+                        <span class="account-toggle-meta"><?= htmlspecialchars($accountMeta) ?></span>
+                    <?php endif; ?>
                 </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end account-menu shadow-sm" aria-labelledby="accountMenuToggle">
                 <li>
-                    <h6 class="dropdown-header">Masuk sebagai <?= htmlspecialchars($roleLabel) ?></h6>
+                    <h6 class="dropdown-header">
+                        <?= htmlspecialchars($displayName) ?>
+                        <br><span class="fw-normal">Masuk sebagai <?= htmlspecialchars($roleLabel) ?></span>
+                        <?php if ($accountMeta): ?>
+                            <br><span class="fw-normal"><?= htmlspecialchars($accountMeta) ?></span>
+                        <?php endif; ?>
+                    </h6>
                 </li>
                 <li><a class="dropdown-item" href="/profile">👤 Profil Saya</a></li>
                 <li>
@@ -296,7 +353,7 @@ function navActive(string $path, string $currentPath): string
                 </li>
                 <li>
                     <form method="POST" action="/logout" class="m-0">
-                        <button type="submit" class="dropdown-item text-danger">🚪 Logout</button>
+                        <button type="submit" class="dropdown-item text-danger">🚪 Keluar</button>
                     </form>
                 </li>
             </ul>
@@ -326,10 +383,10 @@ function navActive(string $path, string $currentPath): string
 
             $navItems = [
                 ['path' => '/dashboard', 'icon' => '🏠', 'label' => 'Dashboard'],
-                ['path' => '/assessment', 'icon' => '📝', 'label' => 'Assessment', 'roles' => ['mahasiswa', 'konselor']],
+                ['path' => '/assessment', 'icon' => '📝', 'label' => 'Assessment', 'roles' => ['student', 'counselor']],
                 ['path' => '/article', 'icon' => '📰', 'label' => 'Artikel'],
                 [
-                    'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['konselor'],
+                    'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['counselor'],
                     'children' => [
                         ['path' => '/consultations', 'icon' => '📨', 'label' => 'Konsultasi Masuk'],
                         ['path' => '/booking-requests', 'icon' => '📥', 'label' => 'Permintaan Booking'],
@@ -337,11 +394,11 @@ function navActive(string $path, string $currentPath): string
                         ['path' => '/shared-diaries', 'icon' => '📔', 'label' => 'Diary Dibagikan'],
                     ],
                 ],
-                ['path' => '/tips', 'icon' => '💡', 'label' => 'Tips Harian', 'roles' => ['konselor']],
-                ['path' => '/diary', 'icon' => '📖', 'label' => 'Diary', 'roles' => ['mahasiswa']],
-                ['path' => '/self-help', 'icon' => '🌱', 'label' => 'Self Help', 'roles' => ['mahasiswa']],
+                ['path' => '/tips', 'icon' => '💡', 'label' => 'Tips Harian', 'roles' => ['counselor']],
+                ['path' => '/diary', 'icon' => '📖', 'label' => 'Diary', 'roles' => ['student']],
+                ['path' => '/self-help', 'icon' => '🌱', 'label' => 'Self Help', 'roles' => ['student']],
                 [
-                    'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['mahasiswa'],
+                    'icon' => '💬', 'label' => 'Konsultasi', 'roles' => ['student'],
                     'children' => [
                         ['path' => '/counselor', 'icon' => '🧑‍⚕️', 'label' => 'Cari Konselor'],
                         ['path' => '/bookings', 'icon' => '📅', 'label' => 'Booking Saya'],
@@ -353,6 +410,7 @@ function navActive(string $path, string $currentPath): string
                         ['path' => '/students', 'icon' => '🎓', 'label' => 'Data Mahasiswa'],
                         ['path' => '/admin/counselors', 'icon' => '🧑‍⚕️', 'label' => 'Kelola Konselor'],
                         ['path' => '/admin/approvals', 'icon' => '✅', 'label' => 'Persetujuan Akun'],
+                        ['path' => '/admin/booking-cancellations', 'icon' => '🚫', 'label' => 'Persetujuan Pembatalan Booking'],
                         ['path' => '/admin/settings', 'icon' => '⚙️', 'label' => 'Pengaturan'],
                     ],
                 ],

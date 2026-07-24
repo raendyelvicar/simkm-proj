@@ -63,12 +63,12 @@
 
             <div style="display:grid;gap:16px;">
                 <label style="font-weight:700;">Nama Panggilan</label>
-                <input type="text" class="form-control" name="nama" required autocomplete="name" placeholder="Masukkan nama panggilan"
-                    value="<?= htmlspecialchars($nama ?? '') ?>">
+                <input type="text" class="form-control" name="name" required autocomplete="name" placeholder="Masukkan nama panggilan"
+                    value="<?= htmlspecialchars($name ?? '') ?>">
 
                 <label style="font-weight:700;">Nama Lengkap</label>
-                <input type="text" class="form-control" name="nama_lengkap" required autocomplete="name" placeholder="Masukkan nama lengkap"
-                    value="<?= htmlspecialchars($nama_lengkap ?? '') ?>">
+                <input type="text" class="form-control" name="full_name" required autocomplete="name" placeholder="Masukkan nama lengkap"
+                    value="<?= htmlspecialchars($full_name ?? '') ?>">
 
                 <label style="font-weight:700;">Username</label>
                 <input type="text" class="form-control" name="username" required autocomplete="username" placeholder="Pilih username"
@@ -83,40 +83,40 @@
                     value="<?= htmlspecialchars($password ?? '') ?>">
 
                 <label style="font-weight:700;">NPM</label>
-                <input type="text" class="form-control" name="npm" autocomplete="off" placeholder="Masukkan NPM"
-                    value="<?= htmlspecialchars($npm ?? '') ?>">
+                <input type="text" class="form-control" name="student_number" autocomplete="off" placeholder="Masukkan NPM"
+                    value="<?= htmlspecialchars($student_number ?? '') ?>">
 
                 <label style="font-weight:700;">Jenis Kelamin</label>
-                <select name="jenis_kelamin" class="form-control" required>
+                <select name="gender" class="form-control" required>
                     <option value="">Pilih jenis kelamin</option>
-                    <option value="Laki-laki" <?= isset($jenis_kelamin) && $jenis_kelamin === 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
-                    <option value="Perempuan" <?= isset($jenis_kelamin) && $jenis_kelamin === 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
+                    <option value="Male" <?= isset($gender) && $gender === 'Male' ? 'selected' : '' ?>>Laki-laki</option>
+                    <option value="Female" <?= isset($gender) && $gender === 'Female' ? 'selected' : '' ?>>Perempuan</option>
                 </select>
 
                 <label style="font-weight:700;">Fakultas</label>
-                <select name="fakultas" required class="form-control">
+                <select name="faculty" required class="form-control">
                     <option value="">Pilih Fakultas</option>
-                    <?php foreach ($fakultasList as $f): ?>
-                        <option value="<?= (int) $f['id'] ?>" <?= (isset($fakultas) && $fakultas == $f['id']) ? 'selected' : '' ?>>
+                    <?php foreach ($facultyList as $f): ?>
+                        <option value="<?= (int) $f['id'] ?>" <?= (isset($faculty) && $faculty == $f['id']) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($f['name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
 
                 <label style="font-weight:700;">Jurusan</label>
-                <select name="jurusan" required class="form-control">
+                <select name="major" required class="form-control">
                     <option value="">Pilih Jurusan</option>
-                    <?php foreach ($jurusanList as $j): ?>
-                        <option value=" <?= (int) $j['id'] ?>" <?= (isset($jurusan) && $jurusan == $j['id']) ? 'selected' : '' ?>>
+                    <?php foreach ($majorList as $j): ?>
+                        <option value=" <?= (int) $j['id'] ?>" <?= (isset($major) && $major == $j['id']) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($j['name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
 
                 <label style="font-weight:700;">No. HP</label>
-                <input type="text" name="no_hp" autocomplete="tel" placeholder="Masukkan nomor HP"
+                <input type="text" name="phone_number" autocomplete="tel" placeholder="Masukkan nomor HP"
                     style="width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px 16px;background:#fff;color:#111;"
-                    value="<?= htmlspecialchars($no_hp ?? '') ?>">
+                    value="<?= htmlspecialchars($phone_number ?? '') ?>">
 
                 <button type="submit"
                     style="width:100%;padding:14px 16px;background:#0ea5a4;color:#fff;border:none;border-radius:14px;font-weight:700;font-size:16px;cursor:pointer;transition:background .2s;">
@@ -128,7 +128,7 @@
                 <div class="text-center">
                     <small>
                         Sudah punya akun?
-                        <a href="/login">Login</a>
+                        <a href="/login">Masuk</a>
                     </small>
                 </div>
             </div>
@@ -137,29 +137,29 @@
 </div>
 
 <script>
-    document.querySelector('select[name="fakultas"]').addEventListener('change', function() {
-        const fakultasId = this.value;
-        const jurusanSelect = document.querySelector('select[name="jurusan"]');
-        jurusanSelect.innerHTML = '<option value="">Memuat...</option>';
+    document.querySelector('select[name="faculty"]').addEventListener('change', function() {
+        const facultyId = this.value;
+        const majorSelect = document.querySelector('select[name="major"]');
+        majorSelect.innerHTML = '<option value="">Memuat...</option>';
 
-        if (!fakultasId) {
-            jurusanSelect.innerHTML = '<option value="">Pilih Jurusan</option>';
+        if (!facultyId) {
+            majorSelect.innerHTML = '<option value="">Pilih Jurusan</option>';
             return;
         }
 
-        fetch('/jurusan?fakultas_id=' + encodeURIComponent(fakultasId))
+        fetch('/major?faculty_id=' + encodeURIComponent(facultyId))
             .then(res => res.json())
             .then(data => {
-                jurusanSelect.innerHTML = '<option value="">Pilih Jurusan</option>';
+                majorSelect.innerHTML = '<option value="">Pilih Jurusan</option>';
                 data.forEach(item => {
                     const opt = document.createElement('option');
                     opt.value = item.id;
                     opt.textContent = item.name;
-                    jurusanSelect.appendChild(opt);
+                    majorSelect.appendChild(opt);
                 });
             })
             .catch(() => {
-                jurusanSelect.innerHTML = '<option value="">Gagal memuat jurusan</option>';
+                majorSelect.innerHTML = '<option value="">Gagal memuat jurusan</option>';
             });
     });
 </script>
