@@ -85,10 +85,10 @@ class AdminScheduleController
 
         $errors = [];
 
-        $date = \DateTime::createFromFormat('Y-m-d', $date);
-        if (!$date || $date->format('Y-m-d') !== $date) {
+        $parsedDate = \DateTime::createFromFormat('Y-m-d', $date);
+        if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) {
             $errors[] = 'Tanggal tidak valid.';
-        } elseif ($date < new \DateTime('today')) {
+        } elseif ($parsedDate < new \DateTime('today')) {
             $errors[] = 'Tanggal tidak boleh di masa lalu.';
         }
 
