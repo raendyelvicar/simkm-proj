@@ -10,6 +10,7 @@ use App\Repositories\CounselingBookingRepository;
 use App\Repositories\CounselorRepository;
 use App\Repositories\MonitoringPeriodRepository;
 use App\Repositories\CounselingSessionRepository;
+use App\Services\NotificationService;
 
 // Counselor-only: review and respond to pending booking requests from students.
 // Confirming a booking starts a monitoring period (see MonitoringPeriodRepository) —
@@ -25,7 +26,9 @@ class BookingQueueController
     private MonitoringPeriodRepository $monitoring;
     private CounselingSessionRepository $session;
     private AssessmentRetakeGrantRepository $retakeGrants;
+    private NotificationService $notifier;
     private int $counselorId;
+    private string $counselorName;
 
     public function __construct()
     {
@@ -40,9 +43,11 @@ class BookingQueueController
         $this->monitoring = new MonitoringPeriodRepository();
         $this->session = new CounselingSessionRepository();
         $this->retakeGrants = new AssessmentRetakeGrantRepository();
+        $this->notifier = new NotificationService();
 
         $counselor = (new CounselorRepository())->find((int) $_SESSION['user_id']);
         $this->counselorId = (int) ($counselor['counselor_id'] ?? 0);
+        $this->counselorName = $counselor['name'] ?? '';
 
         if ($this->counselorId === 0) {
             $_SESSION['error'] = 'Lengkapi profil konselor kamu terlebih dahulu.';
@@ -90,6 +95,13 @@ class BookingQueueController
                 date('Y-m-d'),
                 date('Y-m-d', strtotime("+{$days} days"))
             );
+            $this->notifier->bookingConfirmed(
+                $booking->userId,
+                $this->counselorName,
+                $booking->date,
+                substr($booking->jamMulai, 0, 5),
+                $days
+            );
 
             $_SESSION['success'] = "Booking dikonfirmasi. Monitoring aktif selama {$days} hari.";
         }
@@ -104,6 +116,7 @@ class BookingQueueController
 
         if ($booking && $booking->status === 'Pending') {
             $this->bookings->updateStatus((int) $id, 'Cancelled');
+            $this->notifier->bookingRejected($booking->userId, $this->counselorName);
             $_SESSION['success'] = 'Booking ditolak.';
         }
 
@@ -144,7 +157,10 @@ class BookingQueueController
 
             if ($request->post('recommend_reassessment')) {
                 $this->retakeGrants->grant($booking->userId, (int) $id, $this->counselorId);
+                $this->notifier->retakeGranted($booking->userId);
             }
+
+            $this->notifier->bookingCompleted($booking->userId, $this->counselorName);
 
             $_SESSION['success'] = 'Booking ditandai selesai.';
         }
@@ -160,6 +176,7 @@ class BookingQueueController
         if ($booking && $booking->status === 'Confirmed') {
             $this->bookings->updateStatus((int) $id, 'No Show');
             $this->monitoring->endNowForBooking((int) $id, $this->counselorId);
+            $this->notifier->bookingNoShow($booking->userId, $this->counselorName);
             $_SESSION['success'] = 'Booking ditandai tidak hadir.';
         }
 

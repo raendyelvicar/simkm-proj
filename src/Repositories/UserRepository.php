@@ -197,6 +197,15 @@ class UserRepository
         return $result ? array_column($result->fetch_all(MYSQLI_ASSOC), 'email') : [];
     }
 
+    // Recipient list for broadcast student notifications (e.g. a new article) — only
+    // 'active' students can actually log in to see it, so pending/rejected are excluded.
+    public function activeStudentIds(): array
+    {
+        $result = $this->db->query("SELECT id FROM users WHERE role = 'student' AND status = 'active'");
+
+        return $result ? array_map('intval', array_column($result->fetch_all(MYSQLI_ASSOC), 'id')) : [];
+    }
+
     private const PENDING_SORTABLE = [
         'name'       => 'name',
         'created_at' => 'created_at',

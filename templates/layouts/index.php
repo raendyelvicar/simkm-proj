@@ -10,9 +10,14 @@ $username = $_SESSION['username'] ?? 'Pengguna';
 $displayName = $username;
 $avatarPhoto = '';
 $accountMeta = '';
+$notificationRepo = new \App\Repositories\NotificationRepository();
+$recentNotifications = [];
+$unreadNotificationCount = 0;
 if (!empty($_SESSION['user_id'])) {
     $currentUser = (new \App\Repositories\UserRepository())->find((int) $_SESSION['user_id']);
     $avatarPhoto = $currentUser ? profile_photo_url($currentUser->profile) : '';
+    $recentNotifications = $notificationRepo->recentForUser((int) $_SESSION['user_id'], 8);
+    $unreadNotificationCount = $notificationRepo->unreadCountForUser((int) $_SESSION['user_id']);
 
     if ($currentUser) {
         $displayName = $currentUser->fullName !== '' ? $currentUser->fullName : ($currentUser->name !== '' ? $currentUser->name : $username);
@@ -56,6 +61,7 @@ function navActive(string $path, string $currentPath): string
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #2563eb;
@@ -142,6 +148,120 @@ function navActive(string $path, string $currentPath): string
 
         .account-menu {
             min-width: 220px;
+        }
+
+        .notif-bell-toggle {
+            font-size: 1.05rem;
+            line-height: 1;
+            border-radius: 999px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+        }
+
+        .notif-bell-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1;
+            padding: 3px 5px;
+            border-radius: 999px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .notif-dropdown {
+            min-width: 340px;
+            max-width: 380px;
+            padding: 0;
+        }
+
+        .notif-dropdown-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notif-dropdown-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px 16px;
+            white-space: normal;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notif-dropdown-item:hover {
+            background: #f8fafc;
+        }
+
+        .notif-dropdown-item.notif-unread {
+            background: #eff6ff;
+        }
+
+        .notif-dropdown-item .notif-icon {
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .notif-dropdown-item .notif-body {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .notif-dropdown-item .notif-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+
+        .notif-dropdown-item .notif-message {
+            font-size: 0.78rem;
+            color: var(--muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .notif-dropdown-item .notif-time {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .notif-dropdown-empty {
+            padding: 24px 16px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .notif-dropdown-footer {
+            display: block;
+            text-align: center;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .app-shell {
@@ -321,6 +441,43 @@ function navActive(string $path, string $currentPath): string
             </div>
         </div>
 
+        <div class="d-flex align-items-center gap-2">
+        <div class="dropdown">
+            <button class="btn btn-light notif-bell-toggle position-relative" type="button"
+                id="notifBellToggle" data-bs-toggle="dropdown" aria-expanded="false" title="Notifikasi">
+                🔔
+                <span class="notif-bell-badge<?= $unreadNotificationCount > 0 ? '' : ' d-none' ?>" id="notifBellBadge">
+                    <?= $unreadNotificationCount > 99 ? '99+' : (int) $unreadNotificationCount ?>
+                </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notif-dropdown shadow-sm" aria-labelledby="notifBellToggle">
+                <div class="notif-dropdown-head">
+                    <span>Notifikasi</span>
+                    <?php if ($unreadNotificationCount > 0): ?>
+                        <form method="post" action="/notifications/read-all">
+                            <input type="hidden" name="redirect_to" value="<?= htmlspecialchars($currentPath) ?>">
+                            <button type="submit" class="btn btn-link btn-sm p-0">Tandai Semua Dibaca</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+                <?php if ($recentNotifications): ?>
+                    <?php foreach ($recentNotifications as $n): ?>
+                        <a href="/notifications/<?= (int) $n->id ?>/open" class="dropdown-item notif-dropdown-item <?= $n->isRead ? '' : 'notif-unread' ?>">
+                            <span class="notif-icon"><?= notification_icon($n->type) ?></span>
+                            <span class="notif-body">
+                                <span class="notif-title"><?= htmlspecialchars($n->title) ?></span>
+                                <span class="notif-message"><?= htmlspecialchars($n->message) ?></span>
+                                <span class="notif-time"><?= time_ago($n->createdAt) ?></span>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="notif-dropdown-empty">Belum ada notifikasi.</div>
+                <?php endif; ?>
+                <a href="/notifications" class="notif-dropdown-footer">Lihat Semua Notifikasi</a>
+            </div>
+        </div>
+
         <div class="dropdown">
             <button class="btn btn-light account-toggle dropdown-toggle d-flex align-items-center gap-2" type="button"
                 id="accountMenuToggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -357,6 +514,7 @@ function navActive(string $path, string $currentPath): string
                     </form>
                 </li>
             </ul>
+        </div>
         </div>
     </header>
 
@@ -493,6 +651,28 @@ function navActive(string $path, string $currentPath): string
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        // Every native <input type="date"> app-wide (report filters, schedule filters,
+        // diary filter, and plain date-entry fields) displays as dd/mm/yyyy — the value
+        // actually submitted to the server stays yyyy-mm-dd, which is what every
+        // controller/repository already expects, so this is display-only.
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof flatpickr === 'undefined') {
+                return;
+            }
+
+            document.querySelectorAll('input[type="date"]').forEach(function(input) {
+                flatpickr(input, {
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd/m/Y',
+                    altInputClass: input.className,
+                    allowInput: true,
+                });
+            });
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const toggleButton = document.getElementById('toggleSidebar');
@@ -532,6 +712,38 @@ function navActive(string $path, string $currentPath): string
             document.querySelectorAll('.toast-container .toast').forEach(function(el) {
                 new bootstrap.Toast(el).show();
             });
+        });
+
+        // Keeps the bell badge fresh between page loads without a full refresh —
+        // the dropdown's own contents are still rendered server-side on each load.
+        document.addEventListener('DOMContentLoaded', function() {
+            const badge = document.getElementById('notifBellBadge');
+            if (!badge) {
+                return;
+            }
+
+            setInterval(function() {
+                fetch('/notifications/unread-count', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(function(res) {
+                        return res.ok ? res.json() : null;
+                    })
+                    .then(function(data) {
+                        if (!data) {
+                            return;
+                        }
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    })
+                    .catch(function() {});
+            }, 45000);
         });
     </script>
 </body>

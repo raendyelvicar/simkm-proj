@@ -8,6 +8,8 @@ use App\Middleware\AuthMiddleware;
 use App\Repositories\CounselorRepository;
 use App\Repositories\DiaryRepository;
 use App\Repositories\MonitoringPeriodRepository;
+use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 class DiaryController
 {
@@ -19,6 +21,8 @@ class DiaryController
     private DiaryRepository $diaries;
     private CounselorRepository $counselors;
     private MonitoringPeriodRepository $monitoring;
+    private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -26,6 +30,8 @@ class DiaryController
         $this->diaries = new DiaryRepository();
         $this->counselors = new CounselorRepository();
         $this->monitoring = new MonitoringPeriodRepository();
+        $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /diary — list only the logged-in user's own entries
@@ -85,7 +91,7 @@ class DiaryController
             return;
         }
 
-        $this->diaries->create(
+        $diaryId = $this->diaries->create(
             (int) $_SESSION['user_id'],
             $fields['entry_date'],
             $fields['situation'],
@@ -102,6 +108,10 @@ class DiaryController
             $fields['is_private'],
             $fields['shared_counselor_id']
         );
+
+        if ($fields['shared_counselor_id']) {
+            $this->notifyDiaryShared((int) $fields['shared_counselor_id'], $fields['entry_date'], $diaryId);
+        }
 
         $_SESSION['success'] = 'Diary berhasil ditambahkan.';
         Response::redirect('/diary');
@@ -190,6 +200,12 @@ class DiaryController
             $fields['shared_counselor_id']
         );
 
+        // Only notify on a newly-added or changed share target, not on every edit
+        // of an already-shared entry.
+        if ($fields['shared_counselor_id'] && $fields['shared_counselor_id'] !== $entry->sharedCounselorId) {
+            $this->notifyDiaryShared((int) $fields['shared_counselor_id'], $fields['entry_date'], (int) $id);
+        }
+
         $_SESSION['success'] = 'Diary berhasil diperbarui.';
         Response::redirect('/diary/' . $id);
     }
@@ -203,6 +219,22 @@ class DiaryController
         }
 
         Response::redirect('/diary');
+    }
+
+    private function notifyDiaryShared(int $sharedCounselorId, string $entryDate, int $diaryId): void
+    {
+        $counselor = $this->counselors->findByCounselorId($sharedCounselorId);
+        if (!$counselor) {
+            return;
+        }
+
+        $student = $this->users->find((int) $_SESSION['user_id']);
+        $this->notifier->diaryShared(
+            (int) $counselor['user_id'],
+            $student ? $student->name : ($_SESSION['username'] ?? 'Mahasiswa'),
+            $entryDate,
+            $diaryId
+        );
     }
 
     private function findOwnedEntry(int $id)

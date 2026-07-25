@@ -6,16 +6,19 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\UserRepository;
 use App\Repositories\LookupRepository;
+use App\Services\NotificationService;
 
 class AuthController
 {
     private UserRepository $users;
     private LookupRepository $lookup;
+    private NotificationService $notifier;
 
     public function __construct()
     {
         $this->users = new UserRepository();
         $this->lookup = new LookupRepository();
+        $this->notifier = new NotificationService();
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -96,6 +99,7 @@ class AuthController
         );
 
         $this->notifyAdminsOfPendingRegistration($userId, $old, $facultyName, $majorName);
+        $this->notifier->accountPendingRegistration($this->notifier->adminUserIds(), $old['name']);
 
         $_SESSION['successRegister'] = 'Registrasi berhasil! Akun Anda menunggu persetujuan Admin sebelum bisa digunakan untuk login.';
         Response::redirect('/login');

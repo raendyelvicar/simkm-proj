@@ -28,6 +28,7 @@ use App\Controllers\DailyTipController;
 use App\Controllers\SharedDiaryController;
 use App\Controllers\SelfHelpController;
 use App\Controllers\ReportController;
+use App\Controllers\NotificationController;
 
 $router->get('/', [HomeController::class, 'index']);
 
@@ -50,6 +51,12 @@ $router->get('/demo', [UserController::class, 'demo']);
 
 // --- Protected: requires login (each controller enforces via AuthMiddleware) ---
 $router->get('/dashboard', [DashboardController::class, 'index']);
+
+// --- Protected: in-app notification bell + full history, any role ---
+$router->get('/notifications', [NotificationController::class, 'index']);
+$router->get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+$router->post('/notifications/read-all', [NotificationController::class, 'readAll']);
+$router->get('/notifications/{id}/open', [NotificationController::class, 'open']);
 
 $router->get('/profile', [ProfileController::class, 'show']);
 $router->post('/profile', [ProfileController::class, 'update']);

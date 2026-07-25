@@ -7,6 +7,7 @@ use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\ChatRepository;
 use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 // Counselor-side inbox: lets a logged-in counselor see students who've
 // messaged them and reply. Mirrors ChatController, which is the
@@ -17,6 +18,7 @@ class ConsultationController
 
     private ChatRepository $chats;
     private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class ConsultationController
 
         $this->chats = new ChatRepository();
         $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /consultations
@@ -111,6 +114,13 @@ class ConsultationController
 
         if ($student && $message !== '') {
             $this->chats->send((int) $_SESSION['user_id'], (int) $studentId, $message);
+
+            $counselor = $this->users->find((int) $_SESSION['user_id']);
+            $this->notifier->chatReplyReceived(
+                (int) $studentId,
+                $counselor ? $counselor->name : ($_SESSION['username'] ?? 'Konselor'),
+                (int) $_SESSION['user_id']
+            );
         }
 
         Response::redirect('/consultations/' . $studentId);

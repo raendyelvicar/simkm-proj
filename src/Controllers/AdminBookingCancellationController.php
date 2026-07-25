@@ -9,6 +9,7 @@ use App\Repositories\BookingCancellationRequestRepository;
 use App\Repositories\CounselingBookingRepository;
 use App\Repositories\MonitoringPeriodRepository;
 use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 // Admin review queue for student-initiated booking cancellations (see
 // BookingController::cancel(), which files a request here instead of cancelling
@@ -23,6 +24,7 @@ class AdminBookingCancellationController
     private CounselingBookingRepository $bookings;
     private MonitoringPeriodRepository $monitoring;
     private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -37,6 +39,7 @@ class AdminBookingCancellationController
         $this->bookings = new CounselingBookingRepository();
         $this->monitoring = new MonitoringPeriodRepository();
         $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /admin/booking-cancellations
@@ -83,6 +86,7 @@ class AdminBookingCancellationController
 
         if ($booking) {
             $this->notifyStudent($booking->userId, true, null);
+            $this->notifier->bookingCancellationApproved($booking->userId);
         }
 
         $_SESSION['success'] = 'Pembatalan booking disetujui.';
@@ -108,6 +112,7 @@ class AdminBookingCancellationController
 
         if ($booking) {
             $this->notifyStudent($booking->userId, false, $adminNotes);
+            $this->notifier->bookingCancellationRejected($booking->userId, $adminNotes);
         }
 
         $_SESSION['success'] = 'Permintaan pembatalan booking ditolak.';

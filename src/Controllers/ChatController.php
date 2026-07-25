@@ -8,12 +8,16 @@ use App\Middleware\AuthMiddleware;
 use App\Repositories\ChatRepository;
 use App\Repositories\CounselorRepository;
 use App\Repositories\MonitoringPeriodRepository;
+use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 class ChatController
 {
     private ChatRepository $chats;
     private CounselorRepository $counselors;
     private MonitoringPeriodRepository $monitoring;
+    private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -21,6 +25,8 @@ class ChatController
         $this->chats = new ChatRepository();
         $this->counselors = new CounselorRepository();
         $this->monitoring = new MonitoringPeriodRepository();
+        $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /chat/{counselorId}
@@ -54,6 +60,13 @@ class ChatController
 
         if ($counselor && $this->hasAccess($counselor) && $message !== '') {
             $this->chats->send((int) $_SESSION['user_id'], $counselor['user_id'], $message);
+
+            $student = $this->users->find((int) $_SESSION['user_id']);
+            $this->notifier->newChatMessage(
+                (int) $counselor['user_id'],
+                $student ? $student->name : ($_SESSION['username'] ?? 'Mahasiswa'),
+                (int) $_SESSION['user_id']
+            );
         }
 
         Response::redirect('/chat/' . $counselorId);

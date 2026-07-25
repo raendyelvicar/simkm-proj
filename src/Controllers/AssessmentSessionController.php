@@ -10,6 +10,7 @@ use App\Repositories\AssessmentRetakeGrantRepository;
 use App\Repositories\AssessmentSessionRepository;
 use App\Repositories\SettingsRepository;
 use App\Services\AssessmentScoringService;
+use App\Services\NotificationService;
 use App\Support\AssessmentMeta;
 
 /**
@@ -28,6 +29,7 @@ class AssessmentSessionController
     private AssessmentRetakeGrantRepository $retakeGrants;
     private AssessmentScoringService $scoring;
     private SettingsRepository $settings;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -37,6 +39,7 @@ class AssessmentSessionController
         $this->retakeGrants = new AssessmentRetakeGrantRepository();
         $this->scoring = new AssessmentScoringService();
         $this->settings = new SettingsRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /assessment/start
@@ -297,6 +300,7 @@ class AssessmentSessionController
         $this->assessments->saveAnswers($pwbId, $pwbScored['scored_answers']);
 
         $this->sessions->finalize($sessionId, $status, $bdi2Id, $pwbId);
+        $this->notifier->assessmentResultReady($userId, $sessionId);
 
         $session['status'] = $status;
         $session['bdi2_submission_id'] = $bdi2Id;

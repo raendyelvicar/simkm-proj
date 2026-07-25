@@ -6,16 +6,22 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\ArticleRepository;
+use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 class ArticleController
 {
     private const PER_PAGE = 9;
 
     private ArticleRepository $articles;
+    private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
         $this->articles = new ArticleRepository();
+        $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /article — public, everyone can view
@@ -100,6 +106,7 @@ class ArticleController
         }
 
         $id = $this->articles->create((int) $_SESSION['user_id'], $title, $content, $category, $tags, $image);
+        $this->notifier->articlePublished($this->users->activeStudentIds(), $title, $id);
 
         $_SESSION['success'] = 'Artikel berhasil dipublikasikan.';
         Response::redirect('/article/' . $id);

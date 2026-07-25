@@ -9,6 +9,8 @@ use App\Repositories\BookingCancellationRequestRepository;
 use App\Repositories\CounselingBookingRepository;
 use App\Repositories\CounselorRepository;
 use App\Repositories\CounselorScheduleRepository;
+use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 // Student-facing: request a booking with a counselor, and manage the ones already sent.
 // A booking must be confirmed by the counselor (see BookingQueueController) before chat unlocks.
@@ -20,6 +22,8 @@ class BookingController
     private CounselorScheduleRepository $schedules;
     private CounselorRepository $counselors;
     private BookingCancellationRequestRepository $cancellationRequests;
+    private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -34,6 +38,8 @@ class BookingController
         $this->schedules = new CounselorScheduleRepository();
         $this->counselors = new CounselorRepository();
         $this->cancellationRequests = new BookingCancellationRequestRepository();
+        $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /bookings
@@ -106,6 +112,14 @@ class BookingController
             $fields['complaint']
         );
 
+        $student = $this->users->find((int) $_SESSION['user_id']);
+        $this->notifier->bookingCreated(
+            (int) $counselor['user_id'],
+            $student ? $student->name : ($_SESSION['username'] ?? 'Mahasiswa'),
+            $fields['date'],
+            substr($fields['start_time'], 0, 5)
+        );
+
         $_SESSION['success'] = 'Booking berhasil diajukan. Menunggu konfirmasi counselor.';
         Response::redirect('/bookings');
     }
@@ -122,6 +136,14 @@ class BookingController
             $reason = trim($request->post('reason', '')) ?: null;
             $this->cancellationRequests->create((int) $id, $booking->status, $reason);
             $this->bookings->updateStatus((int) $id, 'Cancellation Requested');
+
+            $student = $this->users->find((int) $_SESSION['user_id']);
+            $this->notifier->bookingCancellationRequested(
+                $this->notifier->adminUserIds(),
+                $student ? $student->name : ($_SESSION['username'] ?? 'Mahasiswa'),
+                $booking->date
+            );
+
             $_SESSION['success'] = 'Permintaan pembatalan booking telah dikirim, menunggu persetujuan Admin.';
         }
 

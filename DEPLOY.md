@@ -62,6 +62,13 @@ Pieces:
 - **Automatic**: push to `main`, or merge a PR into it.
 - **Manual re-run**: GitHub repo → Actions → "Deploy to VPS" → Run workflow.
 - **Manual, from the VPS itself** (e.g. to debug): `cd $VPS_APP_DIR && bash deploy.sh`.
+- **Seed dummy data** (articles, daily tips, self-help activities) — opt-in only,
+  run by hand on the VPS when you want demo content:
+  ```bash
+  cd $VPS_APP_DIR && RUN_SEED=1 bash deploy.sh
+  ```
+  Not run automatically on every push, since `seed_articles.php` replaces every
+  existing article — you don't want that firing on a normal code deploy.
 
 ## Notes
 
@@ -72,6 +79,10 @@ Pieces:
   deploy rebuilds/restarts just the `app` container, so the DB stays up.
 - `bin/migrate.php` is safe to run repeatedly; it only executes files not yet
   in `schema_migrations`.
+- The dummy-data seeders are not all equally safe to re-run: `seed_articles.php`
+  wipes and replaces every article each time, `seed_daily_tips.php` appends
+  (re-running duplicates the 15 tips), and `seed_self_help_activities.php`
+  skips students who already have activity rows.
 - To roll back: revert the bad commit and push (redeploys the reverted code),
   or SSH in, `git checkout <good-sha>`, and run `bash deploy.sh` by hand. Note
   this only rolls back code — it does not undo migrations that already ran.

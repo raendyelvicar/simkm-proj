@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\UserRepository;
+use App\Services\NotificationService;
 
 // Admin review queue for self-registered student accounts (status=pending).
 // Approving/rejecting notifies the user by email; a failed email must never
@@ -15,6 +16,7 @@ class AdminApprovalController
     private const PER_PAGE = 10;
 
     private UserRepository $users;
+    private NotificationService $notifier;
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ class AdminApprovalController
         }
 
         $this->users = new UserRepository();
+        $this->notifier = new NotificationService();
     }
 
     // GET /admin/approvals
@@ -67,6 +70,7 @@ class AdminApprovalController
 
         $this->users->approve((int) $id, (int) $_SESSION['user_id']);
         $this->notifyUser($user, true);
+        $this->notifier->accountApproved($user->id);
 
         $_SESSION['success'] = 'Akun ' . $user->name . ' berhasil disetujui.';
         Response::redirect('/admin/approvals');

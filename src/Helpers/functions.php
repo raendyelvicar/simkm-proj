@@ -170,6 +170,45 @@ if (!function_exists('sort_options')) {
     }
 }
 
+if (!function_exists('notification_icon')) {
+    function notification_icon(string $type): string
+    {
+        $map = [
+            'booking'      => '📅',
+            'assessment'   => '📝',
+            'verification' => '✅',
+            'article'      => '📰',
+            'diary'        => '📔',
+            'chat'         => '💬',
+        ];
+
+        return $map[$type] ?? '🔔';
+    }
+}
+
+if (!function_exists('time_ago')) {
+    /** Renders a past DATETIME as a short relative Indonesian label ("5 menit lalu", "3 hari lalu"). */
+    function time_ago(string $datetime): string
+    {
+        $diff = time() - strtotime($datetime);
+
+        if ($diff < 60) {
+            return 'Baru saja';
+        }
+        if ($diff < 3600) {
+            return floor($diff / 60) . ' menit lalu';
+        }
+        if ($diff < 86400) {
+            return floor($diff / 3600) . ' jam lalu';
+        }
+        if ($diff < 2592000) {
+            return floor($diff / 86400) . ' hari lalu';
+        }
+
+        return date('d M Y', strtotime($datetime));
+    }
+}
+
 if (!function_exists('profile_photo_url')) {
     /**
      * Normalizes a stored profile photo value into a browsable URL. Handles both
