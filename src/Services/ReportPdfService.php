@@ -34,7 +34,10 @@ class ReportPdfService
         .table td, .table th{ padding:6px; border:1px solid #ddd; font-size:10px; text-align:left; }
         .table th{ background:#f5f5f5; }
         .table td.label{ width:22%; font-weight:bold; background:#fafafa; }
-        .page-break{ page-break-after: always; }
+        .diary-entry{ border-bottom:1px solid #ddd; padding:8px 0 12px; }
+        .diary-entry h2{ margin-top:6px; margin-bottom:6px; }
+        .diary-row{ font-size:10px; padding:2px 0; }
+        .diary-label{ font-weight:bold; }
         .org-header{ width:100%; margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #ddd; }
         .org-header td{ vertical-align:middle; }
         .org-logo-cell{ width:64px; }
