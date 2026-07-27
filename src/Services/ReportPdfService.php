@@ -46,9 +46,10 @@ class ReportPdfService
 
         // Admin-scoped reports (e.g. Laporan Diary with no student/counselor filter) can
         // render hundreds of detail pages at once; dompdf's style/layout pass on that much
-        // HTML routinely blows past PHP's default 128M, aborting the export. Raise it just
-        // for this render rather than editing php.ini globally.
+        // HTML routinely blows past PHP's default 128M/30s, aborting the export. Raise both
+        // just for this render rather than editing php.ini globally.
         ini_set('memory_limit', '512M');
+        set_time_limit(300);
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
