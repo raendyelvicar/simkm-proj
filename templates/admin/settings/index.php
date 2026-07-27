@@ -12,6 +12,18 @@
             <div class="form-text">Berlaku untuk satu sesi gabungan BDI-II + PWB (1–240 menit).</div>
         </div>
         <div class="col-12">
+            <label for="report_default_counselor_id" class="form-label">Konselor Default untuk Laporan (Mengetahui)</label>
+            <select name="report_default_counselor_id" id="report_default_counselor_id" class="form-select">
+                <option value="">— Tidak diatur —</option>
+                <?php foreach ($counselors as $c): ?>
+                    <option value="<?= (int) $c['counselor_id'] ?>" <?= $defaultReportCounselorId === (int) $c['counselor_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($c['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <div class="form-text">Ditampilkan sebagai penanggung jawab ("Mengetahui") pada ekspor PDF laporan saat tidak ada konselor lain yang lebih relevan (mis. laporan admin, atau laporan mahasiswa yang belum pernah menjalani sesi konseling).</div>
+        </div>
+        <div class="col-12">
             <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
         </div>
     </form>

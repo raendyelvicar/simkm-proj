@@ -44,6 +44,12 @@ class ReportPdfService
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isRemoteEnabled', false);
 
+        // Admin-scoped reports (e.g. Laporan Diary with no student/counselor filter) can
+        // render hundreds of detail pages at once; dompdf's style/layout pass on that much
+        // HTML routinely blows past PHP's default 128M, aborting the export. Raise it just
+        // for this render rather than editing php.ini globally.
+        ini_set('memory_limit', '512M');
+
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'landscape');
@@ -54,8 +60,9 @@ class ReportPdfService
 
     /**
      * Name Counselor / Date / Tanda Tangan block. Populated with the logged-in
-     * counselor's name when available, otherwise left as a blank placeholder line —
-     * matching the spec's "atau placeholder jika masih manual" note.
+     * counselor's name when available; callers fall back to a fixed default name
+     * otherwise (see ReportController::DEFAULT_COUNSELOR_NAME). Falls back to a blank
+     * placeholder line only if no name at all is passed in.
      */
     public function pengesahanBlock(?string $counselorName): string
     {
@@ -69,7 +76,7 @@ class ReportPdfService
                 Mengetahui,<br>
                 <div class="sign-line">
                     <strong>' . $name . '</strong><br>
-                    Counselor<br>
+                    Konselor<br>
                     ' . $date . '
                 </div>
             </td>

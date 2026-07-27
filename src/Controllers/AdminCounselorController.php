@@ -46,7 +46,7 @@ class AdminCounselorController
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('admin/counselors/index', [
-            'title'       => 'Kelola Counselor',
+            'title'       => 'Kelola Konselor',
             'counselors'  => $result['items'],
             'total'       => $result['total'],
             'page'        => $page,
@@ -60,7 +60,7 @@ class AdminCounselorController
     // GET /admin/counselors/create
     public function create(Request $request): void
     {
-        Response::view('admin/counselors/create', ['title' => 'Tambah Counselor']);
+        Response::view('admin/counselors/create', ['title' => 'Tambah Konselor']);
     }
 
     // POST /admin/counselors
@@ -75,7 +75,7 @@ class AdminCounselorController
 
         if ($errors) {
             Response::view('admin/counselors/create', [
-                'title' => 'Tambah Counselor',
+                'title' => 'Tambah Konselor',
                 'errors' => $errors,
                 'old' => $fields,
             ]);
@@ -105,7 +105,7 @@ class AdminCounselorController
             $this->counselors->updateUserProfileImage($userId, $image);
         }
 
-        $_SESSION['success'] = 'Counselor berhasil ditambahkan.';
+        $_SESSION['success'] = 'Konselor berhasil ditambahkan.';
         Response::redirect('/admin/counselors');
     }
 
@@ -118,7 +118,7 @@ class AdminCounselorController
         }
 
         Response::view('admin/counselors/edit', [
-            'title' => 'Edit Counselor',
+            'title' => 'Edit Konselor',
             'counselor' => $counselor,
         ]);
     }
@@ -141,7 +141,7 @@ class AdminCounselorController
 
         if ($errors) {
             Response::view('admin/counselors/edit', [
-                'title' => 'Edit Counselor',
+                'title' => 'Edit Konselor',
                 'counselor' => array_merge($counselor, $fields),
                 'errors' => $errors,
             ]);
@@ -174,7 +174,7 @@ class AdminCounselorController
             $image
         );
 
-        $_SESSION['success'] = 'Counselor berhasil diperbarui.';
+        $_SESSION['success'] = 'Konselor berhasil diperbarui.';
         Response::redirect('/admin/counselors');
     }
 
@@ -191,8 +191,8 @@ class AdminCounselorController
         if ($counselor['has_profile']) {
             $this->counselors->setActive((int) $counselor['counselor_id'], !$counselor['is_active']);
             $_SESSION['success'] = $counselor['is_active']
-                ? 'Counselor berhasil dinonaktifkan.'
-                : 'Counselor berhasil diaktifkan kembali.';
+                ? 'Konselor berhasil dinonaktifkan.'
+                : 'Konselor berhasil diaktifkan kembali.';
         }
 
         Response::redirect('/admin/counselors');

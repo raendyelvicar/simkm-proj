@@ -39,7 +39,7 @@ class CounselorController
         $totalPages = (int) max(1, ceil($result['total'] / self::PER_PAGE));
 
         Response::view('counselor/index', [
-            'title'                       => 'Counselor',
+            'title'                       => 'Konselor',
             'counselors'                  => $result['items'],
             'total'                       => $result['total'],
             'page'                        => $page,
@@ -73,7 +73,7 @@ class CounselorController
             && $this->monitoring->hasActive((int) $_SESSION['user_id'], (int) $counselor['counselor_id']);
 
         Response::view('counselor/show', [
-            'title' => $counselor['name'] ?: 'Detail Counselor',
+            'title' => $counselor['name'] ?: 'Detail Konselor',
             'counselor' => $counselor,
             'hasActiveMonitoring' => $hasActiveMonitoring,
         ]);

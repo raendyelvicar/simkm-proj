@@ -46,7 +46,7 @@ class ChatController
         $messages = $this->chats->conversation((int) $_SESSION['user_id'], $counselor['user_id']);
 
         Response::view('chat/index', [
-            'title' => 'Chat dengan ' . ($counselor['name'] ?: 'Counselor'),
+            'title' => 'Chat dengan ' . ($counselor['name'] ?: 'Konselor'),
             'counselor' => $counselor,
             'messages' => array_map(fn($message) => $message->toArray(), $messages),
         ]);

@@ -39,7 +39,7 @@ class AdminScheduleController
         }
 
         Response::view('admin/counselors/schedule', array_merge(
-            ['title' => 'Schedule ' . ($counselor['name'] ?: 'Counselor'), 'counselor' => $counselor],
+            ['title' => 'Schedule ' . ($counselor['name'] ?: 'Konselor'), 'counselor' => $counselor],
             $this->scheduleViewData($request, (int) $counselor['counselor_id'])
         ));
     }
@@ -102,7 +102,7 @@ class AdminScheduleController
         if ($errors) {
             Response::view('admin/counselors/schedule', array_merge(
                 [
-                    'title' => 'Schedule ' . ($counselor['name'] ?: 'Counselor'),
+                    'title' => 'Schedule ' . ($counselor['name'] ?: 'Konselor'),
                     'counselor' => $counselor,
                     'errors' => $errors,
                     'old' => compact('date', 'jamMulai', 'jamSelesai', 'quota'),

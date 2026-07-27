@@ -10,6 +10,7 @@ use App\Models\CounselingBooking;
 use App\Models\DiaryEntry;
 use App\Repositories\CounselorRepository;
 use App\Repositories\ReportRepository;
+use App\Repositories\SettingsRepository;
 use App\Services\AssessmentScoringService;
 use App\Services\EngagementScoringService;
 use App\Services\ReportPdfService;
@@ -25,8 +26,13 @@ class ReportController
     private const DIARY_PER_PAGE = 10;
     private const REPORT_PER_PAGE = 10;
 
+    // Bootstrap sign-off name, used only until an admin picks a real default counselor
+    // via /admin/settings (app_settings.report_default_counselor_id).
+    private const FALLBACK_COUNSELOR_NAME = 'Dr. Andi Prakoso';
+
     private ReportRepository $laporan;
     private CounselorRepository $counselors;
+    private SettingsRepository $settings;
     private AssessmentScoringService $scoring;
     private EngagementScoringService $engagementScoring;
     private ReportPdfService $pdf;
@@ -37,6 +43,7 @@ class ReportController
         AuthMiddleware::handle();
         $this->laporan = new ReportRepository();
         $this->counselors = new CounselorRepository();
+        $this->settings = new SettingsRepository();
         $this->scoring = new AssessmentScoringService();
         $this->engagementScoring = new EngagementScoringService();
         $this->pdf = new ReportPdfService();
@@ -832,7 +839,44 @@ class ReportController
 
     private function streamPdf(string $title, string $slug, array $filters, string $bodyHtml): void
     {
-        $html = $this->periodMeta($filters) . $bodyHtml . $this->pdf->pengesahanBlock($this->currentCounselorProfile()['name'] ?? null);
+        $html = $this->periodMeta($filters) . $bodyHtml . $this->pdf->pengesahanBlock($this->signOffCounselorName($filters));
         $this->pdf->stream($title, $html, 'laporan_' . $slug . '_' . date('Ymd_His') . '.pdf');
+    }
+
+    // Resolves the "Mengetahui" signee for a report export:
+    //  - a counselor viewing their own scoped report always sees their own name;
+    //  - a single-student report (a student exporting their own laporan) prefers the
+    //    counselor that student actually attended a completed counseling session with;
+    //  - anything else (admin's system-wide exports, or a student with no counseling
+    //    history yet) falls back to the admin-configured default counselor.
+    private function signOffCounselorName(array $filters): string
+    {
+        if ($this->role() === 'counselor') {
+            return $this->currentCounselorProfile()['name'] ?? $this->defaultCounselorName();
+        }
+
+        if (!empty($filters['user_id'])) {
+            $related = $this->laporan->studentCounselorName((int) $filters['user_id']);
+            if ($related) {
+                return $related;
+            }
+        }
+
+        return $this->defaultCounselorName();
+    }
+
+    // The admin-configurable default "Mengetahui" counselor (see AdminSettingsController),
+    // falling back to a hardcoded name until an admin actually picks one.
+    private function defaultCounselorName(): string
+    {
+        $counselorId = (int) ($this->settings->get('report_default_counselor_id') ?? 0);
+        if ($counselorId) {
+            $counselor = $this->counselors->findByCounselorId($counselorId);
+            if ($counselor) {
+                return $counselor['name'];
+            }
+        }
+
+        return self::FALLBACK_COUNSELOR_NAME;
     }
 }

@@ -41,6 +41,28 @@ class ReportRepository
         return array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'user_id'));
     }
 
+    // The counselor a student actually attended a completed counseling session with,
+    // most recent first — used as the report PDF sign-off for that student's own exports.
+    // monitoring_periods rows only ever get created off a Completed booking, so their
+    // presence is itself proof of attendance (see CounselingBookingController/seeders).
+    public function studentCounselorName(int $userId): ?string
+    {
+        $stmt = $this->db->prepare(
+            'SELECT u.name
+             FROM monitoring_periods mp
+             JOIN counselors k ON k.counselor_id = mp.counselor_id
+             JOIN users u ON u.id = k.user_id
+             WHERE mp.user_id = ?
+             ORDER BY mp.start_date DESC, mp.monitoring_id DESC
+             LIMIT 1'
+        );
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+
+        return $row['name'] ?? null;
+    }
+
     // --- Laporan 1: Riwayat Self Assessment ---------------------------------------
 
     /**
