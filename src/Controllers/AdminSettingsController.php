@@ -9,11 +9,21 @@ use App\Repositories\CounselorRepository;
 use App\Repositories\SettingsRepository;
 
 // Admin-only screen for system settings — the combined BDI-II+PWB session time limit
-// used by AssessmentSessionController, and the default "Mengetahui" counselor used on
+// used by AssessmentSessionController, the default "Mengetahui" counselor used on
 // report PDF exports (ReportController::defaultCounselorName()) when no more specific
-// counselor applies.
+// counselor applies, and the organization letterhead (name/address/phone/email/logo)
+// shown on every Laporan report's PDF export (see ReportPdfService::orgHeaderHtml()).
 class AdminSettingsController
 {
+    private const ALLOWED_LOGO_TYPES = [
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+        'webp' => 'image/webp',
+    ];
+
+    private const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+
     private SettingsRepository $settings;
     private CounselorRepository $counselors;
 
@@ -45,6 +55,11 @@ class AdminSettingsController
             'timeLimitMinutes'          => (int) $this->settings->get('assessment_time_limit_minutes', '45'),
             'counselors'                => $counselors,
             'defaultReportCounselorId'  => (int) ($this->settings->get('report_default_counselor_id') ?? 0),
+            'orgName'                   => $this->settings->get('org_name', ''),
+            'orgAddress'                => $this->settings->get('org_address', ''),
+            'orgPhone'                  => $this->settings->get('org_phone', ''),
+            'orgEmail'                  => $this->settings->get('org_email', ''),
+            'orgLogoPath'               => $this->settings->get('org_logo_path', ''),
         ]);
     }
 
@@ -53,6 +68,11 @@ class AdminSettingsController
     {
         $minutes = (int) $request->post('assessment_time_limit_minutes', 0);
         $reportCounselorId = (int) $request->post('report_default_counselor_id', 0);
+        $orgName = trim($request->post('org_name', ''));
+        $orgAddress = trim($request->post('org_address', ''));
+        $orgPhone = trim($request->post('org_phone', ''));
+        $orgEmail = trim($request->post('org_email', ''));
+        $removeLogo = (bool) $request->post('remove_org_logo', false);
 
         if ($minutes < 1 || $minutes > 240) {
             $_SESSION['error'] = 'Batas waktu harus antara 1 dan 240 menit.';
@@ -66,9 +86,70 @@ class AdminSettingsController
             return;
         }
 
+        [$logoPath, $logoError] = $this->handleLogoUpload($request);
+        if ($logoError) {
+            $_SESSION['error'] = $logoError;
+            Response::redirect('/admin/settings');
+            return;
+        }
+
         $this->settings->set('assessment_time_limit_minutes', (string) $minutes);
         $this->settings->set('report_default_counselor_id', (string) $reportCounselorId);
+        $this->settings->set('org_name', $orgName);
+        $this->settings->set('org_address', $orgAddress);
+        $this->settings->set('org_phone', $orgPhone);
+        $this->settings->set('org_email', $orgEmail);
+
+        if ($logoPath) {
+            $this->settings->set('org_logo_path', $logoPath);
+        } elseif ($removeLogo) {
+            $this->settings->set('org_logo_path', '');
+        }
+
         $_SESSION['success'] = 'Pengaturan berhasil disimpan.';
         Response::redirect('/admin/settings');
+    }
+
+    // Returns [publicPath|null, error|null]. Leaves the existing logo untouched when no
+    // file is chosen — mirrors AdminCounselorController::handleImageUpload().
+    private function handleLogoUpload(Request $request): array
+    {
+        $file = $request->file('org_logo');
+
+        if (!$file) {
+            return [null, null];
+        }
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return [null, 'Gagal mengunggah logo.'];
+        }
+
+        if ($file['size'] > self::MAX_LOGO_BYTES) {
+            return [null, 'Ukuran logo maksimal 2MB.'];
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $mime = mime_content_type($file['tmp_name']);
+
+        if (!isset(self::ALLOWED_LOGO_TYPES[$ext]) || self::ALLOWED_LOGO_TYPES[$ext] !== $mime) {
+            return [null, 'Logo harus berformat JPG, PNG, atau WEBP.'];
+        }
+
+        if (!is_uploaded_file($file['tmp_name'])) {
+            return [null, 'Gagal mengunggah logo.'];
+        }
+
+        $dir = __DIR__ . '/../../public/uploads/org';
+        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return [null, 'Gagal mengunggah logo.'];
+        }
+
+        $filename = bin2hex(random_bytes(16)) . '.' . $ext;
+
+        if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $filename)) {
+            return [null, 'Gagal mengunggah logo.'];
+        }
+
+        return ['/uploads/org/' . $filename, null];
     }
 }

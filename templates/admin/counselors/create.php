@@ -129,6 +129,8 @@
     </div>
 </div>
 
+<?php require __DIR__ . '/../../partials/password_toggle.php'; ?>
+
 <?php
 $content = ob_get_clean();
 $pageTitle = $title ?? 'Tambah Konselor';

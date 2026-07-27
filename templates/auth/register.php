@@ -164,4 +164,6 @@
     });
 </script>
 
+<?php require __DIR__ . '/../partials/password_toggle.php'; ?>
+
 </html>

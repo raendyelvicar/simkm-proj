@@ -1,8 +1,9 @@
 FROM php:8.3-apache
 
 RUN apt-get update \
-    && apt-get install -y unzip libzip-dev \
-    && docker-php-ext-install mysqli \
+    && apt-get install -y unzip libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install mysqli gd \
     && a2enmod rewrite \
     && a2dismod mpm_event mpm_worker 2>/dev/null; a2enmod mpm_prefork \
     && rm -rf /var/lib/apt/lists/*
